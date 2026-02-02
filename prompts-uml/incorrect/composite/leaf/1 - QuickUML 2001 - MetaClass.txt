@@ -1,0 +1,48 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.builder.MetaClass {
+- NamingComponent attributeNamingComponent
+- MetaClass superClass
+- boolean anInterface
+- Vector interfaceList
+- Vector attributeList
+- Vector methodList
++ <<Create>> MetaClass(String,boolean)
++ void setName(String)
++ String getProperName()
++ boolean isInterface()
++ void isInterface(boolean)
++ String getType()
++ void setSuperClass(MetaClass)
++ void setSuperClass(MetaClass,boolean)
++ MetaClass getSuperClass()
++ boolean isAncestorOf(MetaClass)
++ void addInterface(MetaClass)
++ void addInterface(MetaClass,boolean)
++ void removeInterface(MetaClass)
++ MetaClass getCompatibleInterface(MetaClass)
++ boolean hasInterface(MetaClass)
++ boolean hasInterface(MetaClass,boolean)
++ Iterator getInterfaces()
+# Iterator getInterfaces(boolean)
+# NamingComponent getNamingComponent()
++ void addAttribute(MetaAttribute)
++ Iterator getAttributes()
+# Iterator getAttributes(boolean)
++ void addMethod(MetaMethod)
++ void addMethod(MetaMethod,boolean)
++ Iterator getMethods()
+# Iterator getMethods(boolean)
++ int compareTo(Object)
++ String toString()
+}
+
+
+
+
+uml.builder.MetaComponent <|-- uml.builder.MetaClass
+@enduml

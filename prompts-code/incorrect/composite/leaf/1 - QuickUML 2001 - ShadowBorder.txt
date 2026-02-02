@@ -1,0 +1,97 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package uml.ui.border;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Insets;
+
+import javax.swing.border.AbstractBorder;
+
+
+public class ShadowBorder extends AbstractBorder {
+
+  public final static int NORTHEAST = 1;
+  public final static int NORTHWEST = 2;
+  public final static int SOUTHEAST = 3;
+  public final static int SOUTHWEST = 4;
+
+  private int size;
+  private Color color;
+  private int orientation;
+
+  
+  public ShadowBorder()  {
+    this(null,0,5);
+  }
+
+  
+  public ShadowBorder(Color c,int orientation, int size) {
+    this.color = c;
+    this.orientation = orientation;
+    this.size = size;
+  }
+
+  public void paintBorder(Component comp, Graphics g, int x, int y, int width, int height) {
+
+    g.setColor(color == null ? comp.getBackground().darker() : color);
+    switch (orientation) {
+    case NORTHWEST:
+      g.fillRect(x,y,width-size,size); 
+      g.fillRect(x,y,size,height-size); 
+    case NORTHEAST:
+      g.fillRect(x+size,y,width-size,size); 
+      g.fillRect(x+width-size,y,size,height-size); 
+    case SOUTHWEST:
+      g.fillRect(x,y+height-size,width-size,size); 
+      g.fillRect(x,y+size,size,height-size); 
+    case SOUTHEAST:
+    default:
+      g.fillRect(x+size,y+height-size,width-size,size); 
+      g.fillRect(x+width-size,y+size,size,height-size); 
+    }
+
+  }
+
+  public Insets getBorderInsets(Component c) {
+    return getBorderInsets(c,new Insets(0,0,0,0));
+  }
+
+  public Insets getBorderInsets(Component c, Insets i) {
+
+    switch (orientation)  {
+    case NORTHWEST:
+      i.left=size;
+      i.right=0;
+      i.top=size;
+      i.bottom=0;
+      break;
+    case NORTHEAST:
+      i.left=0;
+      i.right=size;
+      i.top=size;
+      i.bottom=0;
+      break;
+    case SOUTHWEST:
+      i.left=size;
+      i.right=0;
+      i.top=0;
+      i.bottom=size;
+      break;
+    case SOUTHEAST:
+    default:
+      i.left=0;
+      i.right=size;
+      i.top=0;
+      i.bottom=size;
+    }
+    return i;
+  }
+
+}

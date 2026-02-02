@@ -1,0 +1,35 @@
+Given the following java code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.util;
+
+
+
+
+public class Clipboard {
+	static Clipboard fgClipboard = new Clipboard();
+
+	
+	static public Clipboard getClipboard() {
+		return fgClipboard;
+	}
+
+	private Object fContents;
+
+	private Clipboard() {
+	}
+
+	
+	public void setContents(Object contents) {
+		fContents = contents;
+	}
+
+	
+	public Object getContents() {
+		return fContents;
+	}
+}

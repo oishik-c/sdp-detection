@@ -1,0 +1,54 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.model.test.DefaultSelectModelTest {
+~ TestAddressValueObject address
+~ VOCollectionValueHolder zipList
+~ VOValueHolder holder
+~ TestSelectModel model
++ {static} TestAddressValueObject JUNEAU
++ {static} TestAddressValueObject DOUGLAS
++ {static} TestAddressValueObject AUKE_BAY
++ {static} TestAddressValueObject KETCHIKAN
++ <<Create>> DefaultSelectModelTest(String)
+# void setUp()
+# void tearDown()
++ void testGetDisplayOptionListNullAllowedThirdSelected()
++ void testGetDisplayOptionListNullAllowedNullSelected()
++ void testGetDisplayOptionListNullNotAllowedThirdSelected()
++ void testGetDisplayOptionListNullNotAllowedNullSelected()
++ void testGetTextValid()
++ void testGetTextNull()
++ void testSetTextValid()
++ void testSetTextInvalid()
++ void testSetTextNullAllowedValueNull()
++ void testSetTextNullNotAllowedValueNull()
++ void testIsMatchTrue()
++ void testIsMatchFalse()
++ void testIsValueNullTrue()
++ void testIsValueNullFalse()
++ void testCopyValues()
++ void testSetNullValues()
++ void testObjectArrayListSetGetText()
++ void testGetSelectedItem()
++ void testSetSelectedItem()
++ {static} void main(String[])
+}
+
+
+class com.taursys.model.test.DefaultSelectModelTest$TestSelectModel {
++ boolean isCurrentMatch()
++ boolean isValueNull()
++ void copyValues()
++ void setNullValues()
+}
+
+
+
+junit.framework.TestCase <|-- com.taursys.model.test.DefaultSelectModelTest
+com.taursys.model.test.DefaultSelectModelTest +.. com.taursys.model.test.DefaultSelectModelTest$TestSelectModel
+com.taursys.model.test.DefaultSelectModel <|-- com.taursys.model.test.DefaultSelectModelTest$TestSelectModel
+@enduml

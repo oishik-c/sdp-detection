@@ -1,0 +1,16 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.jmonkey.office.lexi.support.ImageCellRenderer {
++ <<Create>> ImageCellRenderer()
++ Component getListCellRendererComponent(JList,Object,int,boolean,boolean)
+}
+
+
+
+javax.swing.ListCellRenderer <|.. com.jmonkey.office.lexi.support.ImageCellRenderer
+javax.swing.JLabel <|-- com.jmonkey.office.lexi.support.ImageCellRenderer
+@enduml

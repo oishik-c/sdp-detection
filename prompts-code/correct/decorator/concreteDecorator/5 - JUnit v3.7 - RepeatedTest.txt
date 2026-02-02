@@ -1,0 +1,33 @@
+Given the following java code, determine whether it contains an instance of the decorator design pattern playing the role of concreteDecorator.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package junit.extensions;
+
+import junit.framework.*;
+
+
+public class RepeatedTest extends  TestDecorator {
+	private int fTimesRepeat;
+
+	public RepeatedTest(Test test, int repeat) {
+		super(test);
+		if (repeat < 0)
+			throw new IllegalArgumentException("Repetition count must be > 0");
+		fTimesRepeat= repeat;
+	}
+	public int countTestCases() {
+		return super.countTestCases()*fTimesRepeat;
+	}
+	public void run(TestResult result) {
+		for (int i= 0; i < fTimesRepeat; i++) {
+			if (result.shouldStop())
+				break;
+			super.run(result);
+		}
+	}
+	public String toString() {
+		return super.toString()+"(repeated)";
+	}
+}

@@ -1,0 +1,688 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.nodes;
+
+import java.awt.Image;
+import java.awt.datatransfer.Transferable;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.beans.PropertyEditor;
+import java.beans.FeatureDescriptor;
+import java.io.IOException;
+
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Enumeration;
+
+import java.util.*;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+
+
+import org.openide.util.datatransfer.NewType;
+import org.openide.util.datatransfer.PasteType;
+import org.openide.util.HelpCtx;
+import org.openide.util.Mutex;
+import org.openide.util.actions.SystemAction;
+
+
+public class FilterNode extends Node {
+    
+    private Node original;
+    
+    private PropertyChangeListener propL;
+    
+    private NodeListener nodeL;
+
+    
+    
+    
+    private int delegateMask;
+
+    
+    protected static final int DELEGATE_SET_NAME = 1 << 0;
+    
+    protected static final int DELEGATE_GET_NAME = 1 << 1;
+    
+    protected static final int DELEGATE_SET_DISPLAY_NAME = 1 << 2;
+    
+    protected static final int DELEGATE_GET_DISPLAY_NAME = 1 << 3;
+    
+    protected static final int DELEGATE_SET_SHORT_DESCRIPTION = 1 << 4;
+    
+    protected static final int DELEGATE_GET_SHORT_DESCRIPTION = 1 << 5;
+    
+    protected static final int DELEGATE_DESTROY = 1 << 6;
+    
+    protected static final int DELEGATE_GET_ACTIONS = 1 << 7;
+    
+    protected static final int DELEGATE_GET_CONTEXT_ACTIONS = 1 << 8;
+    
+    private static final int DELEGATE_ALL = DELEGATE_SET_NAME |
+                                            DELEGATE_GET_NAME |
+                                            DELEGATE_SET_DISPLAY_NAME |
+                                            DELEGATE_GET_DISPLAY_NAME |
+                                            DELEGATE_SET_SHORT_DESCRIPTION |
+                                            DELEGATE_GET_SHORT_DESCRIPTION |
+                                            DELEGATE_DESTROY |
+                                            DELEGATE_GET_ACTIONS |
+                                            DELEGATE_GET_CONTEXT_ACTIONS;
+
+    
+    public FilterNode(Node original) {
+        this (
+            original,
+            original.isLeaf () ?
+            org.openide.nodes.Children.LEAF : new Children (original)
+        );
+    }
+
+    
+    public FilterNode(
+        Node original,
+        org.openide.nodes.Children children
+    ) {
+        super (children);
+        this.original = original;
+        init ();
+    }
+
+    
+    private void init () {
+        original.addPropertyChangeListener (getPropertyChangeListener ());
+        original.addNodeListener (getNodeListener ());
+        delegateMask = DELEGATE_ALL;
+    }
+
+    
+    protected void finalize () {
+        original.removePropertyChangeListener (getPropertyChangeListener ());
+        original.removeNodeListener (getNodeListener ());
+    }
+
+    
+    protected final void enableDelegation (int mask) {
+        if ((mask & ~DELEGATE_ALL) != 0) throw new IllegalArgumentException ("Bad delegation mask: " + mask); 
+        delegateMask |= mask;
+    }
+
+    
+    protected final void disableDelegation (int mask) {
+        if ((mask & ~DELEGATE_ALL) != 0) throw new IllegalArgumentException ("Bad delegation mask: " + mask); 
+        delegateMask &= ~mask;
+    }
+
+    
+    private final boolean delegating (int what) {
+        return (delegateMask & what) != 0;
+    }
+
+    
+    public Node cloneNode () {
+        if (isDefault ()) {
+            
+            
+            
+            return new FilterNode (original);
+        } else {
+            
+            
+            return new FilterNode (this);
+        }
+    }
+
+    
+
+    
+    public void setName (String s) {
+        if (delegating (DELEGATE_SET_NAME))
+            original.setName (s);
+        else
+            super.setName (s);
+    }
+
+    
+    public String getName () {
+        if (delegating (DELEGATE_GET_NAME))
+            return original.getName ();
+        else
+            return super.getName ();
+    }
+
+    
+    public void setDisplayName (String s) {
+        if (delegating (DELEGATE_SET_DISPLAY_NAME))
+            original.setDisplayName (s);
+        else
+            super.setDisplayName (s);
+    }
+
+    
+    public String getDisplayName () {
+        if (delegating (DELEGATE_GET_DISPLAY_NAME))
+            return original.getDisplayName ();
+        else
+            return super.getDisplayName ();
+    }
+
+    
+    public void setShortDescription (String s) {
+        if (delegating (DELEGATE_SET_SHORT_DESCRIPTION))
+            original.setShortDescription (s);
+        else
+            super.setShortDescription (s);
+    }
+
+    
+    public String getShortDescription () {
+        if (delegating (DELEGATE_GET_SHORT_DESCRIPTION))
+            return original.getShortDescription ();
+        else
+            return super.getShortDescription ();
+    }
+
+    
+    public Image getIcon (int type) {
+        return original.getIcon (type);
+    }
+
+    
+    public Image getOpenedIcon (int type) {
+        return original.getOpenedIcon (type);
+    }
+
+    public HelpCtx getHelpCtx () {
+        return original.getHelpCtx ();
+    }
+
+    
+    public boolean canRename () {
+        return original.canRename ();
+    }
+
+    
+    public boolean canDestroy () {
+        return original.canDestroy ();
+    }
+
+    
+    public void destroy () throws java.io.IOException {
+        if (delegating (DELEGATE_DESTROY))
+            original.destroy ();
+        else
+            super.destroy ();
+    }
+
+    
+    private final void originalDestroyed () {
+        try {
+            super.destroy ();
+        } catch (IOException ex) {
+        }
+    }
+
+    
+    public PropertySet[] getPropertySets () {
+        return original.getPropertySets ();
+    }
+
+    
+    public Transferable clipboardCopy () throws IOException {
+        return original.clipboardCopy ();
+    }
+
+    
+    public Transferable clipboardCut () throws IOException {
+        return original.clipboardCut ();
+    }
+
+    
+    public boolean canCopy () {
+        return original.canCopy ();
+    }
+
+    
+    public boolean canCut () {
+        return original.canCut ();
+    }
+
+    public Transferable drag () throws IOException {
+        return original.drag ();
+    }
+
+    
+    public PasteType getDropType (Transferable t, int action, int index) {
+        return original.getDropType (t, action, index);
+    }
+
+    
+    public PasteType[] getPasteTypes (Transferable t) {
+        return original.getPasteTypes (t);
+    }
+
+    
+    public NewType[] getNewTypes () {
+        return original.getNewTypes ();
+    }
+
+    
+    public SystemAction[] getActions () {
+        if (delegating (DELEGATE_GET_ACTIONS))
+            return original.getActions ();
+        else
+            return super.getActions ();
+    }
+
+    
+    public SystemAction[] getContextActions () {
+        if (delegating (DELEGATE_GET_CONTEXT_ACTIONS))
+            return original.getContextActions ();
+        else
+            return super.getContextActions ();
+    }
+
+    
+    public SystemAction getDefaultAction () {
+        return original.getDefaultAction ();
+    }
+
+
+    
+    public boolean hasCustomizer () {
+        return original.hasCustomizer ();
+    }
+
+    
+    public java.awt.Component getCustomizer () {
+        return original.getCustomizer ();
+    }
+
+    
+    public Node.Cookie getCookie (Class type) {
+        return original.getCookie (type);
+    }
+
+    
+    public Node.Handle getHandle () {
+        if (!isDefault ()) {
+            
+            return null;
+        }
+        Node.Handle original = this.original.getHandle ();
+        if (original == null) {
+            
+            return null;
+        }
+
+        return new FilterHandle (original);
+    }
+
+    
+    public boolean equals (Object o) {
+        
+        
+        
+        if (!isDefault ()) {
+            return super.equals (o);
+        }
+
+        if (o instanceof FilterNode) {
+            FilterNode fn = (FilterNode)o;
+            return fn.isDefault () && original.equals (fn.original);
+        }
+
+        
+        return original.equals(o);
+    }
+
+    
+    public int hashCode () {
+        
+        
+        
+        return isDefault () ? original.hashCode () : super.hashCode ();
+    }
+
+    
+    
+    
+
+    
+
+    
+    protected Node getOriginal () {
+        return original;
+    }
+
+    
+    protected PropertyChangeListener createPropertyChangeListener () {
+        return new PropertyChangeAdapter (this);
+    }
+
+    
+    protected NodeListener createNodeListener () {
+        return new NodeAdapter (this);
+    }
+
+    
+    synchronized PropertyChangeListener getPropertyChangeListener () {
+        if (propL == null) {
+            propL = createPropertyChangeListener ();
+        }
+        return propL;
+    }
+
+    
+    synchronized NodeListener getNodeListener () {
+        if (nodeL == null) {
+            nodeL = createNodeListener ();
+        }
+        return nodeL;
+    }
+
+    
+    private boolean isDefault () {
+        if (getClass () != FilterNode.class) {
+            return false;
+        }
+
+        org.openide.nodes.Children ch = getChildren ();
+        if ((original.isLeaf () && ch == Children.LEAF) ||
+                (! original.isLeaf () && ch.getClass () ==  Children.class && ((Children) ch).original == original)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    
+    protected static class PropertyChangeAdapter extends Object implements PropertyChangeListener {
+        
+        private WeakReference fn;
+
+        
+        public PropertyChangeAdapter (FilterNode fn) {
+            this.fn = new WeakReference (fn);
+        }
+
+        
+        public final void propertyChange (PropertyChangeEvent ev) {
+            FilterNode fn = (FilterNode)this.fn.get ();
+            if (fn == null) {
+                return;
+            }
+
+            propertyChange (fn, ev);
+        }
+
+        
+        protected void propertyChange (FilterNode fn, PropertyChangeEvent ev) {
+            fn.firePropertyChange (
+                ev.getPropertyName (), ev.getOldValue (), ev.getNewValue ()
+            );
+        }
+    }
+
+    
+    protected static class NodeAdapter extends Object implements NodeListener {
+        
+        private WeakReference fn;
+        
+        private WeakReference children;
+
+        
+        public NodeAdapter (FilterNode fn) {
+            this.fn = new WeakReference (fn);
+        }
+
+        
+        public final void propertyChange (PropertyChangeEvent ev) {
+            FilterNode fn = (FilterNode)this.fn.get ();
+            if (fn == null) {
+                return;
+            }
+            propertyChange (fn, ev);
+        }
+
+        
+        protected void propertyChange (FilterNode fn, PropertyChangeEvent ev) {
+            String n = ev.getPropertyName ();
+            if (n.equals (Node.PROP_PARENT_NODE)) {
+                
+                return;
+            }
+            if (n.equals (Node.PROP_DISPLAY_NAME)) {
+                fn.fireOwnPropertyChange (
+                    PROP_DISPLAY_NAME, (String)ev.getOldValue (), (String)ev.getNewValue ()
+                );
+                return;
+            }
+            if (n.equals (Node.PROP_NAME)) {
+                fn.fireOwnPropertyChange (
+                    PROP_NAME, (String)ev.getOldValue (), (String)ev.getNewValue ()
+                );
+                return;
+            }
+            if (n.equals (Node.PROP_SHORT_DESCRIPTION)) {
+                fn.fireOwnPropertyChange (
+                    PROP_SHORT_DESCRIPTION, (String)ev.getOldValue (), (String)ev.getNewValue ()
+                );
+                return;
+            }
+            if (n.equals (Node.PROP_ICON)) {
+                fn.fireIconChange ();
+                return;
+            }
+            if (n.equals (Node.PROP_OPENED_ICON)) {
+                fn.fireOpenedIconChange ();
+                return;
+            }
+            if (n.equals (Node.PROP_PROPERTY_SETS)) {
+                fn.firePropertySetsChange ((PropertySet[])ev.getOldValue (), (PropertySet[])ev.getNewValue ());
+                return;
+            }
+            if (n.equals (Node.PROP_COOKIE)) {
+                fn.fireCookieChange ();
+                return;
+            }
+        }
+
+        
+        public void childrenAdded (NodeMemberEvent ev) {
+        }
+
+        
+        public void childrenRemoved (NodeMemberEvent ev) {
+        }
+
+        
+        public void childrenReordered (NodeReorderEvent ev) {
+        }
+
+        
+        public final void nodeDestroyed (NodeEvent ev) {
+            FilterNode fn = (FilterNode)this.fn.get ();
+            if (fn == null) {
+                return;
+            }
+            fn.originalDestroyed ();
+        }
+    }
+
+    
+    public static class Children extends
+                org.openide.nodes.Children.Keys
+        implements Cloneable {
+        
+        protected Node original;
+        
+        private NodeListener nodeL;
+
+        
+        public Children (Node or) {
+            original = or;
+        }
+
+        
+        protected void finalize () {
+            if (nodeL != null) original.removeNodeListener (nodeL);
+            nodeL = null;
+        }
+
+        
+        public Object clone () {
+            return new Children (original);
+        }
+
+        
+        protected void addNotify () {
+            
+            nodeL = new ChildrenAdapter (this);
+            original.addNodeListener (nodeL);
+
+            updateKeys ();
+        }
+
+        
+        protected void removeNotify () {
+            setKeys (Collections.EMPTY_SET);
+
+            if (nodeL != null) {
+                original.removeNodeListener (nodeL);
+                nodeL = null;
+            }
+        }
+
+
+
+        
+        protected Node copyNode (Node node) {
+            return node.cloneNode ();
+        }
+
+
+        
+        public Node findChild (String name) {
+            original.getChildren ().findChild (name);
+            return super.findChild (name);
+        }
+
+
+        
+        protected Node[] createNodes (Object key) {
+            Node n = (Node)key;
+            
+            return new Node[] { copyNode (n) };
+        }
+
+        
+        public boolean add (Node[] arr) {
+            return original.getChildren ().add (arr);
+        }
+
+        
+        public boolean remove (Node[] arr) {
+            return original.getChildren ().remove (arr);
+        }
+
+        
+        protected void filterChildrenAdded (NodeMemberEvent ev) {
+            updateKeys ();
+        }
+
+        
+        protected void filterChildrenRemoved (NodeMemberEvent ev) {
+            updateKeys ();
+        }
+
+        
+        protected void filterChildrenReordered (NodeReorderEvent ev) {
+            updateKeys ();
+        }
+
+        
+        
+
+        
+        private void updateKeys () {
+            
+            
+            Children.MUTEX.postWriteRequest (new Runnable () {
+                                                 public void run () {
+                                                     Node[] arr = original.getChildren ().getNodes ();
+                                                     setKeys (arr);
+                                                 }
+                                             });
+            
+            
+        }
+    }
+
+    
+    private static class ChildrenAdapter extends Object
+        implements NodeListener {
+        
+        private WeakReference children;
+
+        
+        public ChildrenAdapter (Children ch) {
+            this.children = new WeakReference (ch);
+        }
+
+        
+        public void propertyChange (PropertyChangeEvent ev) {
+        }
+
+        
+        public void childrenAdded (NodeMemberEvent ev) {
+            Children children = (Children)this.children.get ();
+            if (children == null) return;
+
+            children.filterChildrenAdded (ev);
+        }
+
+        
+        public void childrenRemoved (NodeMemberEvent ev) {
+            Children children = (Children)this.children.get ();
+            if (children == null) return;
+
+            children.filterChildrenRemoved (ev);
+        }
+
+        
+        public void childrenReordered (NodeReorderEvent ev) {
+            Children children = (Children)this.children.get ();
+            if (children == null) return;
+
+            children.filterChildrenReordered (ev);
+        }
+
+
+        
+        public void nodeDestroyed (NodeEvent ev) {
+        }
+    }
+
+    
+    private static final class FilterHandle implements Node.Handle {
+        private Node.Handle original;
+
+        static final long serialVersionUID =7928908039428333839L;
+
+        public FilterHandle (Node.Handle original) {
+            this.original = original;
+        }
+
+        public Node getNode () throws IOException {
+            return new FilterNode (original.getNode ());
+        }
+    }
+}
+
+

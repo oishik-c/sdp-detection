@@ -1,0 +1,230 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.standard;
+
+import java.awt.Point;
+import java.awt.event.MouseEvent;
+import java.util.Enumeration;
+
+import CH.ifa.draw.framework.ConnectionFigure;
+import CH.ifa.draw.framework.Connector;
+import CH.ifa.draw.framework.Drawing;
+import CH.ifa.draw.framework.DrawingView;
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.FigureEnumeration;
+import CH.ifa.draw.util.Geom;
+
+
+
+public  class ConnectionTool extends AbstractTool {
+
+	
+	private Connector   fStartConnector;
+	private Connector   fEndConnector;
+	private Connector   fConnectorTarget = null;
+
+	private Figure fTarget = null;
+
+	
+	private ConnectionFigure  fConnection;
+
+	
+	private int  fSplitPoint;
+
+	
+	private ConnectionFigure  fEditedConnection = null;
+
+	
+	private ConnectionFigure  fPrototype;
+
+
+	public ConnectionTool(DrawingView view, ConnectionFigure prototype) {
+		super(view);
+		fPrototype = prototype;
+	}
+
+	
+	public void mouseMove(MouseEvent e, int x, int y) {
+		trackConnectors(e, x, y);
+	}
+
+	
+	public void mouseDown(MouseEvent e, int x, int y)
+	{
+		int ex = e.getX();
+		int ey = e.getY();
+		fTarget = findConnectionStart(ex, ey, drawing());
+		if (fTarget != null) {
+			fStartConnector = findConnector(ex, ey, fTarget);
+			if (fStartConnector != null) {
+				Point p = new Point(ex, ey);
+				fConnection = createConnection();
+				fConnection.startPoint(p.x, p.y);
+				fConnection.endPoint(p.x, p.y);
+				view().add(fConnection);
+			}
+		}
+		else {
+			ConnectionFigure connection = findConnection(ex, ey, drawing());
+			if (connection != null) {
+				if (!connection.joinSegments(ex, ey)) {
+					fSplitPoint = connection.splitSegment(ex, ey);
+					fEditedConnection = connection;
+				} else {
+					fEditedConnection = null;
+				}
+			}
+		}
+	}
+
+	
+	public void mouseDrag(MouseEvent e, int x, int y) {
+		Point p = new Point(e.getX(), e.getY());
+		if (fConnection != null) {
+			trackConnectors(e, x, y);
+			if (fConnectorTarget != null)
+				p = Geom.center(fConnectorTarget.displayBox());
+			fConnection.endPoint(p.x, p.y);
+		}
+		else if (fEditedConnection != null) {
+			Point pp = new Point(x, y);
+			fEditedConnection.setPointAt(pp, fSplitPoint);
+		}
+	}
+
+	
+	public void mouseUp(MouseEvent e, int x, int y) {
+		Figure c = null;
+		if (fStartConnector != null)
+			c = findTarget(e.getX(), e.getY(), drawing());
+
+		if (c != null) {
+			fEndConnector = findConnector(e.getX(), e.getY(), c);
+			if (fEndConnector != null) {
+				fConnection.connectStart(fStartConnector);
+				fConnection.connectEnd(fEndConnector);
+				fConnection.updateConnection();
+			}
+		} else if (fConnection != null)
+			view().remove(fConnection);
+
+		fConnection = null;
+		fStartConnector = fEndConnector = null;
+		editor().toolDone();
+	}
+
+	public void deactivate() {
+		super.deactivate();
+		if (fTarget != null)
+			fTarget.connectorVisibility(false);
+	}
+
+	
+	protected ConnectionFigure createConnection() {
+		return (ConnectionFigure)fPrototype.clone();
+	}
+
+	
+	protected Figure findSource(int x, int y, Drawing drawing) {
+		return findConnectableFigure(x, y, drawing);
+	}
+
+	
+	protected Figure findTarget(int x, int y, Drawing drawing) {
+		Figure target = findConnectableFigure(x, y, drawing);
+		Figure start = fStartConnector.owner();
+
+		if (target != null
+			 && fConnection != null
+			 && target.canConnect()
+			 && !target.includes(start)
+			 && fConnection.canConnect(start, target))
+			return target;
+		return null;
+	}
+
+	
+	protected ConnectionFigure findConnection(int x, int y, Drawing drawing) {
+		Enumeration k = drawing.figuresReverse();
+		while (k.hasMoreElements()) {
+			Figure figure = (Figure) k.nextElement();
+			figure = figure.findFigureInside(x, y);
+			if (figure != null && (figure instanceof ConnectionFigure))
+				return (ConnectionFigure)figure;
+		}
+		return null;
+	}
+
+	
+	protected ConnectionFigure createdFigure() {
+		return fConnection;
+	}
+
+	protected void trackConnectors(MouseEvent e, int x, int y) {
+		Figure c = null;
+
+		if (fStartConnector == null)
+			c = findSource(x, y, drawing());
+		else
+			c = findTarget(x, y, drawing());
+
+		
+		if (c != fTarget) {
+			if (fTarget != null)
+				fTarget.connectorVisibility(false);
+			fTarget = c;
+			if (fTarget != null)
+				fTarget.connectorVisibility(true);
+		}
+
+		Connector cc = null;
+		if (c != null)
+			cc = findConnector(e.getX(), e.getY(), c);
+		if (cc != fConnectorTarget)
+			fConnectorTarget = cc;
+
+		view().checkDamage();
+	}
+
+	private Connector findConnector(int x, int y, Figure f) {
+		return f.connectorAt(x, y);
+	}
+
+	
+	protected Figure findConnectionStart(int x, int y, Drawing drawing) {
+		Figure target = findConnectableFigure(x, y, drawing);
+		if ((target != null) && target.canConnect())
+			return target;
+		return null;
+	}
+
+	private Figure findConnectableFigure(int x, int y, Drawing drawing) {
+		FigureEnumeration k = drawing.figuresReverse();
+		while (k.hasMoreElements()) {
+			Figure figure = k.nextFigure();
+			if (!figure.includes(fConnection) && figure.canConnect()) {
+				if (figure.containsPoint(x, y))
+					return figure;
+			}
+		}
+		return null;
+	}
+
+	protected Connector getStartConnector() {
+		return fStartConnector;
+	}
+
+	protected Connector getEndConnector() {
+		return fEndConnector;
+	}
+
+	protected Connector getTarget() {
+		return fConnectorTarget;
+	}
+
+}

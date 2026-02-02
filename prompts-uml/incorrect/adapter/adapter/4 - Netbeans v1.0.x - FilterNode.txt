@@ -1,0 +1,147 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.nodes.FilterNode {
+- Node original
+- PropertyChangeListener propL
+- NodeListener nodeL
+- int delegateMask
+# {static} int DELEGATE_SET_NAME
+# {static} int DELEGATE_GET_NAME
+# {static} int DELEGATE_SET_DISPLAY_NAME
+# {static} int DELEGATE_GET_DISPLAY_NAME
+# {static} int DELEGATE_SET_SHORT_DESCRIPTION
+# {static} int DELEGATE_GET_SHORT_DESCRIPTION
+# {static} int DELEGATE_DESTROY
+# {static} int DELEGATE_GET_ACTIONS
+# {static} int DELEGATE_GET_CONTEXT_ACTIONS
+- {static} int DELEGATE_ALL
++ <<Create>> FilterNode(Node)
++ <<Create>> FilterNode(Node,org.openide.nodes.Children)
+- void init()
+# void finalize()
+# void enableDelegation(int)
+# void disableDelegation(int)
+- boolean delegating(int)
++ Node cloneNode()
++ void setName(String)
++ String getName()
++ void setDisplayName(String)
++ String getDisplayName()
++ void setShortDescription(String)
++ String getShortDescription()
++ Image getIcon(int)
++ Image getOpenedIcon(int)
++ HelpCtx getHelpCtx()
++ boolean canRename()
++ boolean canDestroy()
++ void destroy()
+- void originalDestroyed()
++ PropertySet[] getPropertySets()
++ Transferable clipboardCopy()
++ Transferable clipboardCut()
++ boolean canCopy()
++ boolean canCut()
++ Transferable drag()
++ PasteType getDropType(Transferable,int,int)
++ PasteType[] getPasteTypes(Transferable)
++ NewType[] getNewTypes()
++ SystemAction[] getActions()
++ SystemAction[] getContextActions()
++ SystemAction getDefaultAction()
++ boolean hasCustomizer()
++ java.awt.Component getCustomizer()
++ Node.Cookie getCookie(Class)
++ Node.Handle getHandle()
++ boolean equals(Object)
++ int hashCode()
+# Node getOriginal()
+# PropertyChangeListener createPropertyChangeListener()
+# NodeListener createNodeListener()
+~ PropertyChangeListener getPropertyChangeListener()
+~ NodeListener getNodeListener()
+- boolean isDefault()
+}
+
+
+class org.openide.nodes.FilterNode$PropertyChangeAdapter {
+- WeakReference fn
++ <<Create>> PropertyChangeAdapter(FilterNode)
++ void propertyChange(PropertyChangeEvent)
+# void propertyChange(FilterNode,PropertyChangeEvent)
+}
+
+
+class org.openide.nodes.FilterNode$NodeAdapter {
+- WeakReference fn
+- WeakReference children
++ <<Create>> NodeAdapter(FilterNode)
++ void propertyChange(PropertyChangeEvent)
+# void propertyChange(FilterNode,PropertyChangeEvent)
++ void childrenAdded(NodeMemberEvent)
++ void childrenRemoved(NodeMemberEvent)
++ void childrenReordered(NodeReorderEvent)
++ void nodeDestroyed(NodeEvent)
+}
+
+
+class org.openide.nodes.FilterNode$Children {
+# Node original
+- NodeListener nodeL
++ <<Create>> Children(Node)
+# void finalize()
++ Object clone()
+# void addNotify()
+# void removeNotify()
+# Node copyNode(Node)
++ Node findChild(String)
+# Node[] createNodes(Object)
++ boolean add(Node[])
++ boolean remove(Node[])
+# void filterChildrenAdded(NodeMemberEvent)
+# void filterChildrenRemoved(NodeMemberEvent)
+# void filterChildrenReordered(NodeReorderEvent)
+- void updateKeys()
+}
+
+
+class org.openide.nodes.FilterNode$ChildrenAdapter {
+- WeakReference children
++ <<Create>> ChildrenAdapter(Children)
++ void propertyChange(PropertyChangeEvent)
++ void childrenAdded(NodeMemberEvent)
++ void childrenRemoved(NodeMemberEvent)
++ void childrenReordered(NodeReorderEvent)
++ void nodeDestroyed(NodeEvent)
+}
+
+
+class org.openide.nodes.FilterNode$FilterHandle {
+- Node.Handle original
+~ {static} long serialVersionUID
++ <<Create>> FilterHandle(Node.Handle)
++ Node getNode()
+}
+
+
+
+
+org.openide.nodes.Node <|-- org.openide.nodes.FilterNode
+org.openide.nodes.FilterNode +.. org.openide.nodes.FilterNode$PropertyChangeAdapter
+org.openide.nodes.PropertyChangeListener <|.. org.openide.nodes.FilterNode$PropertyChangeAdapter
+org.openide.nodes.Object <|-- org.openide.nodes.FilterNode$PropertyChangeAdapter
+org.openide.nodes.FilterNode +.. org.openide.nodes.FilterNode$NodeAdapter
+org.openide.nodes.NodeListener <|.. org.openide.nodes.FilterNode$NodeAdapter
+org.openide.nodes.Object <|-- org.openide.nodes.FilterNode$NodeAdapter
+org.openide.nodes.FilterNode +.. org.openide.nodes.FilterNode$Children
+org.openide.nodes.Cloneable <|.. org.openide.nodes.FilterNode$Children
+org.openide.nodes.Keys <|-- org.openide.nodes.FilterNode$Children
+org.openide.nodes.FilterNode +.. org.openide.nodes.FilterNode$ChildrenAdapter
+org.openide.nodes.NodeListener <|.. org.openide.nodes.FilterNode$ChildrenAdapter
+org.openide.nodes.Object <|-- org.openide.nodes.FilterNode$ChildrenAdapter
+org.openide.nodes.FilterNode +.. org.openide.nodes.FilterNode$FilterHandle
+org.openide.nodes.Handle <|.. org.openide.nodes.FilterNode$FilterHandle
+@enduml

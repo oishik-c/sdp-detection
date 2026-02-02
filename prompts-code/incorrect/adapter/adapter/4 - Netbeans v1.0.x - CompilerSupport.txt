@@ -1,0 +1,159 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.loaders;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+
+import org.openide.*;
+import org.openide.compiler.*;
+import org.openide.compiler.Compiler;
+import org.openide.filesystems.*;
+import org.openide.cookies.CompilerCookie;
+import org.openide.nodes.Sheet;
+import org.openide.nodes.PropertySupport;
+import org.openide.util.NbBundle;
+
+
+public class CompilerSupport extends Object implements CompilerCookie {
+    
+    private static final String EA_COMPILER_MANAGER = "NetBeansAttrDataObjectCompilerManager"; 
+    
+    public static final String PROP_COMPILER_TYPE = "compiler"; 
+
+    
+    private MultiDataObject.Entry entry;
+
+    
+    private Class cookie;
+
+    
+    protected CompilerSupport(MultiDataObject.Entry entry, Class cookie) {
+        this.entry = entry;
+        this.cookie = cookie;
+    }
+
+    
+    public boolean isDepthSupported (Compiler.Depth depth) {
+        return Compiler.DEPTH_ONE == depth;
+    }
+
+    
+    public void addToJob (CompilerJob job, Compiler.Depth depth) {
+        CompilerType comp = getCompilerType (entry);
+        if (comp == null) {
+            comp = defaultCompilerType ();
+        }
+
+        try {
+            Class xcookie;
+            if (cookie == CompilerCookie.Compile.class) {
+                xcookie = (Compiler.DEPTH_ONE == depth ? CompilerCookie.Build.class : cookie);
+            } else {
+                xcookie = cookie;
+            }
+            comp.prepareJob (job, xcookie, DataObject.find (entry.getFile ()));
+        } catch (DataObjectNotFoundException ex) {
+            
+        }
+    }
+
+    
+    protected CompilerType defaultCompilerType () {
+        return CompilerType.getDefault ();
+    }
+
+    
+    public static void setCompilerType (MultiDataObject.Entry entry, CompilerType man)
+    throws IOException {
+        entry.getFile ().setAttribute (
+            EA_COMPILER_MANAGER, man == null ? null : new CompilerType.Handle (man)
+        );
+    }
+
+    
+    public static CompilerType getCompilerType (MultiDataObject.Entry entry) {
+        CompilerType.Handle man = (CompilerType.Handle)entry.getFile ().getAttribute (EA_COMPILER_MANAGER);
+        if (man == null) return null;
+        ServiceType type = man.getServiceType ();
+        if (type instanceof CompilerType) {
+            return (CompilerType)type;
+        } else {
+            return null;
+        }
+    }
+
+    
+    public void addProperties (Sheet.Set set) {
+        set.put (createCompilerProperty ());
+    }
+
+    
+    private PropertySupport createCompilerProperty () {
+        return new PropertySupport.ReadWrite (
+                   PROP_COMPILER_TYPE,
+                   CompilerType.class,
+                   DataObject.getString("PROP_compilerType"),
+                   DataObject.getString("HINT_compilerType")
+               ) {
+                   public Object getValue() {
+                       CompilerType ct = getCompilerType(entry);
+                       if (ct == null)
+                           return defaultCompilerType ();
+                       else
+                           return ct;
+                   }
+                   public void setValue (Object val) throws InvocationTargetException {
+                       try {
+                           setCompilerType(entry, (CompilerType) val);
+                       } catch (IOException ex) {
+                           throw new InvocationTargetException (ex);
+                       }
+                   }
+
+                   public boolean supportsDefaultValue () {
+                       return true;
+                   }
+
+                   public void restoreDefaultValue () throws InvocationTargetException {
+                       setValue (null);
+                   }
+               };
+    }
+
+
+    
+    public static class Compile extends CompilerSupport
+        implements CompilerCookie.Compile {
+        
+        public Compile (MultiDataObject.Entry entry) {
+            super (entry, CompilerCookie.Compile.class);
+        }
+    }
+
+    
+    public static class Build extends CompilerSupport
+        implements CompilerCookie.Build {
+        
+        public Build (MultiDataObject.Entry entry) {
+            super (entry, CompilerCookie.Build.class);
+        }
+    }
+
+    
+    public static class Clean extends CompilerSupport
+        implements CompilerCookie.Clean {
+        
+        public Clean (MultiDataObject.Entry entry) {
+            super (entry, CompilerCookie.Clean.class);
+        }
+    }
+
+}
+
+

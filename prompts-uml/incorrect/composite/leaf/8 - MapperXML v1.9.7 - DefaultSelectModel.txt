@@ -1,0 +1,52 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.model.DefaultSelectModel {
+- com.taursys.model.CollectionValueHolder list
+- String displayPropertyName
+- String[] listPropertyNames
+- String[] propertyNames
+- String nullDisplay
+- boolean nullAllowed
++ <<Create>> DefaultSelectModel()
++ <<Create>> DefaultSelectModel(int)
+# CollectionValueHolder createDefaultList()
++ String getText()
++ void setText(String)
++ Object getSelectedItem()
++ void setSelectedItem(Object)
++ Collection getDisplayOptionList()
+- boolean positionListToCurrentSelection()
+- String getCurrentDisplayValue()
+# String getCurrentPropertyValues()
+# boolean isCurrentMatch()
+# boolean isValueNull()
+- void validateProperties()
+# void copyValues()
+# void setNullValues()
+# ValueHolder createDefaultValueHolder()
++ void setList(com.taursys.model.CollectionValueHolder)
++ com.taursys.model.CollectionValueHolder getList()
++ void setDisplayPropertyName(String)
++ String getDisplayPropertyName()
++ void setListPropertyNames(String[])
++ String[] getListPropertyNames()
++ void setPropertyNames(String[])
++ String[] getPropertyNames()
++ void setPropertyName(String)
++ String getPropertyName()
++ void setNullAllowed(boolean)
++ boolean isNullAllowed()
++ void setNullDisplay(String)
++ String getNullDisplay()
+}
+
+
+
+
+com.taursys.model.SelectModel <|.. com.taursys.model.DefaultSelectModel
+com.taursys.model.DefaultTextModel <|-- com.taursys.model.DefaultSelectModel
+@enduml

@@ -1,0 +1,32 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.nutch.pagedb.FetchListEntry {
++ {static} String DIR_NAME
+- {static} byte CUR_VERSION
+- boolean fetch
+- Page page
+- String[] anchors
++ <<Create>> FetchListEntry()
++ <<Create>> FetchListEntry(boolean,Page,String[])
++ void readFields(DataInput)
++ {static} FetchListEntry read(DataInput)
++ void write(DataOutput)
++ boolean getFetch()
++ Page getPage()
++ String[] getAnchors()
++ boolean equals(Object)
++ Object clone()
++ String toString()
++ {static} void main(String[])
+}
+
+
+
+
+net.nutch.pagedb.Writable <|.. net.nutch.pagedb.FetchListEntry
+net.nutch.pagedb.Cloneable <|.. net.nutch.pagedb.FetchListEntry
+@enduml

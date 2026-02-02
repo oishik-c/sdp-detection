@@ -1,0 +1,340 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.xml;
+
+import com.taursys.xml.render.*;
+import com.taursys.xml.event.*;
+import com.taursys.servlet.*;
+import com.taursys.dom.*;
+import java.util.*;
+
+
+public class Form extends DocumentElement {
+  public static final String PARAMETER_MAP = "com.taursys.xml.ParameterMap";
+  private transient ArrayList initContextListeners;
+  private transient ArrayList initFormListeners;
+  private transient ArrayList openFormListeners;
+  private transient ArrayList closeFormListeners;
+
+  private InitContextDispatcher initContextDispatcher = new InitContextDispatcher(this);
+  private InitFormDispatcher initFormDispatcher = new InitFormDispatcher(this);
+  private OpenFormDispatcher openFormDispatcher = new OpenFormDispatcher(this);
+  private CloseFormDispatcher closeFormDispatcher = new CloseFormDispatcher(this);
+
+  private String sourceId;
+  private boolean initialized;
+  private DocumentAdapter documentAdapter;
+  private Map formContext = new HashMap();
+
+  
+  
+  
+
+  
+  public Form() {
+    super();
+
+    addEventType(InitContextEvent.class.getName());
+    addEventType(InitFormEvent.class.getName());
+    addEventType(OpenFormEvent.class.getName());
+    addEventType(CloseFormEvent.class.getName());
+
+    addDispatcher(InitContextEvent.class.getName(), initContextDispatcher);
+    addDispatcher(InitFormEvent.class.getName(),initFormDispatcher);
+    addDispatcher(OpenFormEvent.class.getName(),openFormDispatcher);
+    addDispatcher(CloseFormEvent.class.getName(),closeFormDispatcher);
+  }
+
+  
+  protected DocumentElementRenderer createDefaultRenderer() {
+    return new FormRenderer(this);
+  }
+
+  
+  
+  
+
+  
+  protected void dispatchInitContext() throws Exception {
+    HashMap newContext = new HashMap(formContext);
+    newContext.put(PARAMETER_MAP, getParameterMap());
+    initContextDispatcher.dispatch(newContext);
+  }
+
+  
+  protected void dispatchInitForm() throws Exception {
+    initFormDispatcher.dispatch();
+  }
+
+  
+  protected void dispatchOpenForm() throws Exception {
+    openFormDispatcher.dispatch();
+  }
+
+  
+  protected void dispatchCloseForm() throws Exception {
+    closeFormDispatcher.dispatch();
+  }
+
+  
+  
+  
+
+  
+  protected void processEvent(EventObject e) throws Exception {
+    if (e instanceof InitContextEvent)
+      processInitContextEvent((InitContextEvent)e);
+    if (e instanceof InitFormEvent)
+      processInitFormEvent((InitFormEvent)e);
+    if (e instanceof OpenFormEvent)
+      processOpenFormEvent((OpenFormEvent)e);
+    if (e instanceof CloseFormEvent)
+      processCloseFormEvent((CloseFormEvent)e);
+    else
+      super.processEvent(e);
+  }
+
+  
+  
+  
+
+  
+  protected void processInitContextEvent(InitContextEvent e) throws Exception {
+    formContext = e.getContext();
+    setParameterMap((Map)lookup(PARAMETER_MAP));
+    initContextDispatcher.dispatch(e);
+    fireInitContextReceived(e);
+  }
+
+  
+  public void removeInitContextListener(InitContextListener l) {
+    if (initContextListeners != null && initContextListeners.contains(l)) {
+      initContextListeners.remove(l);
+    }
+  }
+
+  
+  public void addInitContextListener(InitContextListener l) {
+    if (initContextListeners != null) {
+      if (!initContextListeners.contains(l)) {
+        initContextListeners.add(l);
+      }
+    } else {
+      initContextListeners = new ArrayList();
+      initContextListeners.add(l);
+    }
+  }
+
+  
+  protected void fireInitContextReceived(InitContextEvent e) throws Exception {
+    if (initContextListeners != null) {
+      Iterator iter = initContextListeners.iterator();
+      while (iter.hasNext()) {
+        ((InitContextListener)iter.next()).initContext(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  protected void initForm() throws Exception {
+    initialized = true;
+  }
+
+  
+  protected void processInitFormEvent(InitFormEvent e) throws Exception {
+    if (!initialized)
+      initForm();
+    initFormDispatcher.dispatch(e);
+    fireInitFormReceived(e);
+  }
+
+  
+  public void removeInitFormListener(InitFormListener l) {
+    if (initFormListeners != null && initFormListeners.contains(l)) {
+      initFormListeners.remove(l);
+    }
+  }
+
+  
+  public void addInitFormListener(InitFormListener l) {
+    if (initFormListeners != null) {
+      if (!initFormListeners.contains(l)) {
+        initFormListeners.add(l);
+      }
+    } else {
+      initFormListeners = new ArrayList();
+      initFormListeners.add(l);
+    }
+  }
+
+  
+  protected void fireInitFormReceived(InitFormEvent e) throws Exception {
+    if (initFormListeners != null) {
+      Iterator iter = initFormListeners.iterator();
+      while (iter.hasNext()) {
+        ((InitFormListener)iter.next()).initForm(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  protected void openForm() throws Exception {
+  }
+
+  
+  protected void processOpenFormEvent(OpenFormEvent e) throws Exception {
+    openForm();
+    openFormDispatcher.dispatch(e);
+    fireOpenFormReceived(e);
+  }
+
+  
+  public void removeOpenFormListener(OpenFormListener l) {
+    if (openFormListeners != null && openFormListeners.contains(l)) {
+      openFormListeners.remove(l);
+    }
+  }
+
+  
+  public void addOpenFormListener(OpenFormListener l) {
+    if (openFormListeners != null) {
+      if (!openFormListeners.contains(l)) {
+        openFormListeners.add(l);
+      }
+    } else {
+      openFormListeners = new ArrayList();
+      openFormListeners.add(l);
+    }
+  }
+
+  
+  protected void fireOpenFormReceived(OpenFormEvent e) throws Exception {
+    if (openFormListeners != null) {
+      Iterator iter = openFormListeners.iterator();
+      while (iter.hasNext()) {
+        ((OpenFormListener)iter.next()).openForm(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  protected void closeForm() throws Exception {
+  }
+
+  
+  protected void processCloseFormEvent(CloseFormEvent e) throws Exception {
+    closeForm();
+    closeFormDispatcher.dispatch(e);
+    fireCloseFormReceived(e);
+  }
+
+  
+  public void removeCloseFormListener(CloseFormListener l) {
+    if (closeFormListeners != null && closeFormListeners.contains(l)) {
+      closeFormListeners.remove(l);
+    }
+  }
+
+  
+  public void addCloseFormListener(CloseFormListener l) {
+    if (closeFormListeners != null) {
+      if (!closeFormListeners.contains(l)) {
+        closeFormListeners.add(l);
+      }
+    } else {
+      closeFormListeners = new ArrayList();
+      closeFormListeners.add(l);
+    }
+  }
+
+  
+  protected void fireCloseFormReceived(CloseFormEvent e) throws Exception {
+    if (closeFormListeners != null) {
+      Iterator iter = closeFormListeners.iterator();
+      while (iter.hasNext()) {
+        ((CloseFormListener)iter.next()).closeForm(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  public String getSourceId() {
+    return sourceId;
+  }
+
+  
+  public void setSourceId(String sourceId) {
+    this.sourceId = sourceId;
+  }
+
+  
+  public void setDocument(org.w3c.dom.Document newDocument) {
+
+    documentAdapter = new DOM_1_20000929_DocumentAdapter(newDocument);
+  }
+
+  
+  public org.w3c.dom.Document getDocument() {
+    if (documentAdapter == null)
+      return null;
+    else
+      return documentAdapter.getDocument();
+  }
+
+  
+  public void setDocumentAdapter(DocumentAdapter newDocumentAdapter) {
+    documentAdapter = newDocumentAdapter;
+  }
+
+  
+  public DocumentAdapter getDocumentAdapter() {
+    return documentAdapter;
+  }
+
+  
+  public void setInitialized(boolean newInitialized) {
+    initialized = newInitialized;
+  }
+
+  
+  public boolean isInitialized() {
+    return initialized;
+  }
+
+  
+  public Map getFormContext() {
+    return formContext;
+  }
+
+  
+  public void setFormContext(Map formContext) {
+    if (formContext == null)
+      throw new IllegalArgumentException("Attempt to set formContext to null");
+    this.formContext = formContext;
+  }
+
+  
+  public Object lookup(Object key) {
+    return formContext.get(key);
+  }
+}

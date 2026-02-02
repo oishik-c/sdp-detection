@@ -1,0 +1,65 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.model;
+
+import java.lang.reflect.Method;
+import com.taursys.util.ChainedException;
+
+
+public class ModelInvocationTargetException extends ModelPropertyAccessorException {
+  public static final int REASON_OFFSET                       =
+      ModelPropertyAccessorException.REASON_OFFSET + 10;
+  public static final int REASON_INVOCATION_EXCEPTION         = 0 + REASON_OFFSET;
+  private static final String[] messages = new String[] {
+    "InvocationTargetException while accessing property value.",
+  };
+
+  
+  
+  
+
+  
+  public static String getReasonMessage(int reason) {
+    if (reason >=  + REASON_OFFSET && reason < messages.length + REASON_OFFSET)
+      return messages[reason - REASON_OFFSET];
+    else
+      return getInvalidMessage();
+  }
+
+  
+  
+  
+
+  
+  public ModelInvocationTargetException(Class voClass,
+      String propertyName, int javaDataType, Object target, Method method,
+      Throwable cause) {
+    super(getReasonMessage(REASON_INVOCATION_EXCEPTION), REASON_INVOCATION_EXCEPTION);
+    setValueObjectClassName(voClass);
+    this.propertyName = propertyName;
+    this.cause = cause;
+    setMethodName(method);
+    setPropertyDataType(javaDataType);
+    setGivenValueObjectClassName(target);
+    setDiagnosticsInfo();
+  }
+
+  
+  public ModelInvocationTargetException(Class voClass,
+      String propertyName, int javaDataType, Object target, Object value,
+      Method method, Throwable cause) {
+    super(getReasonMessage(REASON_INVOCATION_EXCEPTION), REASON_INVOCATION_EXCEPTION);
+    setValueObjectClassName(voClass);
+    this.propertyName = propertyName;
+    this.cause = cause;
+    setMethodName(method);
+    setPropertyDataType(javaDataType);
+    setGivenValueObjectClassName(target);
+    setGivenValueDataType(value);
+    setDiagnosticsInfo();
+  }
+}

@@ -1,0 +1,39 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.util.ChainedException {
++ {static} int REASON_INVALID_REASON_CODE
++ {static} int REASON_UNSPECIFIED
+- {static} String[] messages
+# Throwable cause
+# String diagnosticInfo
+# int reason
+# String userFriendlyMessage
++ <<Create>> ChainedException(int)
++ <<Create>> ChainedException(int,Throwable)
++ <<Create>> ChainedException(int,Throwable,String)
++ <<Create>> ChainedException(int,String)
+# <<Create>> ChainedException(String)
+# <<Create>> ChainedException(String,int)
+# <<Create>> ChainedException(String,int,Throwable)
++ {static} String getReasonMessage(int)
++ {static} String getInvalidMessage()
++ int getReason()
++ Throwable getCause()
++ String getUserFriendlyMessage()
++ String getLocalizedMessage()
++ String getDiagnosticInfo()
++ void printStackTrace()
++ void printStackTrace(PrintStream)
++ void printStackTrace(PrintWriter)
++ {static} void main(String[])
+}
+
+
+
+
+com.taursys.util.Exception <|-- com.taursys.util.ChainedException
+@enduml

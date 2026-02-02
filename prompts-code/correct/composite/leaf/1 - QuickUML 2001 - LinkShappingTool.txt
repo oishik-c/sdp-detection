@@ -1,0 +1,253 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.tool;
+
+import java.awt.Cursor;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
+
+import javax.swing.SwingUtilities;
+import javax.swing.event.MouseInputAdapter;
+
+import diagram.Diagram;
+import diagram.DiagramUI;
+import diagram.Figure;
+import diagram.figures.PolyLink;
+
+
+public class LinkShappingTool extends AbstractTool {
+
+  
+  public static final double CLICK_TOLERANCE = 6.0;
+  public static final double DRAG_TOLERANCE = 6.0;
+  
+  private static final Cursor HD_CURSOR = new Cursor(Cursor.HAND_CURSOR);
+
+  
+  private Cursor originalCursor = null;
+
+  
+  private Diagram diagram;
+
+  
+  private Point2D dragPoint; 
+
+  
+  private PolyLink polyLink;
+  
+  
+  private Point2D pressPoint;
+
+  private MouseHandler mouseHandler = new MouseHandler();
+
+  
+  public void install(Diagram diagram) {
+
+    if(diagram.getSelectionModel() == null)
+      throw new RuntimeException("LinkShapping requires SelectionModel support");
+
+    diagram.addMouseListener(mouseHandler);
+    diagram.addMouseMotionListener(mouseHandler);
+
+  }
+
+  
+  public void uninstall(Diagram diagram) {
+
+    diagram.removeMouseListener(mouseHandler);
+    diagram.removeMouseMotionListener(mouseHandler);
+
+    
+    reset();
+
+  }
+
+  
+  protected void linkPressed(PolyLink link, MouseEvent event) { }
+
+  
+  protected void linkClicked(PolyLink link, MouseEvent event) { }
+
+  
+  protected void linkReleased(PolyLink link, MouseEvent event) { }
+
+  
+  protected class MouseHandler extends MouseInputAdapter {
+
+    
+    public void mousePressed(MouseEvent e) {
+      
+      
+      
+      if(e.isConsumed() || e.isShiftDown() || e.isControlDown() || e.isAltDown())
+        return;
+      
+      
+      diagram = (Diagram)e.getSource();
+      Point2D pt = e.getPoint();
+      
+      Diagram diagram = (Diagram)e.getSource();
+      Figure figure = diagram.findFigure(pt);
+      
+      
+      if(!(figure instanceof PolyLink)) {
+        reset();
+        return;
+      }
+      
+      polyLink = (PolyLink)figure;
+
+      
+      
+      if(SwingUtilities.isLeftMouseButton(e))
+        pressPoint = pt;
+      
+      linkPressed(polyLink, e);
+
+    }
+    
+
+    
+    public void mouseClicked(MouseEvent e) {
+     
+      
+      
+      if(!e.isConsumed() && SwingUtilities.isRightMouseButton(e)) {
+
+        Diagram diagram = (Diagram)e.getSource();
+        Point pt = e.getPoint();
+
+        
+        Figure figure = diagram.findFigure(pt);
+        if(!(figure instanceof PolyLink))
+          return;
+        
+        PolyLink polyLink = (PolyLink)figure;
+        DiagramUI ui = (DiagramUI)diagram.getUI();
+        
+        
+        int point = polyLink.pointFor(pt.getX(), pt.getY(), CLICK_TOLERANCE*2.0);
+        if(point > 0 && point < (polyLink.getPointCount() - 1)) {
+          
+          e.consume();
+          fireToolStarted();        
+          
+          
+          ui.damageFigure(polyLink);
+          polyLink.join(point);
+          ui.refreshFigure(polyLink);
+            
+
+        }
+        
+        linkClicked(polyLink, e);
+
+      }  
+    
+    }
+
+    
+    public void mouseDragged(MouseEvent e) {
+      
+      
+      if(e.isConsumed() || !SwingUtilities.isLeftMouseButton(e)) 
+        return;
+      
+      
+      
+      if(pressPoint != null) {
+        
+        
+        if(pressPoint.distance(e.getPoint()) >= DRAG_TOLERANCE) {
+          
+          Point2D pt = pressPoint;
+          pressPoint = null;
+          
+          
+          int segment = polyLink.segmentFor(pt, CLICK_TOLERANCE);
+          if(segment == -1)
+            return;
+
+          fireToolStarted();
+          
+          
+          
+          int point = polyLink.pointFor(pt.getX(), pt.getY(), CLICK_TOLERANCE*2.0);
+          if(point > 0 && point < (polyLink.getPointCount() - 1))
+            dragPoint = polyLink.getPN(point);
+          else 
+            dragPoint = polyLink.split(segment, pt);
+          
+          
+          originalCursor = diagram.getCursor();
+          diagram.setCursor(HD_CURSOR);
+          
+        }
+        
+      }
+      
+      
+      if(dragPoint != null) {
+        
+        e.consume();    
+        
+        DiagramUI ui = (DiagramUI)diagram.getUI();
+        
+        
+        ui.damageFigure(polyLink);
+        dragPoint.setLocation(e.getPoint());
+        ui.refreshFigure(polyLink);
+        
+      }
+      
+    }
+
+    
+    public void mouseReleased(MouseEvent e) {
+      
+      
+      if(dragPoint != null) {
+        
+        e.consume();
+        
+        ((DiagramUI)diagram.getUI()).refreshRegion(null);
+       
+
+        linkReleased(polyLink, e);
+        
+        fireToolFinished();
+        reset();
+        
+      }
+      
+      
+      
+      
+    }
+
+  } 
+
+
+  
+  protected void reset() {
+
+    
+    if(diagram != null && originalCursor != null)
+      diagram.setCursor(originalCursor);
+
+    
+    diagram = null;
+    dragPoint = null;
+    originalCursor = null;
+    polyLink = null;    
+    pressPoint = null;
+
+  }
+
+}

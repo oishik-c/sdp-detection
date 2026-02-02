@@ -1,0 +1,22 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class junit.runner.ClassPathTestCollector {
+~ {static} int SUFFIX_LENGTH
++ <<Create>> ClassPathTestCollector()
++ Enumeration collectTests()
+~ void collectFilesInRoots(Vector,Hashtable)
+~ void gatherFiles(File,String,Hashtable)
+~ Vector splitClassPath(String,String)
+# boolean isTestClass(String)
+# String classNameFromFile(String)
+}
+
+
+
+
+junit.runner.TestCollector <|.. junit.runner.ClassPathTestCollector
+@enduml

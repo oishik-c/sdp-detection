@@ -1,0 +1,40 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.debugger.jpda.JPDADebuggerModule {
+- Dialog dialog
+- {static} boolean previouslyInstalled
+- {static} int counter
+~ {static} boolean installed
+~ {static} long serialVersionUID
++ <<Create>> JPDADebuggerModule()
++ <<Create>> JPDADebuggerModule(int,boolean)
+# Object writeReplace()
++ void installed()
++ void restored()
++ void uninstalled()
+- void showWarning()
+}
+
+
+class org.netbeans.modules.debugger.jpda.JPDADebuggerModuleLoader {
+- int counter
+- boolean installed
+- {static} int SERIAL_VERSION
+~ {static} long serialVersionUID
++ <<Create>> JPDADebuggerModuleLoader()
++ <<Create>> JPDADebuggerModuleLoader(int,boolean)
++ void readExternal(ObjectInput)
+- Object readResolve()
++ void writeExternal(ObjectOutput)
+}
+
+
+
+
+org.netbeans.modules.debugger.jpda.ModuleInstall <|-- org.netbeans.modules.debugger.jpda.JPDADebuggerModule
+org.netbeans.modules.debugger.jpda.Externalizable <|.. org.netbeans.modules.debugger.jpda.JPDADebuggerModuleLoader
+@enduml

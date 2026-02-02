@@ -1,0 +1,69 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.figures.TextFigure {
+- int fOriginX
+- int fOriginY
+- boolean fSizeIsDirty
+- int fWidth
+- int fHeight
+- String fText
+- Font fFont
+- boolean fIsReadOnly
+- Figure fObservedFigure
+- OffsetLocator fLocator
+- {static} String fgCurrentFontName
+- {static} int fgCurrentFontSize
+- {static} int fgCurrentFontStyle
+- {static} long serialVersionUID
+- int textFigureSerializedDataVersion
++ <<Create>> TextFigure()
++ void moveBy(int,int)
+# void basicMoveBy(int,int)
++ void basicDisplayBox(Point,Point)
++ Rectangle displayBox()
++ Rectangle textDisplayBox()
++ boolean readOnly()
++ void setReadOnly(boolean)
++ Font getFont()
++ void setFont(Font)
++ void changed()
++ Object getAttribute(String)
++ void setAttribute(String,Object)
++ String getText()
++ void setText(String)
++ boolean acceptsTyping()
++ void drawBackground(Graphics)
++ void drawFrame(Graphics)
+- Dimension textExtent()
+- void markDirty()
++ int overlayColumns()
++ Vector handles()
++ void write(StorableOutput)
++ void read(StorableInput)
+- void readObject(ObjectInputStream)
++ void connect(Figure)
++ void figureChanged(FigureChangeEvent)
++ void figureRemoved(FigureChangeEvent)
++ void figureRequestRemove(FigureChangeEvent)
++ void figureInvalidated(FigureChangeEvent)
++ void figureRequestUpdate(FigureChangeEvent)
+# void updateLocation()
++ void release()
++ void disconnect()
++ {static} Font createCurrentFont()
++ {static} void setCurrentFontName(String)
++ {static} void setCurrentFontSize(int)
++ {static} void setCurrentFontStyle(int)
+}
+
+
+
+
+CH.ifa.draw.framework.FigureChangeListener <|.. CH.ifa.draw.figures.TextFigure
+CH.ifa.draw.standard.TextHolder <|.. CH.ifa.draw.figures.TextFigure
+CH.ifa.draw.figures.AttributeFigure <|-- CH.ifa.draw.figures.TextFigure
+@enduml

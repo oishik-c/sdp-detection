@@ -1,0 +1,68 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.form;
+
+import org.openide.nodes.*;
+
+
+public class FormAdapter implements FormListener {
+
+    
+    public void formLoaded () {
+    }
+
+    
+    public void formChanged () {
+    }
+
+    
+    public void codeChanged () {
+    }
+
+    
+    public void formToBeSaved () {
+    }
+
+    
+    public void componentsReordered (ComponentContainer cont) {
+    }
+
+    
+    public void componentsAdded (RADComponent[] comps) {
+    }
+
+    
+    public void componentsRemoved (RADComponent[] comps) {
+    }
+
+    
+    public void componentChanged (FormPropertyEvent evt) {
+    }
+
+    
+    public void propertyChanged (FormPropertyEvent evt) {
+    }
+
+    
+    public void layoutChanged (RADVisualContainer container, RADVisualComponent component, String propertyName, Object oldValue, Object newValue) {
+    }
+
+    
+    public void eventAdded (FormEventEvent evt) {
+    }
+
+    
+    public void eventRemoved (FormEventEvent evt) {
+    }
+
+    
+    public void eventRenamed (FormEventEvent evt) {
+    }
+}
+
+

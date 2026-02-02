@@ -1,0 +1,433 @@
+Given the following java code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package net.nutch.db;
+
+import java.io.*;
+import java.util.*;
+
+import net.nutch.io.*;
+import net.nutch.util.*;
+import net.nutch.pagedb.*;
+import net.nutch.linkdb.*;
+
+
+public class DistributedWebDBReader implements IWebDBReader {
+    static final Page[] PAGE_RECORDS = new Page[0];
+    static final Link[] LINK_RECORDS = new Link[0];
+
+    
+    static final String PAGES_BY_URL = "pagesByURL";
+    static final String PAGES_BY_MD5 = "pagesByMD5";
+    static final String LINKS_BY_URL = "linksByURL";
+    static final String LINKS_BY_MD5 = "linksByMD5";
+
+    static final String STATS_FILE = "stats";
+    static final String META_FILE = "metainfo";
+
+    
+    static final EnumCall PAGE_ENUMS = new PageEnumCall();
+    static final EnumCall PAGE_MD5_ENUMS = new PageByMD5EnumCall();
+    static final EnumCall LINK_ENUMS = new LinkEnumCall();    
+
+    
+    static final DBSectionReader[] STATIC_SR_ARRAY = new DBSectionReader[0];
+
+    
+    NutchFile dbDir;
+    NutchFile globalWriteLock;
+    DBSectionReader pagesByURL[], pagesByMD5[], linksByURL[], linksByMD5[];
+    long totalPages = 0, totalLinks = 0;
+    int numMachines = 0;
+
+        
+    public DistributedWebDBReader(NutchFileSystem nutchfs, String dbName) throws IOException, FileNotFoundException {
+        
+        
+        
+        
+        this.dbDir = new NutchFile(nutchfs, dbName, "standard", new File("webdb"));
+
+        
+        
+        
+        
+        NutchFile dirIsComplete = new NutchFile(dbDir, "dbIsComplete");
+        nutchfs.get(dirIsComplete);
+
+        
+        
+        
+        
+
+        
+        
+
+        
+        
+        
+        NutchFile machineInfo = new NutchFile(nutchfs, dbName, "standard", new File("machineinfo"));
+        DataInputStream in = new DataInputStream(new FileInputStream(nutchfs.get(machineInfo)));
+        try {
+            in.readByte();  
+            this.numMachines = in.readInt();
+        } finally {
+            in.close();
+        }
+
+        
+        
+        
+        
+        
+        Vector pagesByURL = new Vector(), pagesByMD5 = new Vector(), linksByMD5 = new Vector(), linksByURL = new Vector();
+        for (int i = 0; i < numMachines; i++) {
+            
+            NutchFile sectionDir = new NutchFile(dbDir, "dbsection." + i);
+            NutchFile pagesByURLNF = new NutchFile(sectionDir, PAGES_BY_URL);
+            NutchFile pagesByMD5NF = new NutchFile(sectionDir, PAGES_BY_MD5);
+            NutchFile linksByURLNF = new NutchFile(sectionDir, LINKS_BY_URL);
+            NutchFile linksByMD5NF = new NutchFile(sectionDir, LINKS_BY_MD5);
+
+            
+            pagesByURL.add(new DBSectionReader(nutchfs.get(pagesByURLNF), new UTF8.Comparator()));
+            pagesByMD5.add(new DBSectionReader(nutchfs.get(pagesByMD5NF), new Page.Comparator()));
+            linksByURL.add(new DBSectionReader(nutchfs.get(linksByURLNF), new Link.UrlComparator()));
+            linksByMD5.add(new DBSectionReader(nutchfs.get(linksByMD5NF), new Link.MD5Comparator()));
+
+            
+            NutchFile sectionStats = new NutchFile(sectionDir, STATS_FILE);
+            in = new DataInputStream(new FileInputStream(nutchfs.get(sectionStats)));
+            try {
+                in.read(); 
+                this.totalPages += in.readLong();
+                this.totalLinks += in.readLong();
+            } finally {
+                in.close();
+            }
+        }
+
+        
+        this.pagesByURL = (DBSectionReader[]) pagesByURL.toArray(STATIC_SR_ARRAY);
+        this.pagesByMD5 = (DBSectionReader[]) pagesByMD5.toArray(STATIC_SR_ARRAY);
+        this.linksByURL = (DBSectionReader[]) linksByURL.toArray(STATIC_SR_ARRAY);
+        this.linksByMD5 = (DBSectionReader[]) linksByMD5.toArray(STATIC_SR_ARRAY);
+    }
+
+    
+    public void close() throws IOException {
+        for (int i = 0; i < pagesByURL.length; i++) {
+            pagesByURL[i].close();
+            pagesByMD5[i].close();
+            linksByURL[i].close();
+            linksByMD5[i].close();
+        }
+    }
+
+    
+    public int numMachines() {
+        return numMachines;
+    }
+
+    
+    public long numPages() {
+        return totalPages;
+    }
+
+    
+    public long numLinks() {
+        return totalLinks;
+    }
+
+    
+    public Page getPage(String url) throws IOException {
+        Page result = null, target = new Page();
+        UTF8 searchURL = new UTF8(url);
+
+        
+        
+        return pagesByURL[DBKeyDivision.findURLSection(url, numMachines)].getPage(searchURL, target);
+    }
+
+    
+    public Page[] getPages(MD5Hash md5) throws IOException {
+        Vector resultSet = pagesByMD5[DBKeyDivision.findMD5Section(md5, numMachines)].getPages(md5);
+        Page resultArray[] = new Page[resultSet.size()];
+        int i = 0;
+        for (Enumeration e = resultSet.elements(); e.hasMoreElements(); i++) {
+            resultArray[i] = (Page) e.nextElement();
+        }
+        return resultArray;
+    }
+
+    
+    public boolean pageExists(MD5Hash md5) throws IOException {
+        return pagesByMD5[DBKeyDivision.findMD5Section(md5, numMachines)].pageExists(md5);
+    }
+
+    
+    public Enumeration pages() throws IOException {
+        return new MetaEnumerator(pagesByURL, PAGE_ENUMS);
+    }
+
+    
+    public Enumeration pagesByMD5() throws IOException {
+        return new MetaEnumerator(pagesByMD5, PAGE_MD5_ENUMS);
+    }
+
+         
+    public Link[] getLinks(UTF8 url) throws IOException {
+        Vector resultSet = linksByURL[DBKeyDivision.findURLSection(url.toString(), numMachines)].getLinks(url);
+        Link resultArray[] = new Link[resultSet.size()];
+        int i = 0;
+        for (Enumeration e = resultSet.elements(); e.hasMoreElements(); ) {
+            resultArray[i++] = (Link) e.nextElement();
+        }
+        return resultArray;
+    }
+
+    
+    public Link[] getLinks(MD5Hash md5) throws IOException {
+        Vector resultSet = linksByMD5[DBKeyDivision.findMD5Section(md5, numMachines)].getLinks(md5);
+        Link resultArray[] = new Link[resultSet.size()];
+        int i = 0;
+        for (Enumeration e = resultSet.elements(); e.hasMoreElements(); ) {
+            resultArray[i++] = (Link) e.nextElement();
+        }
+        return resultArray;
+    }
+
+    
+    public Enumeration links() throws IOException {
+        return new MetaEnumerator(linksByURL, LINK_ENUMS);
+    }
+
+    
+    
+    
+    
+    
+    static abstract class EnumCall {
+        
+        public EnumCall() {
+        }
+
+        
+        public abstract Enumeration getEnumeration(DBSectionReader reader) throws IOException;
+    }
+
+    
+    
+    
+    static class PageEnumCall extends EnumCall {
+        
+        public PageEnumCall() {
+        }
+
+        
+        public Enumeration getEnumeration(DBSectionReader reader) throws IOException {
+            return reader.pages();
+        }
+    }
+
+    
+    
+    
+    static class PageByMD5EnumCall extends EnumCall {
+        
+        public PageByMD5EnumCall() {
+        }
+
+        
+        public Enumeration getEnumeration(DBSectionReader reader) throws IOException {
+            return reader.pagesByMD5();
+        }
+    }
+
+    
+    
+    
+    static class LinkEnumCall extends EnumCall {
+        
+        public LinkEnumCall() {
+        }
+
+        
+        public Enumeration getEnumeration(DBSectionReader reader) throws IOException {
+            return reader.links();
+        }
+    }
+
+    
+    
+    
+    
+    class MetaEnumerator implements Enumeration {
+        Enumeration enumerations[];
+        int curEnum = 0;
+
+        
+        public MetaEnumerator(DBSectionReader sections[], EnumCall enumCall) throws IOException {
+            this.enumerations = new Enumeration[sections.length];
+
+            for (int i = 0; i < enumerations.length; i++) {
+                enumerations[i] = enumCall.getEnumeration(sections[i]);
+            }
+        }
+
+        
+        public boolean hasMoreElements() {
+            boolean result = false;
+
+            
+            
+            
+            
+            
+            for (; curEnum < enumerations.length; curEnum++) {
+                result = enumerations[curEnum].hasMoreElements();
+                
+                if (result) {
+                    break;
+                }
+            }
+            return result;
+        }
+
+        
+        public Object nextElement() {
+            Object obj = null;
+
+            
+            
+            
+            
+            for (; curEnum < enumerations.length; curEnum++) {
+                if (enumerations[curEnum].hasMoreElements()) {
+                    obj = enumerations[curEnum].nextElement();
+
+                    if (obj != null) {
+                        break;
+                    }
+                }
+            }
+            return obj;
+        }
+    }
+
+    
+    public static void main(String argv[]) throws FileNotFoundException, IOException {
+        if (argv.length < 2) {
+            System.out.println("Usage: java net.nutch.db.DistributedWebDBReader <dbRoot> [-pageurl url] | [-pagemd5 md5] | [-dumppageurl] | [-dumppagemd5] | [-toppages <k>] | [-linkurl url] | [-linkmd5 md5] | [-dumplinks] | [-stats]");
+            return;
+        }
+
+        NutchFileSystem nutchfs = new NutchNFSFileSystem(new File(argv[0]), true);
+        DistributedWebDBReader reader = new DistributedWebDBReader(nutchfs, "db");
+        try {
+            if ("-pageurl".equals(argv[1])) {
+                String url = argv[2];
+                System.out.println(reader.getPage(url.trim()));
+            } else if ("-pagemd5".equals(argv[1])) {
+                MD5Hash md5 = new MD5Hash(argv[2]);
+                Page pages[] = reader.getPages(md5);
+                System.out.println("Found " + pages.length + " pages.");
+                for (int i = 0; i < pages.length; i++) {
+                    System.out.println("Page " + i + ": " + pages[i]);
+                }
+            } else if ("-dumppageurl".equals(argv[1])) {
+                int i = 1;
+                for (Enumeration e = reader.pages(); e.hasMoreElements(); i++) {
+                    Page page = (Page) e.nextElement();
+                    System.out.println("Page " + i + ": " + page);
+                    System.out.println();
+                }
+            } else if ("-dumppagemd5".equals(argv[1])) {
+                int i = 1;
+                for (Enumeration e = reader.pagesByMD5(); e.hasMoreElements(); i++) {
+                    Page page = (Page) e.nextElement();
+                    System.out.println("Page " + i + ": " + page);
+                    System.out.println();
+                }
+            } else if ("-toppages".equals(argv[1])) {
+                int topSize = Integer.parseInt(argv[2]);
+
+                
+                SortedSet topSet = new TreeSet(new Comparator() {
+                    public int compare(Object o1, Object o2) {
+                        Page p1 = (Page) o1;
+                        Page p2 = (Page) o2;
+                        if (p1.getScore() < p2.getScore()) {
+                            return -1;
+                        } else if (p1.getScore() == p2.getScore()) {
+                            
+                            
+                            
+                            
+                            return p1.compareTo(p2);
+                        } else {
+                            return 1;
+                        }
+                    }
+                }
+                    );
+
+                
+                Page lowestPage = null;
+                for (Enumeration e = reader.pages(); e.hasMoreElements(); ) {
+                    Page curPage = (Page) e.nextElement();
+                    if (topSet.size() < topSize) {
+                        topSet.add(curPage);
+                        lowestPage = (Page) topSet.first();
+                    } else if (lowestPage.getScore() < curPage.getScore()) {
+                        topSet.remove(lowestPage);
+                        topSet.add(curPage);
+                        lowestPage = (Page) topSet.first();
+                    }
+                }
+            
+                
+                int i = 0;
+                for (Iterator it = topSet.iterator(); it.hasNext(); i++) {
+                    System.out.println("Page " + i + ": " + (Page) it.next());
+                    System.out.println();
+                }
+            } else if ("-linkurl".equals(argv[1])) {
+                String url = argv[2];
+                Link links[] = reader.getLinks(new UTF8(url.trim()));
+                System.out.println("Found " + links.length + " links.");
+                for (int i = 0; i < links.length; i++) {
+                    System.out.println("Link " + i + ": " + links[i]);
+                }
+            } else if ("-linkmd5".equals(argv[1])) {
+                MD5Hash fromID = new MD5Hash(argv[2]);
+                Link links[] = reader.getLinks(fromID);
+                System.out.println("Found " + links.length + " links.");
+                for (int i = 0; i < links.length; i++) {
+                    System.out.println("Link " + i + ": " + links[i]);
+                }
+            } else if ("-dumplinks".equals(argv[1])) {
+                int i = 1;
+                for (Enumeration e = reader.links(); e.hasMoreElements(); i++) {
+                    Link link = (Link) e.nextElement();
+                    System.out.println("Link " + i + ": " + link);
+                    System.out.println();
+                }
+            } else if ("-stats".equals(argv[1])) {
+                System.out.println("Stats for " + reader);
+                System.out.println("-------------------------------");
+                System.out.println("Number of pages: " + reader.numPages());
+                System.out.println("Number of links: " + reader.numLinks());
+                System.out.println("Number of machines (sections): " + reader.numMachines());
+            } else {
+                System.out.println("Sorry, no command with name " + argv[1]);
+            }
+        } finally {
+            reader.close();
+        }
+    }
+}

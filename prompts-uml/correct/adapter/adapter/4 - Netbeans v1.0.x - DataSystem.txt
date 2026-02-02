@@ -1,0 +1,53 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.core.DataSystem {
+- {static} DataSystem def
+- Repository fileSystemPool
+~ DataFilter filter
+- <<Create>> DataSystem(Children,Repository,DataFilter)
+- <<Create>> DataSystem(Children,DataFilter)
++ HelpCtx getHelpCtx()
++ {static} DataSystem getDataSystem(DataFilter)
++ {static} DataSystem getDataSystem()
+~ void initialize()
++ Handle getHandle()
+~ {static} DataFolder createRoot(FileSystem)
++ NewType[] getNewTypes()
++ org.openide.util.actions.SystemAction[] createActions()
++ void fileSystemAdded(RepositoryEvent)
++ void fileSystemRemoved(RepositoryEvent)
++ void fileSystemPoolReordered(RepositoryReorderedEvent)
+~ void refresh()
+~ void refresh(FileSystem)
+}
+
+
+class org.netbeans.core.DataSystem$DSMap {
++ void propertyChange(PropertyChangeEvent)
+- DataSystem getDS()
+# Node[] createNodes(Object)
++ void refresh(Repository,FileSystem)
+}
+
+class org.netbeans.core.DataSystem$DSHandle {
+~ DataFilter filter
+~ {static} long serialVersionUID
++ <<Create>> DSHandle(DataFilter)
++ Node getNode()
+}
+
+
+
+
+org.netbeans.core.RepositoryListener <|.. org.netbeans.core.DataSystem
+org.netbeans.core.AbstractNode <|-- org.netbeans.core.DataSystem
+org.netbeans.core.DataSystem +.. org.netbeans.core.DataSystem$DSMap
+org.netbeans.core.PropertyChangeListener <|.. org.netbeans.core.DataSystem$DSMap
+org.netbeans.core.Keys <|-- org.netbeans.core.DataSystem$DSMap
+org.netbeans.core.DataSystem +.. org.netbeans.core.DataSystem$DSHandle
+org.netbeans.core.Handle <|.. org.netbeans.core.DataSystem$DSHandle
+@enduml

@@ -1,0 +1,240 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.filesystems;
+
+import java.io.*;
+import java.util.*;
+
+import org.openide.util.enum.*;
+
+
+public class MultiFileSystem extends FileSystem {
+    static final long serialVersionUID =-767493828111559560L;
+
+    
+    static final String MASK = "_hidden"; 
+
+    
+    final FileSystem[] systems;
+
+    
+    private transient MultiFileObject root;
+
+    
+    private static final int WRITE_SYSTEM_INDEX = 0;
+
+    
+    public MultiFileSystem (FileSystem[] fileSystems) {
+        this.systems = fileSystems;
+    }
+
+    
+    public boolean isReadOnly () {
+        return systems[WRITE_SYSTEM_INDEX] == null;
+    }
+
+    
+    public String getDisplayName () {
+        return getString ("CTL_MultiFileSystem");
+    }
+
+    
+    public FileObject getRoot () {
+        return getMultiRoot ();
+    }
+
+    
+    private MultiFileObject getMultiRoot () {
+        if (root == null) {
+            synchronized (this) {
+                if (root == null) {
+                    root = new MultiFileObject (this);
+                }
+            }
+        }
+        return root;
+    }
+
+    
+    public org.openide.util.actions.SystemAction[] getActions () {
+        return new org.openide.util.actions.SystemAction[0];
+    }
+
+    
+    public FileObject find (String aPackage, String name, String ext) {
+        
+        StringTokenizer st = new StringTokenizer (aPackage, "."); 
+        Enumeration en;
+        if (name == null || ext == null) {
+            en = st;
+        } else {
+            en = new SequenceEnumeration (
+                     st,
+                     new SingletonEnumeration (name + '.' + ext)
+                 );
+        }
+        
+        return getMultiRoot ().find (en);
+    }
+
+    
+    public FileObject findResource (String name) {
+        if (name.length () == 0) {
+            return getMultiRoot ();
+        } else {
+            StringTokenizer tok = new StringTokenizer (name, "/"); 
+            return getMultiRoot ().find (tok);
+        }
+    }
+
+    
+    
+    
+
+    
+    protected final FileSystem findSystem (FileObject fo) throws IllegalArgumentException {
+        try {
+            if (fo instanceof MultiFileObject) {
+                MultiFileObject mfo = (MultiFileObject)fo;
+                return mfo.getLeaderFileSystem ();
+            }
+        } catch (FileStateInvalidException ex) {
+        }
+
+        throw new IllegalArgumentException (fo.toString());
+    }
+
+    
+    protected final void hideResource (String res, boolean hide) throws IOException {
+        if (hide) {
+            
+            maskFile (createWritableOn (res), res);
+        } else {
+            unmaskFile (createWritableOn (res), res);
+        }
+    }
+
+    
+    protected static Enumeration hiddenFiles (FileObject folder, boolean rec) {
+        Enumeration allFiles = folder.getChildren (rec);
+        Enumeration allNull = new AlterEnumeration (allFiles) {
+                                  public Object alter (Object fo) {
+                                      String sf = ((FileObject)fo).getPackageNameExt ('/', '.');
+                                      if (sf.endsWith (MASK)) {
+                                          return sf.substring (0, sf.length () - MASK.length ());
+                                      } else {
+                                          return null;
+                                      }
+                                  }
+                              };
+        return new FilterEnumeration (allNull) {
+                   public boolean accept (Object o) {
+                       return o != null;
+                   }
+               };
+    }
+
+    
+    
+    
+
+    
+    protected FileSystem createWritableOn (String name) throws IOException {
+        if (systems[WRITE_SYSTEM_INDEX] == null) {
+            FSException.io ("EXC_FSisRO", getDisplayName ()); 
+        }
+        return systems[WRITE_SYSTEM_INDEX];
+    }
+
+    
+    protected void notifyMigration (FileObject fo) {
+
+    }
+
+    
+    protected void markUnimportant (FileObject fo) {
+    }
+
+
+    
+    
+    
+
+    
+    private static String[] split (String res, String[] store) {
+        if (store == null) {
+            store = new String[3];
+        }
+
+        int file = res.lastIndexOf ('/');
+        int dot = res.lastIndexOf ('.');
+
+        if (file == -1) {
+            store[0] = ""; 
+        } else {
+            store[0] = res.substring (0, file);
+        }
+
+        file++;
+
+        if (dot == -1) {
+            store[1] = res.substring (file);
+            store[2] = ""; 
+        } else {
+            store[1] = res.substring (file, dot);
+            store[2] = res.substring (dot + 1);
+        }
+
+        return store;
+    }
+
+
+    
+    Enumeration delegates (final String name) {
+        Enumeration en = new ArrayEnumeration (systems);
+
+        Enumeration objsAndNulls = new AlterEnumeration (en) {
+                                       public Object alter (Object o) {
+                                           FileSystem fs = (FileSystem)o;
+                                           if (fs == null) {
+                                               return null;
+                                           } else {
+                                               return fs.findResource(name);
+                                           }
+                                       }
+                                   };
+
+        return new FilterEnumeration (objsAndNulls) {
+                   public boolean accept (Object o) {
+                       return o != null;
+                   }
+               };
+    }
+
+    
+    static void maskFile (FileSystem fs, String res) throws IOException {
+        FileObject fo = FileUtil.createData (fs.getRoot (), res + MASK);
+    }
+
+    
+    static void unmaskFile (FileSystem fs, String res) throws IOException {
+        FileObject fo = fs.findResource (res + MASK);
+
+        if (fo != null) {
+            FileLock lock = fo.lock ();
+            try {
+                fo.delete (lock);
+            } finally {
+                lock.releaseLock ();
+            }
+        }
+    }
+}
+
+
+

@@ -1,0 +1,64 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.samples.pert;
+
+import java.awt.Color;
+import java.util.Vector;
+
+import CH.ifa.draw.figures.ArrowTip;
+import CH.ifa.draw.figures.LineConnection;
+import CH.ifa.draw.figures.PolyLineFigure;
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.standard.NullHandle;
+
+
+public class PertDependency extends LineConnection {
+	
+	private static final long serialVersionUID = -7959500008698525009L;
+	private int pertDependencySerializedDataVersion = 1;
+
+	public PertDependency() {
+		setEndDecoration(new ArrowTip());
+		setStartDecoration(null);
+	}
+
+	public void handleConnect(Figure start, Figure end) {
+		PertFigure source = (PertFigure)start;
+		PertFigure target = (PertFigure)end;
+		if (source.hasCycle(target)) {
+			setAttribute("FrameColor", Color.red);
+		} else {
+			target.addPreTask(source);
+			source.addPostTask(target);
+			source.notifyPostTasks();
+		}
+	}
+
+	public void handleDisconnect(Figure start, Figure end) {
+		PertFigure source = (PertFigure)start;
+		PertFigure target = (PertFigure)end;
+		if (target != null) {
+			target.removePreTask(source);
+			target.updateDurations();
+		}
+		if (source != null)
+			source.removePostTask(target);
+   }   
+
+	public boolean canConnect(Figure start, Figure end) {
+		return (start instanceof PertFigure && end instanceof PertFigure);
+	}
+
+	public Vector handles() {
+		Vector handles = super.handles();
+		
+		handles.setElementAt(
+			new NullHandle(this, PolyLineFigure.locator(0)), 0);
+		return handles;
+	}
+}

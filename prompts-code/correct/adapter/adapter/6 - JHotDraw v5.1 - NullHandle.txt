@@ -1,0 +1,34 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.standard;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.Locator;
+
+
+public class NullHandle extends LocatorHandle {
+
+	
+	protected Locator fLocator;
+
+	public NullHandle(Figure owner, Locator locator) {
+		super(owner, locator);
+	}
+
+	
+	public void draw(Graphics g) {
+		Rectangle r = displayBox();
+
+		g.setColor(Color.black);
+		g.drawRect(r.x, r.y, r.width, r.height);
+	}
+}

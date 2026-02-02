@@ -1,0 +1,49 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.util;
+
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+
+
+
+
+public  class Filler
+		extends Canvas {
+
+	private int     fWidth;
+	private int     fHeight;
+	private Color   fBackground;
+
+
+	public Filler(int width, int height) {
+		this(width, height, null);
+	}
+
+	public Filler(int width, int height, Color background) {
+		fWidth = width;
+		fHeight = height;
+		fBackground = background;
+	}
+
+	public Dimension getMinimumSize() {
+		return new Dimension(fWidth, fHeight);
+	}
+
+	public Dimension getPreferredSize() {
+		return getMinimumSize();
+	}
+
+	public Color getBackground() {
+		if (fBackground != null)
+			return fBackground;
+		return super.getBackground();
+	}
+}
+

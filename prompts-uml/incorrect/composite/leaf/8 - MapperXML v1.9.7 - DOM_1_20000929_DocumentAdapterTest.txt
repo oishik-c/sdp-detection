@@ -1,0 +1,38 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.dom.test.DOM_1_20000929_DocumentAdapterTest {
+~ DOM_1_20000929_DocumentAdapter adapter
++ <<Create>> DOM_1_20000929_DocumentAdapterTest(String)
+# void setUp()
+# void tearDown()
+# byte[] getEmptyXMLDocBytes()
+# byte[] getHTMLDoc1Bytes()
+# byte[] getXHTMLBytes()
+# byte[] getHTMLNoXMLBytes()
+# byte[] getHTMLWithEndingSlash()
+# byte[] getHTMLWithoutEndingSlash()
+# Document getDocumentFromBytes(byte[])
+# Attr[] sortAttributes(NamedNodeMap)
+# void dump(Document)
+# void dump(Node,String)
+# void dumpDocInfo(Document)
+# void parseWrite(byte[])
+# void parseWrite(byte[],byte[])
++ void testCreate()
++ void testSetDocument()
++ void testWrite_HTML()
++ void testWrite_XHTML()
++ void testWrite_HTMLNoXML()
++ void testWrite_HTMLWithoutEndingSlash()
++ {static} void main(String[])
+}
+
+
+
+
+junit.framework.TestCase <|-- com.taursys.dom.test.DOM_1_20000929_DocumentAdapterTest
+@enduml

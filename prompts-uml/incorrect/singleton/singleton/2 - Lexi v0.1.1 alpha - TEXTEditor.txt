@@ -1,0 +1,81 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.jmonkey.office.lexi.support.editors.TEXTEditor {
++ {static} String CONTENT_TYPE
++ {static} String[] FILE_EXTENSIONS
+- JTextPane _EDITOR
+- boolean _CHANGED
+- E _EVENT_LISTENER
+- Element _CURRENT_RUN
+- Element _CURRENT_PARAGRAPH
++ <<Create>> TEXTEditor()
++ void append(File)
++ void documentSetSelection(int,int,boolean)
++ String getContentType()
++ Element getCurrentParagraph()
++ Element getCurrentRun()
+- E getEventListener()
++ String[] getFileExtensions()
++ MutableAttributeSet getInputAttributes()
++ JEditorPane getTextComponent()
++ void hasBeenActivated(Editor)
++ void hasBeenDeactivated(Editor)
++ void init()
++ void insert(File,int)
++ boolean isChanged()
++ boolean isEmpty()
++ boolean isFormatted()
++ boolean isNew()
++ void keyPressed(KeyEvent)
++ void keyReleased(KeyEvent)
++ void keyTyped(KeyEvent)
++ void mouseClicked(MouseEvent)
++ void mouseEntered(MouseEvent)
++ void mouseExited(MouseEvent)
++ void mousePressed(MouseEvent)
++ void mouseReleased(MouseEvent)
++ void read(File)
++ void requestFocus()
++ void setCaretBlinkRate(int)
++ void setCaretColor(Color)
++ void setChanged(boolean)
++ void setCurrentParagraph(Element)
++ void setCurrentRun(Element)
++ void setSelectionColor(Color)
++ void write(File)
+}
+
+
+class com.jmonkey.office.lexi.support.editors.TEXTEditor$E {
+- TEXTEditor _PARENT
+# <<Create>> E(TEXTEditor)
++ void focusGained(FocusEvent)
++ void focusLost(FocusEvent)
++ void insertUpdate(DocumentEvent)
++ void removeUpdate(DocumentEvent)
++ void changedUpdate(DocumentEvent)
++ void undoableEditHappened(UndoableEditEvent)
++ void hyperlinkUpdate(HyperlinkEvent)
++ void vetoableChange(PropertyChangeEvent)
++ void stateChanged(ChangeEvent)
+}
+
+
+
+
+java.awt.event.MouseListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor
+java.awt.event.KeyListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor
+com.jmonkey.office.lexi.support.Editor <|-- com.jmonkey.office.lexi.support.editors.TEXTEditor
+com.jmonkey.office.lexi.support.editors.TEXTEditor +.. com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+com.jmonkey.office.lexi.support.editors.DocumentListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+com.jmonkey.office.lexi.support.editors.UndoableEditListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+com.jmonkey.office.lexi.support.editors.HyperlinkListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+com.jmonkey.office.lexi.support.editors.FocusListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+com.jmonkey.office.lexi.support.editors.VetoableChangeListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+com.jmonkey.office.lexi.support.editors.ChangeListener <|.. com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+com.jmonkey.office.lexi.support.editors.Object <|-- com.jmonkey.office.lexi.support.editors.TEXTEditor$E
+@enduml

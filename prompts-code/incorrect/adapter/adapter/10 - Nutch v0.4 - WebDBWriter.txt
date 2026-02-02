@@ -1,0 +1,1671 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+
+package net.nutch.db;
+
+import java.io.*;
+import java.util.*;
+import java.util.logging.*;
+import java.nio.channels.*;
+
+import net.nutch.io.*;
+import net.nutch.util.*;
+import net.nutch.pagedb.*;
+import net.nutch.linkdb.*;
+
+
+public class WebDBWriter implements IWebDBWriter {
+    static final Logger LOG = LogFormatter.getLogger("net.nutch.db.WebDBWriter");
+    static final byte CUR_VERSION = 0;
+
+    
+    static final byte ADD_PAGE = 0;
+    static final byte ADD_PAGE_WITH_SCORE = 1;
+    static final byte ADD_PAGE_IFN_PRESENT = 2;
+    static final byte DEL_PAGE = 3;
+    static final int ADD_LINK = 0;
+    static final int DEL_LINK = 1;
+    static final int DEL_SINGLE_LINK = 2;
+
+    
+    static final String PAGES_BY_URL = "pagesByURL";
+    static final String PAGES_BY_MD5 = "pagesByMD5";
+    static final String LINKS_BY_URL = "linksByURL";
+    static final String LINKS_BY_MD5 = "linksByMD5";
+    static final String STATS_FILE = "stats";
+
+    
+    static final int NO_OUTLINKS = 0;
+    static final int HAS_OUTLINKS = 1;
+    static final int LINK_INVALID = 2;
+
+    
+    public static class PageInstruction implements WritableComparable {
+        byte opcode;
+        boolean hasLink;
+        Page page;
+        Link link;
+
+        
+        public PageInstruction() {}
+
+        
+        public PageInstruction(Page page, int opcode) {
+            set(page, opcode);
+        }
+
+        
+        public PageInstruction(Page page, Link link, int opcode) {
+            set(page, link, opcode);
+        }
+
+        
+        public void set(PageInstruction that) {
+            this.opcode = that.opcode;
+
+            if (this.page == null) {
+                this.page = new Page();
+            }
+            this.page.set(that.page);
+
+            if (this.link == null) {
+                this.link = new Link();
+            }
+            this.hasLink = that.hasLink;
+            if (this.hasLink) {
+                this.link.set(that.link);
+            }
+        }
+
+        
+        public void set(Page page, int opcode) {
+            this.opcode = (byte) opcode;
+            this.page = page;
+            this.hasLink = false;
+            this.link = null;
+        }
+
+                 
+        public void set(Page page, Link link, int opcode) {
+            this.opcode = (byte) opcode;
+            this.page = page;
+            this.hasLink = true;
+            this.link = link;
+        }
+
+        
+        
+        
+        public int compareTo(Object o) {
+            int pageResult = this.page.compareTo(((PageInstruction) o).page);
+            if (pageResult != 0) {
+                return pageResult;
+            } else {
+                return this.opcode - (((PageInstruction) o).opcode);
+            }
+        }
+        public void write(DataOutput out) throws IOException {
+            out.writeByte(opcode);
+            page.write(out);
+            out.writeByte(hasLink ? 1 : 0);
+            if (hasLink) {
+                link.write(out);
+            }
+        }
+        public void readFields(DataInput in) throws IOException {
+            opcode = in.readByte();
+            if (page == null) {
+                page = new Page();
+            }
+            page.readFields(in);
+            
+            if (link == null) {
+                link = new Link();
+            }
+            hasLink = (1 == in.readByte());
+            if (hasLink) {
+                link.readFields(in);
+            }
+        }
+        public Page getPage() {
+            return page;
+        }
+        public Link getLink() {
+            if (hasLink) {
+                return link;
+            } else {
+                return null;
+            }
+        }
+        public int getInstruction() {
+            return opcode;
+        }
+
+        
+        public static class PageComparator extends WritableComparator {
+            private static final Page.Comparator PAGE_COMPARATOR =
+            new Page.Comparator();
+
+            public PageComparator() { super(PageInstruction.class); }
+
+            
+            public int compare(byte[] b1, int s1, int l1,
+                               byte[] b2, int s2, int l2) {
+                int opcode1 = b1[s1];
+                int opcode2 = b2[s2];
+                int c = PAGE_COMPARATOR.compare(b1, s1+1, l1-1, b2, s2+1, l2-1);
+                if (c != 0)
+                    return c;
+                return opcode1 - opcode2;
+            }
+        }
+ 
+        
+        public static class UrlComparator extends WritableComparator {
+            private static final Page.UrlComparator PAGE_COMPARATOR =
+            new Page.UrlComparator();
+
+            public UrlComparator() { super(PageInstruction.class); }
+
+            
+            public int compare(WritableComparable a, WritableComparable b) {
+                PageInstruction instructionA = (PageInstruction)a;
+                PageInstruction instructionB = (PageInstruction)b;
+                Page pageA = instructionA.getPage();
+                Page pageB = instructionB.getPage();
+
+                int result = pageA.getURL().compareTo(pageB.getURL());
+                if (result != 0) {
+                    return result;
+                } else {
+                    return instructionA.opcode - instructionB.opcode;
+                }
+            }
+
+            
+            public int compare(byte[] b1, int s1, int l1,
+                               byte[] b2, int s2, int l2) {
+                int opcode1 = b1[s1];
+                int opcode2 = b2[s2];
+                int c = PAGE_COMPARATOR.compare(b1, s1+1, l1-1, b2, s2+1, l2-1);
+                if (c != 0)
+                    return c;
+                return opcode1 - opcode2;
+            }
+        }
+    }
+
+    
+    public static class PageInstructionWriter {
+        PageInstruction pi = new PageInstruction();
+
+        
+        public PageInstructionWriter() {
+        }
+
+        
+        public synchronized void appendInstructionInfo(SequenceFile.Writer writer, Page page, int opcode, Writable val) throws IOException {
+            pi.set(page, opcode);
+            writer.append(pi, val);
+        }
+
+        
+        public synchronized void appendInstructionInfo(SequenceFile.Writer writer, Page page, Link link, int opcode, Writable val) throws IOException {
+            pi.set(page, link, opcode);
+            writer.append(pi, val);
+        }
+    }
+
+    
+    private static class DeduplicatingPageSequenceReader {
+        SequenceFile.Reader edits;
+        PageInstruction current = new PageInstruction();
+        UTF8 currentUrl = new UTF8();
+        boolean haveCurrent;
+
+        
+        public DeduplicatingPageSequenceReader(SequenceFile.Reader edits) throws IOException {
+            this.edits = edits;
+            this.haveCurrent = edits.next(current, NullWritable.get());
+        }
+
+        
+        public boolean next(PageInstruction result) throws IOException {
+            if (!haveCurrent) {
+                return false;
+            }
+        
+            currentUrl.set(current.getPage().getURL());
+            result.set(current); 
+
+            do {
+                
+            } while ((haveCurrent = edits.next(current, NullWritable.get())) &&
+                     currentUrl.compareTo(current.getPage().getURL()) == 0);
+            return true;
+        }
+    }
+
+
+    
+    public static class LinkInstruction implements WritableComparable {
+        Link link;
+        int instruction;
+
+        
+        public LinkInstruction() {
+        }
+
+        
+        public LinkInstruction(Link link, int instruction) {
+            set(link, instruction);
+        }
+
+        
+        public void set(LinkInstruction that) {
+            this.instruction = that.instruction;
+          
+            if (this.link == null)
+                this.link = new Link();
+
+            this.link.set(that.link);
+        }
+
+        
+        public void set(Link link, int instruction) {
+            this.link = link;
+            this.instruction = instruction;
+        }
+
+        
+        
+        
+        public int compareTo(Object o) {
+            return this.link.compareTo(((LinkInstruction) o).link);
+        }
+        public void write(DataOutput out) throws IOException {
+            out.writeByte(instruction);
+            link.write(out);
+        }
+        public void readFields(DataInput in) throws IOException {
+            this.instruction = in.readByte();
+            if (link == null)
+                link = new Link();
+            link.readFields(in);
+        }
+        public Link getLink() {
+            return link;
+        }
+        public int getInstruction() {
+            return instruction;
+        }
+
+        
+        public static class MD5Comparator extends WritableComparator {
+            private static final Link.MD5Comparator MD5_COMPARATOR =
+            new Link.MD5Comparator();
+
+            public MD5Comparator() { super(LinkInstruction.class); }
+
+            public int compare(WritableComparable a, WritableComparable b) {
+                LinkInstruction instructionA = (LinkInstruction)a;
+                LinkInstruction instructionB = (LinkInstruction)b;
+                return instructionA.link.md5Compare(instructionB.link);
+            }
+
+            
+            public int compare(byte[] b1, int s1, int l1,
+                               byte[] b2, int s2, int l2) {
+                return MD5_COMPARATOR.compare(b1, s1+1, l1-1, b2, s2+1, l2-1);
+            }
+        }
+ 
+        
+        public static class UrlComparator extends WritableComparator {
+            private static final Link.UrlComparator URL_COMPARATOR =
+            new Link.UrlComparator();
+
+            public UrlComparator() { super(LinkInstruction.class); }
+
+            public int compare(WritableComparable a, WritableComparable b) {
+                LinkInstruction instructionA = (LinkInstruction)a;
+                LinkInstruction instructionB = (LinkInstruction)b;
+                return instructionA.link.urlCompare(instructionB.link);
+
+            }
+
+            
+            public int compare(byte[] b1, int s1, int l1,
+                               byte[] b2, int s2, int l2) {
+                return URL_COMPARATOR.compare(b1, s1+1, l1-1, b2, s2+1, l2-1);
+            }
+        }
+    }
+
+    
+    public static class LinkInstructionWriter {
+        LinkInstruction li = new LinkInstruction();
+
+        
+        public LinkInstructionWriter() {
+        }
+
+        
+        public synchronized void appendInstructionInfo(SequenceFile.Writer writer, Link link, int opcode, Writable val) throws IOException {
+            li.set(link, opcode);
+            writer.append(li, val);
+        }
+    }
+
+    
+    class DeduplicatingLinkSequenceReader {
+        Link currentKey = new Link();
+        LinkInstruction current = new LinkInstruction();
+        SequenceFile.Reader edits;
+        boolean haveCurrent;
+
+        
+        public DeduplicatingLinkSequenceReader(SequenceFile.Reader edits) throws IOException {
+            this.edits = edits;
+            this.haveCurrent = edits.next(current, NullWritable.get());
+        }
+
+
+        
+        public boolean next(LinkInstruction key) throws IOException {
+            if (! haveCurrent) {
+                return false;
+            }
+
+            currentKey.set(current.getLink());
+            
+            do {
+                key.set(current);
+            } while ((haveCurrent = edits.next(current, NullWritable.get())) &&
+                     currentKey.compareTo(current.getLink()) == 0);
+            return true;
+        }
+    }
+
+
+    
+    private abstract class CloseProcessor {
+        String basename;
+        MapFile.Reader oldDb;
+        SequenceFile.Writer editWriter;
+        SequenceFile.Sorter sorter;
+        WritableComparator comparator;
+        Class keyClass, valueClass;
+        long itemsWritten = 0;
+
+        
+        CloseProcessor(String basename, MapFile.Reader oldDb, SequenceFile.Writer editWriter, SequenceFile.Sorter sorter, WritableComparator comparator, Class keyClass, Class valueClass) {
+            this.basename = basename;
+            this.oldDb = oldDb;
+            this.editWriter = editWriter;
+            this.sorter = sorter;
+            this.comparator = comparator;
+            this.keyClass = keyClass;
+            this.valueClass = valueClass;
+        }
+
+        
+        long closeDown(File workingDir, File outputDir, long numEdits) throws IOException {
+            File editsFile = new File(workingDir, basename + ".out");
+            File newDbFile = new File(outputDir, basename);
+            File sortedEditsFile = new File(editsFile.getPath() + ".sorted");
+            editWriter.close();
+
+            
+            if (numEdits != 0) {
+                
+                long startSort = System.currentTimeMillis();
+                sorter.sort(editsFile.getPath(), sortedEditsFile.getPath());
+                long endSort = System.currentTimeMillis();
+                LOG.info("Processing " + basename + ": Sorted " + numEdits + " instructions in " + ((endSort - startSort) / 1000.0) + " seconds.");
+                LOG.info("Processing " + basename + ": Sorted " + (numEdits / ((endSort - startSort) / 1000.0)) + " instructions/second");
+            
+                
+                editsFile.delete();
+                sortedEditsFile.renameTo(editsFile);
+
+                
+                SequenceFile.Reader sortedEdits = new SequenceFile.Reader(editsFile.getPath());
+
+                
+                MapFile.Writer newDb = (comparator == null) ? new MapFile.Writer(newDbFile.getPath(), keyClass, valueClass) : new MapFile.Writer(newDbFile.getPath(), comparator, valueClass);
+
+                
+                
+                oldDb.reset();
+            
+                
+                long startMerge = System.currentTimeMillis();
+                mergeEdits(oldDb, sortedEdits, newDb);
+                long endMerge = System.currentTimeMillis();
+                LOG.info("Processing " + basename + ": Merged to new DB containing " + itemsWritten + " records in " + ((endMerge - startMerge) / 1000.0) + " seconds");
+                LOG.info("Processing " + basename + ": Merged " + (itemsWritten / ((endMerge - startMerge) / 1000.0)) + " records/second");
+
+                
+                sortedEdits.close();
+                newDb.close();
+            } else {
+                
+                
+                long startCopy = System.currentTimeMillis();
+                File curFile = new File(dbFile, basename);
+                FileUtil.recursiveCopy(curFile, newDbFile);
+                long endCopy = System.currentTimeMillis();
+
+                LOG.info("Processing " + basename + ": Copied file (" + newDbFile.length()+ " bytes) in " + ((endCopy - startCopy) / 1000.0) + " secs.");
+            }
+
+            
+            editsFile.delete();
+
+            return itemsWritten;
+        }
+
+        
+        abstract void mergeEdits(MapFile.Reader db, SequenceFile.Reader edits, MapFile.Writer newDb) throws IOException;
+    }
+
+    
+    private class PagesByURLProcessor extends CloseProcessor {
+        SequenceFile.Writer futureEdits;
+
+        
+        PagesByURLProcessor(MapFile.Reader db, SequenceFile.Writer editWriter, SequenceFile.Writer futureEdits) {
+            super(PAGES_BY_URL, db, editWriter, new SequenceFile.Sorter(new PageInstruction.UrlComparator(), NullWritable.class), new UTF8.Comparator(), null, Page.class);
+            this.futureEdits = futureEdits;
+        }
+
+        
+        void mergeEdits(MapFile.Reader db, SequenceFile.Reader sortedEdits, MapFile.Writer newDb) throws IOException {
+            
+            DeduplicatingPageSequenceReader edits = new DeduplicatingPageSequenceReader(sortedEdits);
+            WritableComparable readerKey = new UTF8();
+            Page readerVal = new Page();
+            PageInstruction editItem = new PageInstruction();
+            int futureOrdering = 0;
+
+            
+            boolean hasEntries = db.next(readerKey, readerVal);
+            boolean hasEdits = edits.next(editItem);
+
+            
+            
+            while (hasEntries && hasEdits) {
+                int comparison = readerKey.compareTo(editItem.getPage().getURL());
+                int curInstruction = editItem.getInstruction();
+
+                
+                if ((curInstruction == ADD_PAGE) ||
+                    (curInstruction == ADD_PAGE_WITH_SCORE) ||
+                    (curInstruction == ADD_PAGE_IFN_PRESENT)) {
+
+                    if (comparison < 0) {
+                        
+                        
+                        newDb.append(readerKey, readerVal);
+                        itemsWritten++;
+                        hasEntries = db.next(readerKey, readerVal);
+                    } else if (comparison == 0) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        if ((curInstruction == ADD_PAGE) ||
+                            (curInstruction == ADD_PAGE_WITH_SCORE)) {
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            pagesByMD5Edits++;
+
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            Page editItemPage = editItem.getPage();
+
+                            if (curInstruction == ADD_PAGE) {
+                                editItemPage.setScore(readerVal.getScore(), readerVal.getNextScore());
+                            }
+
+                            piwriter.appendInstructionInfo(futureEdits, editItemPage, ADD_PAGE, NullWritable.get());
+
+                            
+                            
+                            
+                            newDb.append(editItemPage.getURL(), editItemPage);
+
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            if (editItemPage.compareTo(readerVal) != 0) {
+                                pagesByMD5Edits++;
+                                piwriter.appendInstructionInfo(futureEdits, readerVal, DEL_PAGE, NullWritable.get());
+                            }
+
+                            itemsWritten++;
+
+                            
+                            hasEntries = db.next(readerKey, readerVal);
+                        } else {
+                            
+                            
+                            
+                            
+                        }
+                        
+                        hasEdits = edits.next(editItem);
+
+                    } else if (comparison > 0) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        pagesByMD5Edits++;
+
+                        
+                        
+                        
+                        
+                        if (curInstruction == ADD_PAGE_IFN_PRESENT) {
+                            Link editLink = editItem.getLink();
+                            if (editLink != null) {
+                                addLink(editLink);
+                            }
+                        }
+                        piwriter.appendInstructionInfo(futureEdits, editItem.getPage(), ADD_PAGE, NullWritable.get());
+
+                        
+                        
+                        newDb.append(editItem.getPage().getURL(), editItem.getPage());
+                        itemsWritten++;
+
+                        
+                        hasEdits = edits.next(editItem);
+                    }
+                } else if (curInstruction == DEL_PAGE) {
+                    if (comparison < 0) {
+                        
+                        
+                        newDb.append(readerKey, readerVal);
+                        itemsWritten++;
+                        hasEntries = db.next(readerKey, readerVal);
+                    } else if (comparison == 0) {
+                        
+                        
+                        
+                        
+                        pagesByMD5Edits++;
+                        piwriter.appendInstructionInfo(futureEdits, readerVal, DEL_PAGE, NullWritable.get());
+
+                        
+                        
+                        
+                        hasEntries = db.next(readerKey, readerVal);
+
+                        
+                        hasEdits = edits.next(editItem);
+                    } else if (comparison > 0) {
+                        
+                        
+                        hasEdits = edits.next(editItem);
+                    }
+                }
+            }
+
+            
+            while (! hasEntries && hasEdits) {
+                int curInstruction = editItem.getInstruction();
+                if (curInstruction == ADD_PAGE ||
+                    curInstruction == ADD_PAGE_WITH_SCORE ||
+                    curInstruction == ADD_PAGE_IFN_PRESENT) {
+                    
+                    
+
+                    
+                    pagesByMD5Edits++;
+                    
+                    
+                    
+                    
+                    
+                    if (curInstruction == ADD_PAGE_IFN_PRESENT) {
+                        Link editLink = editItem.getLink();
+                        if (editLink != null) {
+                            addLink(editLink);
+                        }
+                    }
+                    piwriter.appendInstructionInfo(futureEdits, editItem.getPage(), ADD_PAGE, NullWritable.get());
+
+                    
+                    newDb.append(editItem.getPage().getURL(), editItem.getPage());
+                    itemsWritten++;
+                } else if (curInstruction == DEL_PAGE) {
+                    
+                    
+                }
+
+                
+                hasEdits = edits.next(editItem);
+            }
+
+            
+            
+            while (hasEntries && ! hasEdits) {
+                newDb.append(readerKey, readerVal);
+                itemsWritten++;
+                hasEntries = db.next(readerKey, readerVal);
+            }
+        }
+    }
+
+    
+    private class PagesByMD5Processor extends CloseProcessor {
+        
+        PagesByMD5Processor(MapFile.Reader db, SequenceFile.Writer editWriter) {
+            super(PAGES_BY_MD5, db, editWriter, new SequenceFile.Sorter(new PageInstruction.PageComparator(), NullWritable.class), null, Page.class, NullWritable.class);
+        }
+
+        
+        void mergeEdits(MapFile.Reader db, SequenceFile.Reader sortedEdits, MapFile.Writer newDb) throws IOException {
+            
+            Page readerItem = new Page();
+            PageInstruction editItem = new PageInstruction();
+
+            
+            Page deletedItem = new Page(), lastItem = new Page();
+            boolean justDeletedItem = false;
+            boolean newReaderItem = false;
+            int itemRepeats = 0;
+
+            
+            boolean hasEntries = db.next(readerItem, NullWritable.get());
+            boolean hasEdits = sortedEdits.next(editItem, NullWritable.get());
+            if (hasEntries) {
+                
+                
+                
+                outBuf.reset();
+                readerItem.write(outBuf);
+                inBuf.reset(outBuf.getData(), outBuf.getLength());
+                lastItem.readFields(inBuf);
+                itemRepeats = 0;
+            }
+
+            
+            
+            while (hasEdits && hasEntries) {
+                int comparison = readerItem.compareTo(editItem.getPage());
+                int curInstruction = editItem.getInstruction();
+
+                
+                
+                
+                if (curInstruction == ADD_PAGE) {
+                    if (comparison < 0) {
+                        
+                        
+                        newDb.append(readerItem, NullWritable.get());
+                        itemsWritten++;
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        newReaderItem = true;
+                    } else if (comparison == 0) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        newDb.append(editItem.getPage(), NullWritable.get());
+                        itemsWritten++;
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        newReaderItem = true;
+                        hasEdits = sortedEdits.next(editItem, NullWritable.get());
+                    } else if (comparison > 0) {
+                        
+                        
+                        newDb.append(editItem.getPage(), NullWritable.get());
+                        itemsWritten++;
+                        hasEdits = sortedEdits.next(editItem, NullWritable.get());
+                    }
+                } else if (curInstruction == ADD_PAGE_IFN_PRESENT) {
+                    throw new IOException("Should never process ADD_PAGE_IFN_PRESENT for the index:  " + editItem);
+                } else if (curInstruction == DEL_PAGE) {
+                    if (comparison < 0) {
+                        
+                        
+                        newDb.append(readerItem, NullWritable.get());
+                        itemsWritten++;
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        newReaderItem = true;
+                    } else if (comparison == 0) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        newReaderItem = true;
+                        hasEdits = sortedEdits.next(editItem, NullWritable.get());
+
+                        
+                        justDeletedItem = true;
+                    } else if (comparison > 0) {
+                        
+                        
+                        throw new IOException("An unapplicable DEL_PAGE should never appear during index-merge: " + editItem);
+                    }
+                }
+
+                
+                
+                
+                
+                
+                
+                
+                if (newReaderItem) {
+                    
+                    
+                    
+                    if (hasEntries && readerItem.getMD5().compareTo(lastItem.getMD5()) == 0) {
+                        itemRepeats++;
+                    } else {
+                        
+                        
+                        
+                        
+                        
+                        
+                        if (justDeletedItem && itemRepeats == 0) {
+                            deleteLink(lastItem.getMD5());
+                        }
+
+                        
+                        outBuf.reset();
+                        readerItem.write(outBuf);
+                        inBuf.reset(outBuf.getData(), outBuf.getLength());
+                        lastItem.readFields(inBuf);
+                        itemRepeats = 0;
+                    }
+                    
+                    newReaderItem = false;
+                }
+                
+                justDeletedItem = false;
+            }
+        
+            
+            while (! hasEntries && hasEdits) {
+                int curInstruction = editItem.getInstruction();
+                if (curInstruction == ADD_PAGE) {
+                    
+                    newDb.append(editItem.getPage(), NullWritable.get());
+                    itemsWritten++;
+                } else if (curInstruction == ADD_PAGE_IFN_PRESENT) {
+                    throw new IOException("Should never process ADD_PAGE_IFN_PRESENT for the index:  " + editItem);
+                } else if (curInstruction == DEL_PAGE) {
+                    
+                    
+                    throw new IOException("An unapplicable DEL_PAGE should never appear during index-merge: " + editItem);
+                }
+                hasEdits = sortedEdits.next(editItem, NullWritable.get());
+            }
+
+            
+            
+            while (hasEntries && ! hasEdits) {
+                
+                newDb.append(readerItem, NullWritable.get());
+                itemsWritten++;
+                hasEntries = db.next(readerItem, NullWritable.get());
+                newReaderItem = true;
+            }
+        }
+    }
+
+    
+    private class LinksByMD5Processor extends CloseProcessor {
+        SequenceFile.Writer futureEdits;
+
+        
+        public LinksByMD5Processor(MapFile.Reader db, SequenceFile.Writer editWriter, SequenceFile.Writer futureEdits) {
+            super(LINKS_BY_MD5, db, editWriter, new SequenceFile.Sorter(new LinkInstruction.MD5Comparator(), NullWritable.class), new Link.MD5Comparator(), Link.class, NullWritable.class);
+            this.futureEdits = futureEdits;
+        }
+
+        
+        void mergeEdits(MapFile.Reader db, SequenceFile.Reader sortedEdits, MapFile.Writer newDb) throws IOException {
+            WritableComparator comparator = new Link.MD5Comparator();
+            DeduplicatingLinkSequenceReader edits = new DeduplicatingLinkSequenceReader(sortedEdits);
+
+            
+            LinkInstruction editItem = new LinkInstruction();
+            Link readerItem = new Link();
+
+            
+            boolean hasEntries = db.next(readerItem, NullWritable.get());
+            boolean hasEdits = edits.next(editItem);
+
+            
+            
+            while (hasEntries && hasEdits) {
+                int curInstruction = editItem.getInstruction();
+
+                
+                if (curInstruction == ADD_LINK) {
+                    
+                    
+                    
+                    
+                    int comparison = comparator.compare(readerItem, editItem.getLink());
+
+                    if (comparison < 0) {
+                        
+                        
+                        newDb.append(readerItem, NullWritable.get());
+                        itemsWritten++;
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                    } else if (comparison == 0) {
+                        
+                        if (futureEdits != null) {
+                            linksByURLEdits++;
+                            liwriter.appendInstructionInfo(futureEdits, editItem.getLink(), ADD_LINK, NullWritable.get());
+                        }
+
+                        
+                        
+                        
+                        newDb.append(editItem.getLink(), NullWritable.get());
+                        itemsWritten++;
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        hasEdits = edits.next(editItem);
+                    } else if (comparison > 0) {
+                        
+                        if (futureEdits != null) {
+                            linksByURLEdits++;
+                            liwriter.appendInstructionInfo(futureEdits, editItem.getLink(), ADD_LINK, NullWritable.get());
+                        }
+
+                        
+                        
+                        newDb.append(editItem.getLink(), NullWritable.get());
+                        itemsWritten++;
+                        hasEdits = edits.next(editItem);
+                    }
+                } else if ((curInstruction == DEL_LINK) ||
+                           (curInstruction == DEL_SINGLE_LINK)) {
+                    
+                    
+                    
+                    
+                    
+                    int comparison = 0;
+                    if (curInstruction == DEL_LINK) {
+                        comparison = readerItem.getFromID().compareTo(editItem.getLink().getFromID());
+                    } else {
+                        comparison = readerItem.md5Compare(editItem.getLink());
+                    }
+
+                    if (comparison < 0) {
+                        
+                        
+                        newDb.append(readerItem, NullWritable.get());
+                        itemsWritten++;
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                    } else if (comparison == 0) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        if (futureEdits != null) {
+                            linksByURLEdits++;
+                            liwriter.appendInstructionInfo(futureEdits, readerItem, DEL_LINK, NullWritable.get());
+                        }
+
+                        
+                        
+                        
+                        
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        if (curInstruction == DEL_SINGLE_LINK) {
+                            hasEdits = edits.next(editItem);
+                        }
+                    } else if (comparison > 0) {
+                        
+                        hasEdits = edits.next(editItem);
+                    }
+                }
+            }
+
+            
+            while (! hasEntries && hasEdits) {
+                int curInstruction = editItem.getInstruction();
+
+                if (curInstruction == ADD_LINK) {
+                    
+                    if (futureEdits != null) {
+                        linksByURLEdits++;
+                        liwriter.appendInstructionInfo(futureEdits, editItem.getLink(), ADD_LINK, NullWritable.get());
+                    }
+
+                    
+                    newDb.append(editItem.getLink(), NullWritable.get());
+                    itemsWritten++;
+                } else if (curInstruction == DEL_LINK) {
+                    
+                }
+                
+                hasEdits = edits.next(editItem);
+            }
+
+            
+            
+            while (hasEntries && ! hasEdits) {
+                newDb.append(readerItem, NullWritable.get());
+                itemsWritten++;
+                hasEntries = db.next(readerItem, NullWritable.get());
+            }
+        }
+    }
+
+    
+    private class TargetTester {
+        MapFile.Reader pagedb;
+        boolean hasPage = false;
+        UTF8 pageURL = null;
+        Page page = null;
+
+        
+        public TargetTester(MapFile.Reader pagedb) throws IOException {
+            this.pagedb = pagedb;
+            this.pageURL = new UTF8();
+            this.page = new Page();
+            this.hasPage = pagedb.next(pageURL, page);
+        }
+
+        
+        public int hasOutlinks(UTF8 curURL) throws IOException {
+            int returnCode = NO_OUTLINKS;
+            int comparison = pageURL.compareTo(curURL);
+
+            while (hasPage && comparison < 0) {
+                hasPage = pagedb.next(pageURL, page);
+                if (hasPage) {
+                    comparison = pageURL.compareTo(curURL);
+                }
+            }
+
+            if (hasPage) {
+                if (comparison == 0) {
+                    returnCode = (page.getNumOutlinks() > 0) ? HAS_OUTLINKS : NO_OUTLINKS;
+                } else if (comparison > 0) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    returnCode = LINK_INVALID;
+                }
+            }
+            return returnCode;
+        }
+
+        
+        public void close() throws IOException {
+            pagedb.close();
+        }
+    }
+
+    
+    private class LinksByURLProcessor extends CloseProcessor {
+        MapFile.Reader pageDb;
+        SequenceFile.Writer futureEdits;
+
+        
+        public LinksByURLProcessor(MapFile.Reader db, SequenceFile.Writer editWriter, MapFile.Reader pageDb, SequenceFile.Writer futureEdits) {
+            super(LINKS_BY_URL, db, editWriter, new SequenceFile.Sorter(new LinkInstruction.UrlComparator(), NullWritable.class), new Link.UrlComparator(), Link.class, NullWritable.class);
+            this.pageDb = pageDb;
+            this.futureEdits = futureEdits;
+        }
+
+        
+        public long closeDown(File workingDir, File outputDir, long numEdits) throws IOException {
+            long result = super.closeDown(workingDir, outputDir, numEdits);
+            pageDb.close();
+            return result;
+        }
+
+        
+        void mergeEdits(MapFile.Reader db, SequenceFile.Reader sortedEdits, MapFile.Writer newDb) throws IOException {
+            WritableComparator comparator = new Link.UrlComparator();
+
+            
+            LinkInstruction editItem = new LinkInstruction();
+            Link readerItem = new Link();
+        
+            
+            boolean hasEntries = db.next(readerItem, NullWritable.get());
+            boolean hasEdits = sortedEdits.next(editItem, NullWritable.get());
+            TargetTester targetTester = new TargetTester(pageDb);
+
+            
+            
+            while (hasEntries && hasEdits) {
+                int curInstruction = editItem.getInstruction();
+
+                if (curInstruction == ADD_LINK) {
+                    
+                    
+                    
+                    
+                    int comparison = comparator.compare(readerItem, editItem.getLink());
+
+                    if (comparison < 0) {
+                        
+                        
+                        int linkTest = targetTester.hasOutlinks(readerItem.getURL());
+
+                        if (linkTest == LINK_INVALID) {
+                            liwriter.appendInstructionInfo(futureEdits, readerItem, DEL_SINGLE_LINK, NullWritable.get());
+                            targetOutlinkEdits++;
+                        } else {
+                            boolean oldOutlinkStatus = readerItem.targetHasOutlink();
+                            boolean newOutlinkStatus = (linkTest == HAS_OUTLINKS);
+                            
+                            
+                            if (oldOutlinkStatus != newOutlinkStatus) {
+                                readerItem.setTargetHasOutlink(newOutlinkStatus);
+                                liwriter.appendInstructionInfo(futureEdits, readerItem, ADD_LINK, NullWritable.get());
+                                targetOutlinkEdits++;
+                            }
+                            newDb.append(readerItem, NullWritable.get());
+                            itemsWritten++;
+                        }
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                    } else if (comparison == 0) {
+                        
+                        
+                        
+                        Link editLink = editItem.getLink();
+                        int linkTest = targetTester.hasOutlinks(editLink.getURL());
+
+                        
+                        
+                        if (linkTest == LINK_INVALID) {
+                            liwriter.appendInstructionInfo(futureEdits, editLink, DEL_SINGLE_LINK, NullWritable.get());
+                        } else {
+                            editLink.setTargetHasOutlink(linkTest == HAS_OUTLINKS);
+                            liwriter.appendInstructionInfo(futureEdits, editLink, ADD_LINK, NullWritable.get());
+
+                            newDb.append(editLink, NullWritable.get());
+                            itemsWritten++;
+                        }
+                        targetOutlinkEdits++;
+
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        hasEdits = sortedEdits.next(editItem, NullWritable.get());
+                    } else if (comparison > 0) {
+                        
+                        
+                        Link editLink = editItem.getLink();
+                        int linkTest = targetTester.hasOutlinks(editLink.getURL());
+
+                        
+                        if (linkTest == LINK_INVALID) {
+                            liwriter.appendInstructionInfo(futureEdits, editLink, DEL_SINGLE_LINK, NullWritable.get());
+                        } else {
+                            editLink.setTargetHasOutlink(linkTest == HAS_OUTLINKS);
+                            liwriter.appendInstructionInfo(futureEdits, editLink, ADD_LINK, NullWritable.get());
+                            newDb.append(editLink, NullWritable.get());
+                            itemsWritten++;
+                        }
+                        targetOutlinkEdits++;
+
+                        hasEdits = sortedEdits.next(editItem, NullWritable.get());
+                    }
+                } else if (curInstruction == DEL_LINK) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    int comparison = comparator.compare(readerItem, editItem.getLink());
+
+                    if (comparison < 0) {
+                        
+                        
+                        int linkTest = targetTester.hasOutlinks(readerItem.getURL());
+
+                        
+                        if (linkTest == LINK_INVALID) {
+                            liwriter.appendInstructionInfo(futureEdits, readerItem, DEL_SINGLE_LINK, NullWritable.get());
+                        } else {
+                            readerItem.setTargetHasOutlink(linkTest == HAS_OUTLINKS);
+                            liwriter.appendInstructionInfo(futureEdits, readerItem, ADD_LINK, NullWritable.get());
+                            newDb.append(readerItem, NullWritable.get());
+                            itemsWritten++;
+                        }
+                        targetOutlinkEdits++;
+
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                    } else if (comparison == 0) {
+                        
+                        
+                        
+                        hasEntries = db.next(readerItem, NullWritable.get());
+                        hasEdits = sortedEdits.next(editItem, NullWritable.get());
+                    } else if (comparison > 0) {
+                        
+                        hasEdits = sortedEdits.next(editItem, NullWritable.get());
+                    }
+                }
+            }
+
+            
+            while (! hasEntries && hasEdits) {
+                int curInstruction = editItem.getInstruction();
+
+                if (curInstruction == ADD_LINK) {
+                    
+                    
+                    
+
+                    
+                    
+                    
+                    Link editLink = editItem.getLink();
+                    int linkTest = targetTester.hasOutlinks(editLink.getURL());
+                    if (linkTest == LINK_INVALID) {
+                        liwriter.appendInstructionInfo(futureEdits, editLink, DEL_SINGLE_LINK, NullWritable.get());
+                    } else {
+                        editLink.setTargetHasOutlink(linkTest == HAS_OUTLINKS);
+                        liwriter.appendInstructionInfo(futureEdits, editLink, ADD_LINK, NullWritable.get());
+                        newDb.append(editLink, NullWritable.get());
+                        itemsWritten++;
+                    }
+                    targetOutlinkEdits++;
+                } else if (curInstruction == DEL_LINK) {
+                    
+                }
+                
+                hasEdits = sortedEdits.next(editItem, NullWritable.get());
+            }
+
+            
+            
+            while (hasEntries && ! hasEdits) {
+                
+                
+                
+
+                
+                
+                
+                int linkTest = targetTester.hasOutlinks(readerItem.getURL());
+                if (linkTest == LINK_INVALID) {
+                    liwriter.appendInstructionInfo(futureEdits, readerItem, DEL_SINGLE_LINK, NullWritable.get());
+                    targetOutlinkEdits++;
+                } else {
+                    boolean oldOutlinkStatus = readerItem.targetHasOutlink();
+                    boolean newOutlinkStatus = (linkTest == HAS_OUTLINKS);
+                    if (oldOutlinkStatus != newOutlinkStatus) {
+                        readerItem.setTargetHasOutlink(newOutlinkStatus);
+                        liwriter.appendInstructionInfo(futureEdits, readerItem, ADD_LINK, NullWritable.get());
+                        targetOutlinkEdits++;
+                    }
+
+                    
+                    newDb.append(readerItem, NullWritable.get());
+                    itemsWritten++;
+                }
+
+                
+                hasEntries = db.next(readerItem, NullWritable.get());
+            }
+
+            targetTester.close();
+        }
+    }
+
+    
+    public static void createWebDB(File dir) throws IOException {
+        WebDBWriter starter = new WebDBWriter(dir, true);
+        starter.close();
+    }
+    
+    boolean haveEdits = false;
+    File dbFile, oldDbFile, newDbFile, tmp;
+    MapFile.Reader pagesByURL, pagesByMD5, linksByURL, linksByMD5;
+    SequenceFile.Writer pagesByURLWriter, pagesByMD5Writer, linksByURLWriter, linksByMD5Writer;
+    long pagesByURLEdits = 0, pagesByMD5Edits = 0, linksByURLEdits = 0, linksByMD5Edits = 0, targetOutlinkEdits = 0;
+    PageInstructionWriter piwriter = new PageInstructionWriter();
+    LinkInstructionWriter liwriter = new LinkInstructionWriter();
+    DataInputBuffer inBuf = new DataInputBuffer();
+    DataOutputBuffer outBuf = new DataOutputBuffer();
+    FileOutputStream dbReadLockData, dbWriteLockData;
+    FileLock dbWriteLock;
+
+    
+    public WebDBWriter(File dir) throws IOException {
+        this(dir, false);
+    }
+
+    
+    private WebDBWriter(File dir, boolean create) throws IOException {
+        this.dbFile = new File(dir, "webdb");
+        this.oldDbFile = new File(dir, "webdb.old");
+        this.newDbFile = new File(dir, "webdb.new");
+        this.tmp = new File(newDbFile, "tmp");
+
+        if ((! dir.exists()) && create) {
+            dir.mkdirs();
+        }
+
+        
+        File writeLockFile = new File(dir, "dbwritelock");
+        writeLockFile.createNewFile();
+        this.dbWriteLockData = new FileOutputStream(writeLockFile);
+        this.dbWriteLock = dbWriteLockData.getChannel().lock(0L, Long.MAX_VALUE, false);
+
+        
+        File readLockFile = new File(dir, "dbreadlock");
+        readLockFile.createNewFile();
+        this.dbReadLockData = new FileOutputStream(readLockFile);
+
+        
+        if (oldDbFile.exists()) {
+            if (dbFile.exists()) {
+                throw new IOException("Impossible condition: directories " + oldDbFile + " and " + dbFile + " cannot exist simultaneously");
+            }
+            if (newDbFile.exists()) {
+                newDbFile.renameTo(dbFile);
+            }
+            FileUtil.fullyDelete(oldDbFile);
+        } else if (newDbFile.exists()) {
+            FileUtil.fullyDelete(newDbFile);
+        }
+
+        
+        if ((! dbFile.exists()) && create) {
+            dbFile.mkdirs();
+        }
+
+        
+        if (tmp.exists()) {
+            FileUtil.fullyDelete(tmp);
+        }
+        tmp.mkdirs();
+
+        
+        if (create) {
+            new MapFile.Writer(new File(dbFile, PAGES_BY_URL).getPath(), new UTF8.Comparator(), Page.class).close();
+            new MapFile.Writer(new File(dbFile, PAGES_BY_MD5).getPath(), new Page.Comparator(), NullWritable.class).close();
+            new MapFile.Writer(new File(dbFile, LINKS_BY_URL).getPath(), new Link.UrlComparator(), NullWritable.class).close();
+            new MapFile.Writer(new File(dbFile, LINKS_BY_MD5).getPath(), new Link.MD5Comparator(), NullWritable.class).close();
+        }
+
+        
+        this.pagesByURL = new MapFile.Reader(new File(dbFile, PAGES_BY_URL).getPath(), new UTF8.Comparator());
+        this.pagesByMD5 = new MapFile.Reader(new File(dbFile, PAGES_BY_MD5).getPath(), new Page.Comparator());
+        this.linksByURL = new MapFile.Reader(new File(dbFile, LINKS_BY_URL).getPath(), new Link.UrlComparator());
+        this.linksByMD5 = new MapFile.Reader(new File(dbFile, LINKS_BY_MD5).getPath(), new Link.MD5Comparator());
+
+        
+        
+        pagesByURLWriter = new SequenceFile.Writer(new File(tmp, PAGES_BY_URL + ".out").getPath(), PageInstruction.class, NullWritable.class);
+        pagesByMD5Writer = new SequenceFile.Writer(new File(tmp, PAGES_BY_MD5 + ".out").getPath(), PageInstruction.class, NullWritable.class);
+        linksByURLWriter = new SequenceFile.Writer(new File(tmp, LINKS_BY_URL + ".out").getPath(), LinkInstruction.class, NullWritable.class);
+        linksByMD5Writer = new SequenceFile.Writer(new File(tmp, LINKS_BY_MD5 + ".out").getPath(), LinkInstruction.class, NullWritable.class);
+    }
+
+    
+    public synchronized void close() throws IOException {
+        if (haveEdits) {
+            newDbFile.mkdirs();
+
+            
+            
+            
+            
+            
+
+            
+            
+            
+            CloseProcessor pagesByURLProcessor = new PagesByURLProcessor(pagesByURL, pagesByURLWriter, pagesByMD5Writer);
+            long numPBUItems = pagesByURLProcessor.closeDown(tmp, newDbFile, pagesByURLEdits);
+
+            
+            
+            
+            
+            CloseProcessor pagesByMD5Processor = new PagesByMD5Processor(pagesByMD5, pagesByMD5Writer);
+            long numPBMItems = pagesByMD5Processor.closeDown(tmp, newDbFile, pagesByMD5Edits);
+
+            
+            
+            
+            
+            
+            
+            CloseProcessor linksByMD5Processor = new LinksByMD5Processor(linksByMD5, linksByMD5Writer, linksByURLWriter);
+            long numLBMItems = linksByMD5Processor.closeDown(tmp, newDbFile, linksByMD5Edits);
+
+            
+            
+            
+            
+            
+            
+            SequenceFile.Writer targetOutlinkEditsWriter = new SequenceFile.Writer(new File(tmp, LINKS_BY_MD5 + ".out").getPath(), LinkInstruction.class, NullWritable.class);
+            CloseProcessor linksByURLProcessor = new LinksByURLProcessor(linksByURL, linksByURLWriter, new MapFile.Reader(new File(newDbFile, PAGES_BY_URL).getPath(), new UTF8.Comparator()), targetOutlinkEditsWriter);
+            long numLBUItems = linksByURLProcessor.closeDown(tmp, newDbFile, linksByURLEdits);
+
+            
+            
+            
+            
+            
+            if (numLBUItems == 0) {
+                targetOutlinkEditsWriter.close();
+
+                
+                
+                
+                
+                File stats = new File(dbFile, STATS_FILE);
+                if (stats.exists()) {
+                    DataInputStream in = new DataInputStream(new FileInputStream(stats));
+                    try {
+                        in.read();                   
+                        in.readLong();               
+                        numLBMItems = in.readLong(); 
+                    } finally {
+                        in.close();
+                    }
+                }
+            } else {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                File stageTwoDbFile = new File(newDbFile, "stage2.subdir");
+                stageTwoDbFile.mkdir();
+
+                MapFile.Reader linksByMD5ForStageTwo = new MapFile.Reader(new File(newDbFile, LINKS_BY_MD5).getPath(), new Link.MD5Comparator());
+                CloseProcessor linksByMD5StageTwoProcessor = new LinksByMD5Processor(linksByMD5ForStageTwo, targetOutlinkEditsWriter, null);
+                numLBMItems = linksByMD5StageTwoProcessor.closeDown(tmp, stageTwoDbFile, targetOutlinkEdits);
+
+                
+                
+                
+                
+                linksByMD5ForStageTwo.close();
+                File stageOneLinksByMD5 = new File(newDbFile, LINKS_BY_MD5);
+                FileUtil.fullyDelete(stageOneLinksByMD5);
+                new File(stageTwoDbFile, LINKS_BY_MD5).renameTo(stageOneLinksByMD5);
+                FileUtil.fullyDelete(stageTwoDbFile);
+            }
+
+            
+            
+            
+            File stats = new File(newDbFile, STATS_FILE);
+            DataOutputStream out = new DataOutputStream(new FileOutputStream(stats));
+            try {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                out.write(CUR_VERSION);
+                out.writeLong(numPBUItems);
+                out.writeLong(numLBMItems);
+            } finally {
+                out.close();
+            }
+        } else {
+            pagesByURLWriter.close();
+            pagesByMD5Writer.close();
+            linksByMD5Writer.close();
+            linksByURLWriter.close();
+        }
+
+        
+        pagesByURL.close();
+        pagesByMD5.close();
+        linksByMD5.close();
+        linksByURL.close();
+
+        
+        FileUtil.fullyDelete(tmp);
+
+        
+        
+        
+        
+        FileLock dbReadLock = dbReadLockData.getChannel().lock(0L, Long.MAX_VALUE, false);
+
+        
+        
+        if (haveEdits) {
+            dbFile.renameTo(oldDbFile);
+            newDbFile.renameTo(dbFile);
+            FileUtil.fullyDelete(oldDbFile);
+        } else {
+            
+            
+            
+            FileUtil.fullyDelete(newDbFile);
+        }
+        
+        
+        dbReadLock.release();
+        dbReadLockData.close();
+
+        
+        dbWriteLock.release();
+        dbWriteLockData.close();
+    }
+
+    
+    
+    
+
+    
+    public synchronized void addPage(Page page) throws IOException {
+        
+        haveEdits = true;
+        pagesByURLEdits++;
+        piwriter.appendInstructionInfo(pagesByURLWriter, page, ADD_PAGE, NullWritable.get());
+    }
+
+    
+    public synchronized void addPageWithScore(Page page) throws IOException {
+        
+        haveEdits = true;
+        pagesByURLEdits++;
+        piwriter.appendInstructionInfo(pagesByURLWriter, page, ADD_PAGE_WITH_SCORE, NullWritable.get());
+    }
+
+    
+    public synchronized void addPageIfNotPresent(Page page) throws IOException {
+        
+        haveEdits = true;
+        pagesByURLEdits++;
+        piwriter.appendInstructionInfo(pagesByURLWriter, page, ADD_PAGE_IFN_PRESENT, NullWritable.get());        
+    }
+
+    
+    public synchronized void addPageIfNotPresent(Page page, Link link) throws IOException {
+        
+        haveEdits = true;
+        pagesByURLEdits++;
+        piwriter.appendInstructionInfo(pagesByURLWriter, page, link, ADD_PAGE_IFN_PRESENT, NullWritable.get());        
+    }
+
+    
+    public synchronized void deletePage(String url) throws IOException {
+        
+        haveEdits = true;
+        Page p = new Page();
+        p.setURL(url);
+        pagesByURLEdits++;        
+        piwriter.appendInstructionInfo(pagesByURLWriter, p, DEL_PAGE, NullWritable.get());
+    }
+
+    
+    public synchronized void addLink(Link lr) throws IOException {
+        haveEdits = true;
+        linksByMD5Edits++;
+        liwriter.appendInstructionInfo(linksByMD5Writer, lr, ADD_LINK, NullWritable.get());
+    }
+
+    
+    public synchronized void deleteLink(MD5Hash md5) throws IOException {
+        haveEdits = true;
+        linksByMD5Edits++;
+        liwriter.appendInstructionInfo(linksByMD5Writer, new Link(md5, 0, "", ""), DEL_LINK, NullWritable.get());
+    }
+
+    
+    public static void main(String argv[]) throws FileNotFoundException, IOException {
+        if (argv.length < 2) {
+            System.out.println("Usage: java net.nutch.db.WebDBWriter <db> [-create] | [-addpage id url] | [-addpageifnp id url] | [-deletepage url] | [-addlink fromID url] | [-deletelink fromID]");
+            return;
+        }
+
+        if ("-create".equals(argv[1])) {
+            WebDBWriter.createWebDB(new File(argv[0]));
+            System.out.println("Created webdb at " + argv[0]);
+        } else if ("-addpage".equals(argv[1])) {
+            MD5Hash md5 = new MD5Hash(argv[2]);
+            String url = argv[3];
+
+            WebDBWriter writer = new WebDBWriter(new File(argv[0]));
+            try {
+                Page page = new Page(url, md5);
+                writer.addPageWithScore(page);
+                System.out.println("Added page (with score): " + page);
+            } finally {
+                writer.close();
+            } 
+        } else if ("-addpageifnp".equals(argv[1])) {
+            MD5Hash md5 = new MD5Hash(argv[2]);
+            String url = argv[3];
+
+            WebDBWriter writer = new WebDBWriter(new File(argv[0]));
+            try {
+                Page page = new Page(url, md5);
+                writer.addPageIfNotPresent(page);
+                System.out.println("Added page: " + page);
+            } finally {
+                writer.close();
+            } 
+        } else if ("-deletepage".equals(argv[1])) {
+            String url = argv[2];
+
+            WebDBWriter writer = new WebDBWriter(new File(argv[0]));
+            try {
+                writer.deletePage(url.trim());
+                System.out.println("Deleted item(s)");
+            } finally {
+                writer.close();
+            }
+        } else if ("-addlink".equals(argv[1])) {
+            MD5Hash fromID = new MD5Hash(argv[2]);
+            String url = argv[3];
+
+            WebDBWriter writer = new WebDBWriter(new File(argv[0]));
+            try {
+                Link link = new Link(fromID, MD5Hash.digest("randomstring.com").halfDigest(), url, "SomeRandomAnchorText_" + System.currentTimeMillis());
+                writer.addLink(link);
+                System.out.println("Added link: " + link);
+            } finally {
+                writer.close();
+            }
+        } else if ("-deletelink".equals(argv[1])) {
+            MD5Hash fromID = new MD5Hash(argv[2]);
+
+            WebDBWriter writer = new WebDBWriter(new File(argv[0]));
+            try {
+                writer.deleteLink(fromID);
+                System.out.println("Deleted item(s)");
+            } finally {
+                writer.close();
+            }
+        } else {
+            System.out.println("Sorry, no command with name " + argv[1]);
+        }
+    }
+}
+
+
+

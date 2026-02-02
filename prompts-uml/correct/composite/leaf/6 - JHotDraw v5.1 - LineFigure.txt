@@ -1,0 +1,23 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.figures.LineFigure {
+- {static} long serialVersionUID
+- int lineFigureSerializedDataVersion
++ <<Create>> LineFigure()
++ Point startPoint()
++ Point endPoint()
++ void startPoint(int,int)
++ void endPoint(int,int)
++ void setPoints(Point,Point)
++ void basicDisplayBox(Point,Point)
+}
+
+
+
+
+CH.ifa.draw.figures.PolyLineFigure <|-- CH.ifa.draw.figures.LineFigure
+@enduml

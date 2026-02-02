@@ -1,0 +1,37 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.framework;
+
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+
+
+
+public interface Tool {
+
+	
+	public void activate();
+
+	
+	public void deactivate();
+
+	
+	public void mouseDown(MouseEvent e, int x, int y);
+
+	
+	public void mouseDrag(MouseEvent e, int x, int y);
+
+	
+	public void mouseUp(MouseEvent e, int x, int y);
+
+	
+	public void mouseMove(MouseEvent evt, int x, int y);
+
+	
+	public void keyDown(KeyEvent evt, int key);
+}

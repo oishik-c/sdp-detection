@@ -1,0 +1,39 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.html;
+
+import com.taursys.html.render.HTMLSelectFieldRenderer;
+import com.taursys.model.ObjectArrayValueHolder;
+
+
+public class HTMLSelect extends com.taursys.xml.SelectField {
+
+  
+  public HTMLSelect() {
+    setRenderer(new HTMLSelectFieldRenderer(this));
+  }
+
+  
+  public HTMLSelect(int javaDataType) {
+    super(javaDataType);
+    setRenderer(new HTMLSelectFieldRenderer(this));
+  }
+
+  
+  public HTMLSelect(Object[] array) {
+    setRenderer(new HTMLSelectFieldRenderer(this));
+    setList(new ObjectArrayValueHolder(array));
+  }
+
+  
+  public HTMLSelect(int javaDataType, Object[] array) {
+    super(javaDataType);
+    setRenderer(new HTMLSelectFieldRenderer(this));
+    setList(new ObjectArrayValueHolder(array));
+  }
+
+}

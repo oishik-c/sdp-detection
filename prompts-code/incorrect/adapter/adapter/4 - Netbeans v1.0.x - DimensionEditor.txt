@@ -1,0 +1,71 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.beaninfo.editors;
+
+import java.awt.Dimension;
+import java.util.ResourceBundle;
+
+import org.openide.TopManager;
+import org.openide.NotifyDescriptor;
+import org.openide.util.NbBundle;
+
+
+public class DimensionEditor extends ArrayOfIntSupport {
+
+    
+    static ResourceBundle bundle = NbBundle.getBundle (
+                                       DimensionEditor.class);
+
+    public DimensionEditor() {
+        super("java.awt.Dimension", 2); 
+    }
+
+    
+    int[] getValues() {
+        Dimension d = (Dimension) getValue();
+        return new int[] { d.width, d.height };
+    }
+
+    
+    void setValues(int[] val) {
+        if ((val[0] < 0) || (val[1] < 0)) {
+            
+            
+            
+            javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                                                       public void run() {
+                                                           TopManager.getDefault().notify(new NotifyDescriptor.Message(bundle.getString("CTL_NegativeSize"), NotifyDescriptor.ERROR_MESSAGE));
+                                                       }
+                                                   });
+        }
+        else
+            setValue(new Dimension(val[0], val[1]));
+    }
+
+    public boolean supportsCustomEditor () {
+        return true;
+    }
+
+    public java.awt.Component getCustomEditor () {
+        return new DimensionCustomEditor (this);
+    }
+
+
+    
+    String getHintFormat() {
+        return bundle.getString ("CTL_HintFormat");
+    }
+
+    
+    protected String getXMLValueTag () {
+        return "Dimension"; 
+    }
+
+}
+
+

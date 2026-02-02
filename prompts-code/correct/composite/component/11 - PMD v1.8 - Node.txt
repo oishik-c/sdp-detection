@@ -1,0 +1,36 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package net.sourceforge.pmd.ast;
+
+
+
+public interface Node {
+
+    
+    public void jjtOpen();
+
+    
+    public void jjtClose();
+
+    
+    public void jjtSetParent(Node n);
+
+    public Node jjtGetParent();
+
+    
+    public void jjtAddChild(Node n, int i);
+
+    
+    public Node jjtGetChild(int i);
+
+    
+    public int jjtGetNumChildren();
+
+    
+    public Object jjtAccept(JavaParserVisitor visitor, Object data);
+}

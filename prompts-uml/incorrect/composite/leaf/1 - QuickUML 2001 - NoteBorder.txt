@@ -1,0 +1,28 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.ui.border.NoteBorder {
+- int[] xPoints
+- int[] yPoints
+# int thickness
+# int foldThickness
+# Color lineColor
+# boolean fillFold
++ <<Create>> NoteBorder()
++ <<Create>> NoteBorder(int,int,Color,boolean)
++ Insets getBorderInsets(Component)
++ Insets getBorderInsets(Component,Insets)
++ Color getLineColor()
++ int getThickness()
++ int getFoldThickness()
++ void paintBorder(Component,Graphics,int,int,int,int)
+}
+
+
+
+
+javax.swing.border.AbstractBorder <|-- uml.ui.border.NoteBorder
+@enduml

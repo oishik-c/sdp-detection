@@ -1,0 +1,35 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.samples.money.MoneyBag {
+- Vector fMonies
+- <<Create>> MoneyBag()
+~ <<Create>> MoneyBag(Money[])
+~ <<Create>> MoneyBag(Money,Money)
+~ <<Create>> MoneyBag(Money,MoneyBag)
+~ <<Create>> MoneyBag(MoneyBag,MoneyBag)
++ IMoney add(IMoney)
++ IMoney addMoney(Money)
++ IMoney addMoneyBag(MoneyBag)
+- void appendBag(MoneyBag)
+- void appendMoney(Money)
+- boolean contains(Money)
++ boolean equals(Object)
+- Money findMoney(String)
++ int hashCode()
++ boolean isZero()
++ IMoney multiply(int)
++ IMoney negate()
+- IMoney simplify()
++ IMoney subtract(IMoney)
++ String toString()
+}
+
+
+
+
+junit.samples.money.IMoney <|.. junit.samples.money.MoneyBag
+@enduml

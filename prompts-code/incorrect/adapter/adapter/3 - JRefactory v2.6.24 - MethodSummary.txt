@@ -1,0 +1,330 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.summary;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+
+import org.acm.seguin.pretty.ModifierHolder;
+
+
+public class MethodSummary extends Summary {
+	
+	private TypeDeclSummary returnType;
+	private String name;
+	private LinkedList parameterList = null;
+	private LinkedList exceptionList = null;
+	private LinkedList dependencyList = null;
+	private ModifierHolder modifiers;
+	private int statementCount = 0;
+	private int blockDepth = 0;
+	private int maxBlockDepth = 0;
+	private int declarationLine = 0;
+
+
+	
+	public MethodSummary(Summary parent) {
+		
+		super(parent);
+
+		returnType = null;
+	}
+
+
+	
+	public void setName(String newName) {
+		name = newName.intern();
+	}
+
+
+	
+	public void setReturnType(TypeDeclSummary type) {
+		returnType = type;
+	}
+
+
+	
+	public void setDeclarationLine(int value) {
+		declarationLine = value;
+	}
+
+
+	
+	public String getName() {
+		return name;
+	}
+
+
+	
+	public TypeDeclSummary getReturnType() {
+		return returnType;
+	}
+
+
+	
+	public Iterator getExceptions() {
+		if (exceptionList == null) {
+			return null;
+		}
+
+		return exceptionList.iterator();
+	}
+
+
+	
+	public Iterator getParameters() {
+		if (parameterList == null) {
+			return null;
+		}
+
+		return parameterList.iterator();
+	}
+
+
+	
+	public int getParameterCount() {
+		if (parameterList == null) {
+			return 0;
+		}
+
+		return parameterList.size();
+	}
+
+
+	
+	public Iterator getDependencies() {
+		if (dependencyList == null) {
+			return null;
+		}
+
+		return dependencyList.iterator();
+	}
+
+
+	
+	public ModifierHolder getModifiers() {
+		return modifiers;
+	}
+
+
+	
+	public int getStatementCount() {
+		return statementCount;
+	}
+
+
+	
+	public boolean isNearMiss(MethodSummary other) {
+		return checkSignature(other) && !(checkReturn(other) &&
+				checkProtection(other));
+	}
+
+
+	
+	public boolean isInitializer() {
+		return name.equals("***Initializer***");
+	}
+
+
+	
+	public int getMaxBlockDepth() {
+		return maxBlockDepth;
+	}
+
+
+	
+	public int getDeclarationLine() {
+		return declarationLine;
+	}
+
+
+	
+	public boolean isConstructor() {
+		return (returnType == null) && !isInitializer();
+	}
+
+
+	
+	public String toString() {
+		
+		StringBuffer buffer = new StringBuffer(getName());
+		buffer.append("(");
+
+		
+		Iterator iter = getParameters();
+		if (iter != null) {
+			while (iter.hasNext()) {
+				Object next = iter.next();
+				buffer.append(next.toString());
+				if (iter.hasNext()) {
+					buffer.append(", ");
+				}
+			}
+		}
+
+		
+		if (returnType == null) {
+			buffer.append(")");
+		}
+		else {
+			buffer.append(") : ");
+			buffer.append(returnType.toString());
+		}
+
+		
+		return buffer.toString();
+	}
+
+
+	
+	public Object accept(SummaryVisitor visitor, Object data) {
+		return visitor.visit(this, data);
+	}
+
+
+	
+	public void incrStatementCount() {
+		statementCount++;
+	}
+
+
+	
+	public boolean equals(Object other) {
+		if (other instanceof MethodSummary) {
+			MethodSummary temp = (MethodSummary) other;
+
+			return checkSignature(temp) && checkReturn(temp) &&
+					checkProtection(temp);
+		}
+		return false;
+	}
+
+
+	
+	public void beginBlock() {
+		blockDepth++;
+		if (blockDepth > maxBlockDepth) {
+			maxBlockDepth = blockDepth;
+		}
+	}
+
+
+	
+	public void endBlock() {
+		blockDepth--;
+	}
+
+
+	
+	public boolean checkSignature(MethodSummary other) {
+		if (!name.equals(other.getName())) {
+			return false;
+		}
+
+		Iterator params1 = getParameters();
+		Iterator params2 = other.getParameters();
+
+		if (params1 == null) {
+			return (params2 == null);
+		}
+
+		if (params2 == null) {
+			return false;
+		}
+
+		while (params1.hasNext() && params2.hasNext()) {
+			ParameterSummary next1 = (ParameterSummary) params1.next();
+			ParameterSummary next2 = (ParameterSummary) params2.next();
+
+			if (!next1.getTypeDecl().isSame(next2.getTypeDecl())) {
+				return false;
+			}
+		}
+
+		return (params1.hasNext() == params2.hasNext());
+	}
+
+
+	
+	protected void setModifiers(ModifierHolder mod) {
+		modifiers = mod;
+	}
+
+
+	
+	protected void add(TypeDeclSummary except) {
+		if (except != null) {
+			if (exceptionList == null) {
+				initExceptionList();
+			}
+
+			exceptionList.add(except);
+		}
+	}
+
+
+	
+	protected void add(ParameterSummary param) {
+		if (param != null) {
+			if (parameterList == null) {
+				initParameterList();
+			}
+
+			parameterList.add(param);
+		}
+	}
+
+
+	
+	protected void addDependency(Summary dependsOn) {
+		if (dependsOn != null) {
+			if (dependencyList == null) {
+				initDependencyList();
+			}
+
+			if (!dependencyList.contains(dependsOn)) {
+				dependencyList.add(dependsOn);
+			}
+		}
+	}
+
+
+	
+	private void initParameterList() {
+		parameterList = new LinkedList();
+	}
+
+
+	
+	private void initExceptionList() {
+		exceptionList = new LinkedList();
+	}
+
+
+	
+	private void initDependencyList() {
+		dependencyList = new LinkedList();
+	}
+
+
+	
+	private boolean checkReturn(MethodSummary other) {
+		return getReturnType().isSame(other.getReturnType());
+	}
+
+
+	
+	private boolean checkProtection(MethodSummary other) {
+		ModifierHolder mh1 = getModifiers();
+		ModifierHolder mh2 = other.getModifiers();
+
+		return (mh1.isPublic() == mh2.isPublic()) &&
+				(mh1.isProtected() == mh2.isProtected()) &&
+				(mh1.isPackage() == mh2.isPackage()) &&
+				(mh1.isPrivate() == mh2.isPrivate());
+	}
+}

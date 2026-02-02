@@ -1,0 +1,125 @@
+Given the following java code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.servlet;
+
+import java.util.Hashtable;
+import java.util.Vector;
+
+
+public class ServletFormFactory {
+  private Hashtable packages = new Hashtable();
+  private Hashtable servletForms = new Hashtable();
+  private String defaultFormName;
+  private String servletFormSuffix = ".sf";
+  private ClassLoader defaultClassLoader;
+
+  
+  public ServletFormFactory() {
+    defaultFormName = "com.taursys.servlet.DefaultMessageForm";
+    defaultClassLoader = getClass().getClassLoader();
+  }
+
+  
+  public synchronized ServletForm createServletForm(String url)
+      throws ServletFormNotFoundException {
+    String servletFormName = parseClassName(url);
+    Vector instances = (Vector)servletForms.get(servletFormName);
+    
+    ServletForm newForm = null;
+    if (instances != null && instances.size() > 0) {
+        newForm = (ServletForm)instances.remove(0);
+    }
+    
+    if (newForm == null ) {
+      try {
+        newForm = (ServletForm)defaultClassLoader.loadClass(servletFormName).newInstance();
+      } catch (Exception ex) {
+        throw new ServletFormNotFoundException("Cannot create requested form: "
+            + ex);
+      }
+    }
+    return newForm;
+  }
+
+  
+  public synchronized void recycle(ServletForm usedServletForm) {
+    if (usedServletForm.recycle()) {
+      Vector instances = (Vector)servletForms.get(
+          usedServletForm.getClass().getName());
+      if (instances == null) {
+        instances = new Vector();
+        servletForms.put(usedServletForm.getClass().getName(), instances);
+      }
+      instances.add(usedServletForm);
+    }
+  }
+
+  
+  public String parseClassName(String url) throws ServletFormNotFoundException {
+    if (url != null && !url.equals("/")) {
+      
+      int lastSlash = url.lastIndexOf("/");
+      String urlPrefix = url.substring(0,lastSlash +1 );
+      String packageName = (String)packages.get(urlPrefix);
+      if (packageName == null)
+        throw new ServletFormNotFoundException(
+            "Prefix " + urlPrefix + " not registered");
+      
+      String formName = url.substring(lastSlash + 1);
+      int sLen = servletFormSuffix.length();
+      if (formName.length() < sLen + 1 || !formName.endsWith(servletFormSuffix))
+        throw new ServletFormNotFoundException("Name of ServletForm does not end in "
+            + servletFormSuffix + ". url=" + url);
+      
+      return packageName + "."
+          + formName.substring(0, formName.length() - sLen);
+    } else {
+      return defaultFormName;
+    }
+  }
+
+  
+  public void addPackage(String path, String packageName) {
+    if (path.endsWith("/"))
+      packages.put(path, packageName);
+    else
+      packages.put(path + "/", packageName);
+  }
+
+  
+  public void setDefaultFormName(String newDefaultFormName) {
+    defaultFormName = newDefaultFormName;
+  }
+
+  
+  public String getDefaultFormName() {
+    return defaultFormName;
+  }
+
+  
+  public void setServletFormSuffix(String newServletFormSuffix) {
+    if (newServletFormSuffix == null)
+      throw new java.lang.IllegalArgumentException(
+        "servletFormSuffix cannot be null - use blank to indicate no suffix");
+    servletFormSuffix = newServletFormSuffix;
+  }
+
+  
+  public String getServletFormSuffix() {
+    return servletFormSuffix;
+  }
+
+  
+  public void setDefaultClassLoader(ClassLoader newDefaultClassLoader) {
+    defaultClassLoader = newDefaultClassLoader;
+  }
+
+  
+  public ClassLoader getDefaultClassLoader() {
+    return defaultClassLoader;
+  }
+}

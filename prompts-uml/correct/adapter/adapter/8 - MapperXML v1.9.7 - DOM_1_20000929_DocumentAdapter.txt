@@ -1,0 +1,35 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.dom.DOM_1_20000929_DocumentAdapter {
+- Document doc
+- Hashtable identifierMap
+- String defaultIdentifier
+- AbstractWriter xmlWriter
++ <<Create>> DOM_1_20000929_DocumentAdapter(Document)
++ void write(OutputStream)
++ void write(Writer)
++ Element getElementById(String)
++ void setElementText(String,String)
++ void setAttributeText(String,String,String)
++ Document getDocument()
++ void setDocument(Document)
+# void mapIdentifiers(Node)
++ {static} String getAttribute(String,Node)
++ {static} void setElementText(Element,String)
++ {static} String getElementText(Element)
++ {static} org.w3c.dom.Text findFirstTextNode(Element)
++ {static} boolean hasChildElements(Element)
+# AbstractWriter createDefaultWriter()
++ void setXMLWriter(AbstractWriter)
++ AbstractWriter getXMLWriter()
+}
+
+
+
+
+com.taursys.dom.DocumentAdapter <|.. com.taursys.dom.DOM_1_20000929_DocumentAdapter
+@enduml

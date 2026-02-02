@@ -1,0 +1,129 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.loaders.XMLDataObject {
++ {static} String XMLINFO_DTD_PUBLIC_ID
++ {static} String XMLINFO_DTD_PUBLIC_ID_OLD
+- {static} RequestProcessor XML_RP
++ {static} int STATUS_NOT
++ {static} int STATUS_OK
++ {static} int STATUS_WARNING
++ {static} int STATUS_ERROR
++ {static} String PROP_DOCUMENT
++ {static} String PROP_INFO
+~ {static} long serialVersionUID
+- Task infoTask
+- Info info
+- Reference xmlDocument
+- {static} ErrorPrinter errorHandler
+- {static} com.sun.xml.parser.Resolver entityResolver
+- int status
+- EditorCookie editor
+- InfoParser infoParser
++ <<Create>> XMLDataObject(FileObject,MultiFileLoader)
+# Node createNodeDelegate()
+# void updateIconBase(String)
++ HelpCtx getHelpCtx()
++ Node.Cookie getCookie(Class)
+# EditorCookie createEditorCookie()
++ Document getDocument()
+~ void clearDocument()
++ int getStatus()
++ Info getInfo()
++ void setInfo(Info)
+- void setInfoImpl(Info)
+- void writeInfo()
+~ Document parsePrimaryFile()
++ {static} Document parse(URL)
++ {static} Document parse(URL,boolean)
++ {static} Document parse(URL,ErrorHandler)
++ {static} Document parse(URL,ErrorHandler,boolean)
++ {static} Parser createParser()
++ {static} Parser createParser(boolean)
++ {static} Document createDocument()
++ {static} void write(Document,Writer)
++ {static} org.xml.sax.InputSource createInputSource(URL)
++ {static} void registerCatalogEntry(String,String)
++ {static} void registerCatalogEntry(String,String,ClassLoader)
+}
+
+
+class org.openide.loaders.XMLDataObject$ErrorPrinter {
+- void message(String,org.xml.sax.SAXParseException)
++ void error(org.xml.sax.SAXParseException)
++ void warning(org.xml.sax.SAXParseException)
++ void fatalError(org.xml.sax.SAXParseException)
+}
+
+interface org.openide.loaders.XMLDataObject$Processor {
++ void attachTo(XMLDataObject)
+}
+
+class org.openide.loaders.XMLDataObject$InfoParser {
+- {static} String TAG_INFO
+- {static} String TAG_PROCESSOR
+- {static} String ATT_PROCESSOR_CLASS
+- {static} String TAG_ICON
+- {static} String ATT_ICON_BASE
+- FileObject fileObject
+- Info tempInfo
++ void setInfoFile(FileObject)
++ void startDocument()
++ void endDocument()
++ void startElement(String,AttributeList)
++ void run()
++ void fileFolderCreated(FileEvent)
++ void fileDataCreated(FileEvent)
++ void fileChanged(FileEvent)
++ void fileDeleted(FileEvent)
++ void fileRenamed(FileRenameEvent)
++ void fileAttributeChanged(FileAttributeEvent)
+}
+
+
+class org.openide.loaders.XMLDataObject$Loader {
+~ {static} String XML_EXT
+~ {static} String XMLINFO_EXT
+~ {static} long serialVersionUID
++ <<Create>> Loader()
+# void initialize()
+# FileObject findPrimaryFile(FileObject)
+# MultiDataObject createMultiObject(FileObject)
+# MultiDataObject.Entry createPrimaryEntry(MultiDataObject,FileObject)
+# MultiDataObject.Entry createSecondaryEntry(MultiDataObject,FileObject)
+}
+
+
+class org.openide.loaders.XMLDataObject$Info {
+~ Set processors
+~ String iconBase
++ <<Create>> Info()
++ Object clone()
++ void addProcessorClass(Class)
++ boolean removeProcessorClass(Class)
++ Iterator processorClasses()
++ void setIconBase(String)
++ String getIconBase()
++ void write(Writer)
+}
+
+
+
+
+org.openide.loaders.MultiDataObject <|-- org.openide.loaders.XMLDataObject
+org.openide.loaders.XMLDataObject +.. org.openide.loaders.XMLDataObject$ErrorPrinter
+org.openide.loaders.ErrorHandler <|.. org.openide.loaders.XMLDataObject$ErrorPrinter
+org.openide.loaders.XMLDataObject +.. org.openide.loaders.XMLDataObject$Processor
+org.openide.loaders.Cookie <|-- org.openide.loaders.XMLDataObject$Processor
+org.openide.loaders.XMLDataObject +.. org.openide.loaders.XMLDataObject$InfoParser
+org.openide.loaders.Runnable <|.. org.openide.loaders.XMLDataObject$InfoParser
+org.openide.loaders.FileChangeListener <|.. org.openide.loaders.XMLDataObject$InfoParser
+org.openide.loaders.HandlerBase <|-- org.openide.loaders.XMLDataObject$InfoParser
+org.openide.loaders.XMLDataObject +.. org.openide.loaders.XMLDataObject$Loader
+org.openide.loaders.MultiFileLoader <|-- org.openide.loaders.XMLDataObject$Loader
+org.openide.loaders.XMLDataObject +.. org.openide.loaders.XMLDataObject$Info
+org.openide.loaders.Cloneable <|.. org.openide.loaders.XMLDataObject$Info
+@enduml

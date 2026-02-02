@@ -1,0 +1,66 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.web.core.syntax.JspTagSyntax {
++ {static} String TN_JSP_TAG
++ {static} String TN_JSP_SYMBOL
++ {static} String TN_JSP_COMMENT
++ {static} String TN_JSP_ATTRIBUTE
++ {static} String TN_JSP_ATTR_VALUE
++ {static} String TN_JSP_SYMBOL2
++ {static} int TEXT
++ {static} int ERROR
++ {static} int JSP_TAG
++ {static} int JSP_SYMBOL
++ {static} int JSP_COMMENT
++ {static} int JSP_ATTRIBUTE
++ {static} int JSP_ATTR_VALUE
++ {static} int JSP_SYMBOL2
+- {static} int ISI_ERROR
+- {static} int ISA_LT
+- {static} int ISI_TAG
+- {static} int ISI_DIR
+- {static} int ISP_TAG
+- {static} int ISP_DIR
+- {static} int ISI_TAG_I_WS
+- {static} int ISI_DIR_I_WS
+- {static} int ISI_ENDTAG
+- {static} int ISI_TAG_ATTR
+- {static} int ISI_DIR_ATTR
+- {static} int ISP_TAG_EQ
+- {static} int ISP_DIR_EQ
+- {static} int ISI_TAG_STRING
+- {static} int ISI_DIR_STRING
+- {static} int ISI_TAG_STRING_B
+- {static} int ISI_DIR_STRING_B
+- {static} int ISI_TAG_STRING2
+- {static} int ISI_DIR_STRING2
+- {static} int ISI_TAG_STRING2_B
+- {static} int ISI_DIR_STRING2_B
+- {static} int ISA_ENDSLASH
+- {static} int ISA_ENDPC
+- {static} int ISA_LT_PC
+- {static} int ISI_JSP_COMMENT
+- {static} int ISI_JSP_COMMENT_M
+- {static} int ISI_JSP_COMMENT_MM
+- {static} int ISI_JSP_COMMENT_MMP
+~ {static} int ISA_END_JSP
+- {static} int ISI_TAG_ERROR
+- {static} int ISI_DIR_ERROR
+- {static} int ISI_DIR_ERROR_P
+- {static} int ISA_LT_PC_AT
++ <<Create>> JspTagSyntax()
++ boolean isIdentifierPart(char)
+# int parseToken()
++ String getTokenName(int)
++ String getStateName(int)
+}
+
+
+
+
+org.netbeans.editor.Syntax <|-- org.netbeans.modules.web.core.syntax.JspTagSyntax
+@enduml

@@ -1,0 +1,40 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.swingui.TestSuitePanel {
+- JTree fTree
+- JScrollPane fScrollTree
+- TestTreeModel fModel
++ <<Create>> TestSuitePanel()
++ void addError(Test,Throwable)
++ void addFailure(Test,AssertionFailedError)
++ void endTest(Test)
++ void startTest(Test)
++ Test getSelectedTest()
++ JTree getTree()
++ void showTestTree(Test)
+- void fireTestChanged(Test,boolean)
+}
+
+
+class junit.swingui.TestSuitePanel$TestTreeCellRenderer {
+- Icon fErrorIcon
+- Icon fOkIcon
+- Icon fFailureIcon
+~ <<Create>> TestTreeCellRenderer()
+~ void loadIcons()
+~ String stripParenthesis(Object)
++ Component getTreeCellRendererComponent(JTree,Object,boolean,boolean,boolean,int,boolean)
+}
+
+
+
+
+junit.framework.TestListener <|.. junit.swingui.TestSuitePanel
+javax.swing.JPanel <|-- junit.swingui.TestSuitePanel
+junit.swingui.TestSuitePanel +.. junit.swingui.TestSuitePanel$TestTreeCellRenderer
+junit.swingui.DefaultTreeCellRenderer <|-- junit.swingui.TestSuitePanel$TestTreeCellRenderer
+@enduml

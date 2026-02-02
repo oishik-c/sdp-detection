@@ -1,0 +1,252 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.form.palette;
+
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.beans.BeanInfo;
+
+import org.openide.*;
+import org.openide.actions.*;
+import org.openide.filesystems.*;
+import org.openide.loaders.*;
+import org.openide.nodes.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.actions.SystemAction;
+import org.openide.util.datatransfer.NewType;
+
+
+public class PaletteNode extends DataFolder.FolderNode {
+    
+    
+
+    
+    
+
+    private static PaletteNode sharedPaletteNode;
+
+    
+    private static String iconURL   = "/org/netbeans/modules/form/resources/palette.gif"; 
+    private static String icon32URL = "/org/netbeans/modules/form/resources/palette32.gif"; 
+    private static Image substIcon, substIcon32;
+
+    private static final String PALETTE_FOLDER_NAME="Palette"; 
+    private static final Node.PropertySet[] NO_PROPERTIES = new Node.PropertySet[0];
+
+    private static SystemAction[] staticActions;
+    private static DataFolder paletteFolder;
+
+    private static java.util.ResourceBundle bundle = org.openide.util.NbBundle.getBundle (PaletteNode.class);
+
+    
+    
+
+    
+    public PaletteNode () {
+        this (getPaletteFolder ());
+    }
+
+    PaletteNode (DataFolder folder) {
+        folder.super (new PaletteNodeChildren (folder));
+        setDisplayName(bundle.getString("CTL_Component_palette"));
+        if (sharedPaletteNode == null)
+            sharedPaletteNode = this;
+    }
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (PaletteNode.class);
+    }
+
+    
+    
+
+    public static PaletteNode getPaletteNode () {
+        if (sharedPaletteNode == null) {
+            new PaletteNode (); 
+        }
+        return sharedPaletteNode;
+    }
+
+    
+    
+
+    public PaletteCategoryNode[] getPaletteCategories () {
+        Node[] categories = getChildren ().getNodes ();
+        java.util.ArrayList al = new java.util.ArrayList (categories.length);
+        for (int i = 0; i < categories.length; i++) {
+            if (categories[i] instanceof PaletteCategoryNode) {
+                al.add (categories[i]);
+            }
+        }
+        return (PaletteCategoryNode[]) al.toArray (new PaletteCategoryNode[al.size ()]);
+    }
+
+    
+    
+
+    static DataFolder getPaletteFolder () {
+        if (paletteFolder != null)
+            return paletteFolder;
+
+        try {
+            FileObject fo = TopManager.getDefault ().getRepository().getDefaultFileSystem ().findResource(PALETTE_FOLDER_NAME);
+
+            if (fo == null) {
+                
+                fo = TopManager.getDefault ().getRepository ().getDefaultFileSystem ().getRoot ().createFolder (PALETTE_FOLDER_NAME);
+            }
+
+            paletteFolder = DataFolder.findFolder(fo);
+            return paletteFolder;
+        } catch (java.io.IOException ex) {
+            throw new InternalError ("Folder not found and cannot be created: " + PALETTE_FOLDER_NAME); 
+        }
+    }
+
+    
+    public Node.Cookie getCookie (Class type) {
+        if (Index.class.isAssignableFrom(type)) {
+            
+            DataFolder dataObj = (DataFolder)super.getCookie(DataFolder.class);
+            if (dataObj != null) {
+                return new PaletteIndex(dataObj, (PaletteNodeChildren)getChildren());
+            }
+        }
+        return super.getCookie(type);
+    }
+
+    public Image getIcon (int type) {
+        if ((type == BeanInfo.ICON_COLOR_16x16) || (type == BeanInfo.ICON_MONO_16x16)) {
+            if (substIcon == null)
+                substIcon = Toolkit.getDefaultToolkit ().getImage (
+                                getClass ().getResource (iconURL));
+            return substIcon;
+        }
+        else {
+            if (substIcon32 == null)
+                substIcon32 = Toolkit.getDefaultToolkit ().getImage (
+                                  getClass ().getResource (icon32URL));
+            return substIcon32;
+        }
+    }
+
+    public Image getOpenedIcon (int type) {
+        return getIcon(type);
+    }
+
+    
+    public NewType[] getNewTypes () {
+        return new NewType[] { new NewCategory () };
+    }
+
+    
+    public SystemAction[] getActions () {
+        if (staticActions == null)
+            staticActions = new SystemAction [] {
+                                SystemAction.get (FileSystemAction.class),
+                                null,
+                                SystemAction.get(MoveUpAction.class),
+                                SystemAction.get(MoveDownAction.class),
+                                SystemAction.get(ReorderAction.class),
+                                null,
+                                SystemAction.get(PasteAction.class),
+                                null,
+                                SystemAction.get(NewAction.class),
+                                null,
+                                SystemAction.get(ToolsAction.class),
+                                SystemAction.get(PropertiesAction.class),
+                            };
+        return staticActions;
+    }
+
+    
+    public Node.PropertySet[] getPropertySets () {
+        return NO_PROPERTIES;
+    }
+
+    
+    
+
+    
+    static final class PaletteNodeChildren extends FilterNode.Children {
+
+        
+        public PaletteNodeChildren (DataFolder folder) {
+            super(folder.getNodeDelegate ());
+        }
+
+        
+        protected Node copyNode (Node node) {
+            DataFolder df = (DataFolder)node.getCookie(DataFolder.class);
+            if (df != null) {
+                return new PaletteCategoryNode(df);
+            }
+            return node.cloneNode();
+        }
+    }
+
+    
+    static final class PaletteIndex extends DataFolder.Index {
+
+        
+        PaletteNodeChildren children;
+
+        PaletteIndex (final DataFolder df, final PaletteNodeChildren children) {
+            super(df);
+            this.children = children;
+        }
+
+        
+        public int getNodesCount () {
+            return children.getNodesCount();
+        }
+
+        
+        public Node[] getNodes () {
+            return children.getNodes();
+        }
+    }
+
+    
+    private final class NewCategory extends NewType {
+        
+        public String getName() {
+            return bundle.getString ("CTL_NewCategory");
+        }
+
+        
+        public org.openide.util.HelpCtx getHelpCtx() {
+            return new org.openide.util.HelpCtx (NewCategory.class);
+        }
+
+        
+        public void create () throws java.io.IOException {
+            NotifyDescriptor.InputLine input = new NotifyDescriptor.InputLine (
+                                                   bundle.getString ("CTL_NewCategoryName"), bundle.getString ("CTL_NewCategoryTitle")
+                                               );
+            input.setInputText (bundle.getString ("CTL_NewCategoryValue"));
+            if (TopManager.getDefault ().notify (input) == NotifyDescriptor.OK_OPTION) {
+                FileObject folder = getPaletteFolder ().getPrimaryFile ();
+                String categoryName = input.getInputText ();
+                if (folder.getFileObject (categoryName) != null) {
+                    TopManager.getDefault ().notify (
+                        new NotifyDescriptor.Message (
+                            java.text.MessageFormat.format (bundle.getString ("FMT_CategoryExists"), new Object[] { categoryName }),
+                            NotifyDescriptor.INFORMATION_MESSAGE
+                        )
+                    );
+                } else {
+                    folder.createFolder (categoryName);
+                }
+            }
+        }
+    }
+
+}
+
+

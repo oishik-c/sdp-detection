@@ -1,0 +1,55 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.xml.render;
+
+import com.taursys.xml.TextField;
+import com.taursys.model.ModelException;
+import com.taursys.dom.DocumentAdapter;
+import com.taursys.xml.event.RenderException;
+import com.taursys.xml.DocumentComponent;
+
+
+public class AttributeTextFieldRenderer extends TextFieldRenderer {
+
+  
+  public AttributeTextFieldRenderer() {
+  }
+
+  
+  public AttributeTextFieldRenderer(TextField textField) {
+    super(textField);
+  }
+
+  
+  public void render(TextField textField) throws RenderException {
+    try {
+      DocumentAdapter da = textField.getParent().getDocumentAdapter();
+      da.setAttributeText(textField.getId(), textField.getAttributeName(),
+          textField.getModel().getText());
+    } catch (ModelException ex) {
+      throw new RenderException(RenderException.REASON_MODEL_EXCEPTION, ex);
+    }
+  }
+
+  
+  public void render() throws RenderException {
+    init();
+    if (getComponent().isVisible()) {
+      restoreSelf();
+      try {
+        DocumentAdapter da = getComponent().getParent().getDocumentAdapter();
+        da.setAttributeText(((DocumentComponent)getComponent()).getId(),
+            ((TextField)getComponent()).getAttributeName(),
+            ((TextField)getComponent()).getModel().getText());
+      } catch (ModelException ex) {
+        throw new RenderException(RenderException.REASON_MODEL_EXCEPTION, ex);
+      }
+    } else {
+      removeSelf();
+    }
+  }
+}

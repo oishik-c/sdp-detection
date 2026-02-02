@@ -1,0 +1,59 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package uml.diagram;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
+
+import javax.swing.UIManager;
+
+import diagram.DefaultLinkRenderer;
+import diagram.shape.ArrowHead;
+
+
+public class GeneralizationLinkRenderer extends DefaultLinkRenderer {
+
+  protected static final CustomUI generalizationUI = new CustomUI("generalization");
+
+  static {
+    UIManager.put("generalization.foreground", Color.black);
+    UIManager.put("generalization.background", Color.white);
+  }
+
+  
+  public GeneralizationLinkRenderer() {
+    setUI(generalizationUI);
+  }
+
+  
+  protected GeneralPath getSourceEndpoint(double x, double y, GeneralPath path) {
+    return null;
+  }
+
+  
+  protected GeneralPath getSinkEndpoint(double x, double y, GeneralPath path) {
+    return ArrowHead.createArrowHead(13.0, ArrowHead.FLAT, x, y, path);
+  }
+
+  
+  protected void paintSinkEndpoint(Graphics2D g2, AffineTransform at, GeneralPath path) {
+
+    
+    g2.setPaint(getBackground());
+    super.paintSinkEndpoint(g2, at, path);
+
+    
+    g2.setPaint(getForeground());
+    g2.draw(path);
+
+  }
+
+
+}

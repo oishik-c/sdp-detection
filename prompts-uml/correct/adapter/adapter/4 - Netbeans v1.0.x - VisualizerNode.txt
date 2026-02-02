@@ -1,0 +1,69 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.explorer.view.VisualizerNode {
+- {static} VisualizerNode TEMPLATE
+- {static} Reference NO_REF
+- {static} WeakHashMap cache
++ {static} VisualizerNode EMPTY
+~ Node node
+- int hashCode
+- Reference children
+- VisualizerChildren parent
+- PropertyChangeListener uiListener
++ String name
++ String displayName
++ String shortDescription
+- NodeRenderer.Tree rendererTree
+- NodeRenderer.List rendererList
+- NodeRenderer.Pane rendererPane
+~ {static} long serialVersionUID
+- <<Create>> VisualizerNode(int)
+- <<Create>> VisualizerNode(Node)
++ {static} VisualizerNode getVisualizer(VisualizerChildren,Node)
+# void finalize()
++ List getChildren()
++ int getIndex(javax.swing.tree.TreeNode)
++ boolean getAllowsChildren()
++ javax.swing.tree.TreeNode getChildAt(int)
++ int getChildCount()
++ java.util.Enumeration children()
++ boolean isLeaf()
++ javax.swing.tree.TreeNode getParent()
++ NodeRenderer.Tree getTree()
++ NodeRenderer.List getList()
++ NodeRenderer.Pane getPane()
++ void childrenAdded(NodeMemberEvent)
++ void childrenRemoved(NodeMemberEvent)
++ void childrenReordered(NodeReorderEvent)
++ void nodeDestroyed(NodeEvent)
++ void propertyChange(java.beans.PropertyChangeEvent)
++ void run()
+~ void notifyVisualizerChildrenChange(int,VisualizerChildren)
++ void addNodeModel(NodeModel)
++ void removeNodeModel(NodeModel)
++ int hashCode()
++ boolean equals(Object)
++ String toString()
+}
+
+
+class org.openide.explorer.view.VisualizerNode$StrongReference {
+- Object o
++ <<Create>> StrongReference(Object)
++ Object get()
+}
+
+
+
+
+org.openide.explorer.view.NodeListener <|.. org.openide.explorer.view.VisualizerNode
+javax.swing.tree.TreeNode <|.. org.openide.explorer.view.VisualizerNode
+org.openide.explorer.view.Runnable <|.. org.openide.explorer.view.VisualizerNode
+javax.swing.event.EventListenerList <|-- org.openide.explorer.view.VisualizerNode
+org.openide.explorer.view.VisualizerNode +.. org.openide.explorer.view.VisualizerNode$StrongReference
+org.openide.explorer.view.WeakReference <|-- org.openide.explorer.view.VisualizerNode$StrongReference
+@enduml

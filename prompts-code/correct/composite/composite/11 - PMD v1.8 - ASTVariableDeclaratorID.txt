@@ -1,0 +1,55 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package net.sourceforge.pmd.ast;
+
+public class ASTVariableDeclaratorId extends SimpleNode {
+    public ASTVariableDeclaratorId(int id) {
+        super(id);
+    }
+
+    public ASTVariableDeclaratorId(JavaParser p, int id) {
+        super(p, id);
+    }
+
+    
+    public Object jjtAccept(JavaParserVisitor visitor, Object data) {
+        return visitor.visit(this, data);
+    }
+
+    public boolean isExceptionBlockParameter() {
+        return jjtGetParent().jjtGetParent() instanceof ASTTryStatement;
+    }
+
+    public SimpleNode getTypeNameNode() {
+        if (jjtGetParent() instanceof ASTFormalParameter) {
+            return findTypeNameNode(jjtGetParent());
+        } else if (jjtGetParent().jjtGetParent() instanceof ASTLocalVariableDeclaration || jjtGetParent().jjtGetParent() instanceof ASTFieldDeclaration) {
+            return findTypeNameNode(jjtGetParent().jjtGetParent());
+        }
+        throw new RuntimeException("Don't know how to get the type for anything other than ASTLocalVariableDeclaration/ASTFormalParameter/ASTFieldDeclaration");
+    }
+
+    public ASTType getTypeNode() {
+        if (jjtGetParent() instanceof ASTFormalParameter) {
+            return (ASTType)jjtGetParent().jjtGetChild(0);
+        } else if (jjtGetParent().jjtGetParent() instanceof ASTLocalVariableDeclaration || jjtGetParent().jjtGetParent() instanceof ASTFieldDeclaration) {
+            return (ASTType)(jjtGetParent().jjtGetParent().jjtGetChild(0));
+        }
+        throw new RuntimeException("Don't know how to get the type for anything other than ASTLocalVariableDeclaration/ASTFormalParameter/ASTFieldDeclaration");
+    }
+
+    public void dump(String prefix) {
+        System.out.println(toString(prefix) + ":" + getImage());
+        dumpChildren(prefix);
+    }
+
+    private SimpleNode findTypeNameNode(Node node) {
+        ASTType typeNode = (ASTType) node.jjtGetChild(0);
+        return (SimpleNode) typeNode.jjtGetChild(0);
+    }
+}

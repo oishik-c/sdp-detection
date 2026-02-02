@@ -1,0 +1,201 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.util.actions;
+
+import java.beans.PropertyChangeEvent;
+
+import org.openide.nodes.Node;
+import org.openide.nodes.NodeAdapter;
+
+
+public abstract class CookieAction extends NodeAction {
+    
+    private static final String PROP_COOKIES = "cookies"; 
+
+    
+    private static final String PROP_COOKIE_CHANGE = "cookieChange"; 
+
+    
+    public static final int MODE_ONE  = 0x01;
+
+    
+    public static final int MODE_SOME = 0x02;
+
+    
+    public static final int MODE_ALL  = 0x04;
+
+    
+    public static final int MODE_EXACTLY_ONE  = 0x08;
+
+    
+    public static final int MODE_ANY  = 0x07;
+    
+
+    static final long serialVersionUID =6031319415908298424L;
+    
+    protected abstract int mode();
+
+    
+    protected abstract Class[] cookieClasses ();
+
+    
+    protected void initialize () {
+        super.initialize ();
+        CookiesChangeListener listener = new CookiesChangeListener(getClass());
+        putProperty(PROP_COOKIE_CHANGE, listener);
+    }
+
+    
+    protected void addNotify () {
+        super.addNotify();
+        CookiesChangeListener listener =
+            (CookiesChangeListener)getProperty (PROP_COOKIE_CHANGE);
+        listener.setActive(true);
+    }
+
+    
+    protected void removeNotify () {
+        super.removeNotify();
+        CookiesChangeListener listener =
+            (CookiesChangeListener)getProperty (PROP_COOKIE_CHANGE);
+        listener.setActive(false);
+    }
+
+    
+    private Class[] getCookies () {
+        Class[] ret = (Class[])getProperty (PROP_COOKIES);
+        if (ret != null) return ret;
+        ret = cookieClasses ();
+        putProperty (PROP_COOKIES, ret);
+        return ret;
+    }
+
+    
+    protected boolean enable (Node[] activatedNodes) {
+        if (activatedNodes.length == 0)
+            return false;
+        
+        ((CookiesChangeListener)getProperty(PROP_COOKIE_CHANGE)).
+        setNodes(activatedNodes);
+        
+        return doEnable(activatedNodes);
+    }
+
+    
+    boolean doEnable (Node[] activatedNodes) {
+        int supported = resolveSupported(activatedNodes);
+        if (supported == 0)
+            return false;
+        int mode = mode ();
+        return
+            
+            ((mode & MODE_ONE) != 0) ||
+            (((mode & MODE_ALL) != 0) && (supported == activatedNodes.length)) ||
+            (((mode & MODE_EXACTLY_ONE) != 0) && (activatedNodes.length == 1)) ||
+            (((mode & MODE_SOME) != 0) && (supported < activatedNodes.length));
+    }
+
+    
+    private int resolveSupported (Node[] activatedNodes) {
+        int total = activatedNodes.length;
+        int ret = 0;
+
+        Class[] cookies = getCookies();
+        for (int i = 0; i < total; i++) {
+            for (int j = 0; j < cookies.length; j++) {
+                
+                if (activatedNodes[i].getCookie(cookies[j]) != null) {
+                    ret++;
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    
+    static final class CookiesChangeListener extends NodeAdapter {
+
+        
+        Node[] nodes;
+        
+        boolean active;
+        
+        private Class clazz;
+
+        
+        public CookiesChangeListener (Class clazz) {
+            this.clazz = clazz;
+        }
+
+        
+        void setActive (boolean active) {
+            if (this.active == active)
+                return;
+            this.active = active;
+            if (nodes != null) {
+                if (active)
+                    attachListeners(nodes);
+                else {
+                    detachListeners(nodes);
+                    nodes = null;
+                }
+            }
+        }
+
+        
+        boolean isActive () {
+            return active;
+        }
+
+        
+        void setNodes (Node[] newNodes) {
+            
+            if (nodes != null)
+                detachListeners(nodes);
+            
+            if ((newNodes != null) && active) {
+                attachListeners(newNodes);
+            }
+            nodes = newNodes;
+        }
+
+        
+        void detachListeners (Node[] nodes) {
+            for (int i = 0; i < nodes.length; i++) {
+                nodes[i].removeNodeListener(this);
+            }
+        }
+
+        
+        void attachListeners (Node[] nodes) {
+            for (int i = 0; i < nodes.length; i++) {
+                nodes[i].addNodeListener(this);
+            }
+        }
+
+        
+        public void propertyChange (PropertyChangeEvent ev) {
+            
+            if (!Node.PROP_COOKIE.equals(ev.getPropertyName()))
+                return;
+            
+            CookieAction a = (CookieAction)findObject(clazz);
+            
+            if ((nodes != null) && (a != null)) {
+                a.setEnabled (a.enable (nodes));
+            }
+        }
+
+    } 
+
+
+}
+
+

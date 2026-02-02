@@ -1,0 +1,36 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.java.settings.CompilerSettings {
+~ {static} long serialVersionUID
+~ {static} ResourceBundle bundle
+- {static} int flag
+- {static} String charEncoding
++ String displayName()
++ HelpCtx getHelpCtx()
++ int flag()
+- void orFlag(int)
+- void andFlag(int)
++ void setWarnings(boolean)
++ boolean getWarnings()
++ void setDebug(boolean)
++ boolean getDebug()
++ void setOptimize(boolean)
++ boolean getOptimize()
++ void setDeprecation(boolean)
++ boolean getDeprecation()
++ void setDependencies(boolean)
++ boolean getDependencies()
++ void setCharEncoding(String)
++ String getCharEncoding()
+}
+
+
+
+
+sun.tools.java.Constants <|.. org.netbeans.modules.java.settings.CompilerSettings
+org.openide.options.SystemOption <|-- org.netbeans.modules.java.settings.CompilerSettings
+@enduml

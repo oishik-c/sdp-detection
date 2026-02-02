@@ -1,0 +1,21 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class diagram.tool.CompositeTool {
+- Vector tools
++ void addToolListener(ToolListener)
++ void removeToolListener(ToolListener)
++ void install(Diagram)
++ void uninstall(Diagram)
++ void add(Tool)
++ void remove(Tool)
+}
+
+
+
+
+diagram.tool.Tool <|.. diagram.tool.CompositeTool
+@enduml

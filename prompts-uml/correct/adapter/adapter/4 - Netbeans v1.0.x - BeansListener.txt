@@ -1,0 +1,176 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.explorer.propertysheet.PropertySheet {
+~ {static} long serialVersionUID
++ {static} String PROPERTY_SORTING_MODE
++ {static} String PROPERTY_VALUE_COLOR
++ {static} String PROPERTY_DISABLED_PROPERTY_COLOR
++ {static} String PROPERTY_CURRENT_PAGE
++ {static} String PROPERTY_PLASTIC
++ {static} String PROPERTY_PROPERTY_PAINTING_STYLE
++ {static} String PROPERTY_DISPLAY_WRITABLE_ONLY
++ {static} int ALWAYS_AS_STRING
++ {static} int STRING_PREFERRED
++ {static} int PAINTING_PREFERRED
++ {static} int UNSORTED
++ {static} int SORTED_BY_NAMES
++ {static} int SORTED_BY_TYPES
+# {static} Icon iNoSort
+# {static} Icon iAlphaSort
+# {static} Icon iTypeSort
+# {static} Icon iDisplayWritableOnly
+# {static} Icon iCustomize
+- {static} String text
+~ {static} java.util.ResourceBundle bundle
+- {static} java.util.Comparator SORTER_TYPE
+- {static} java.util.Comparator SORTER_NAME
+- int propertyPaintingStyle
+- boolean plastic
+- boolean displayWritableOnly
+- java.util.Comparator sorter
+- int sortingMode
+- Color valueColor
+- Color disabledPropertyColor
+- BeansDetails beansDetails
+- String[] tab
+- String[] hints
+- PropertyDisplayer[][] propertyDisplayer
+- PropertyDetails[][] propertyDetails
+- PropertyValue[][] propertyValue
+- int pageIndex
+- String selectedTabName
+- Integer lock
+- PropertyDisplayer lastSelectedLine
+- boolean ignorePropertyChanges
+- JTabbedPane pages
+- EmptyPanel emptyPanel
+- NamesPanel[] namesPanel
+- NamesPanel[] valuesPanel
+- ToolbarToggleButton bNoSort
+- ToolbarButton customizer
+- PropertyChangeListener settingsListener
+- BeansListener beansListener
+- ChangeListener tabListener
+- JPopupMenu popupMenu
+~ PasteType[] oldPaste
+~ CopyAction copy
+~ PasteAction paste
+~ ActionPerformer oldCopy
+~ boolean keepFocus
+~ SetDefaultValueAction setDefault
+- RunNodes runNodes
++ <<Create>> PropertySheet()
+~ {static} String getString(String)
+~ {static} String getDescription(PropertyDetails)
+~ {static} String getValueDescription(PropertyDetails)
++ void setNodes(Node[])
++ void setPropertyPaintingStyle(int)
++ int getPropertyPaintingStyle()
++ void setSortingMode(int)
++ int getSortingMode()
++ void setCurrentPage(int)
++ boolean setCurrentPage(String)
++ int getCurrentPage()
++ void setPlastic(boolean)
++ boolean getPlastic()
++ void setValueColor(Color)
++ Color getValueColor()
++ void setDisabledPropertyColor(Color)
++ Color getDisabledPropertyColor()
++ void setDisplayWritableOnly(boolean)
++ boolean getDisplayWritableOnly()
+- void refreshPropertySheet()
+~ void resort(int)
+- void createTab(int)
+- void createPane(int,boolean)
+- void refreshTab(int)
+~ void updateTab(int)
+~ void invokeCustomization()
+~ void setInputComponent(PropertyDisplayer)
+~ void removeInputComponent(int)
+~ void setActions(PropertyDetails)
+~ void removeActions(PropertyDetails)
++ void addNotify()
++ void removeNotify()
++ Dimension getPreferredSize()
+~ void postSetNodes(Node[])
+}
+
+
+class org.openide.explorer.propertysheet.PropertySheet$BeansListener {
++ void propertyChange(PropertyChangeEvent)
+}
+
+class org.openide.explorer.propertysheet.PropertySheet$ScrollableSplittedPanel {
+~ {static} long serialVersionUID
+~ Component scroll
+~ Container element
+~ <<Create>> ScrollableSplittedPanel(Component,Container)
++ Dimension getPreferredScrollableViewportSize()
++ int getScrollableUnitIncrement(Rectangle,int,int)
++ int getScrollableBlockIncrement(Rectangle,int,int)
++ boolean getScrollableTracksViewportWidth()
++ boolean getScrollableTracksViewportHeight()
+}
+
+
+class org.openide.explorer.propertysheet.PropertySheet$SheetListener {
+- SheetButton nameComponent
+- PropertyDisplayer valueComponent
+~ <<Create>> SheetListener(SheetButton,PropertyDisplayer)
++ void sheetButtonEntered(ActionEvent)
++ void sheetButtonExited(ActionEvent)
++ void sheetButtonClicked(ActionEvent)
+}
+
+
+class org.openide.explorer.propertysheet.PropertySheet$RunNodes {
+- RequestProcessor.Task runTask
+- Node[] nodes
++ void postNodes(Node[])
++ void run()
+}
+
+
+class org.openide.explorer.propertysheet.PropertySheet$BeanPasteType {
+~ PropertyDetails details
+~ Transferable transferable
+~ DataFlavor flavor
++ <<Create>> BeanPasteType(PropertyDetails,Transferable,DataFlavor)
++ String getName()
++ org.openide.util.HelpCtx getHelpCtx()
++ Transferable paste()
+}
+
+
+class org.openide.explorer.propertysheet.PropertySheet$BeanTransferableOwner {
+- Object object
+- DataFlavor flavor
++ <<Create>> BeanTransferableOwner(Object)
++ DataFlavor[] getTransferDataFlavors()
++ boolean isDataFlavorSupported(DataFlavor)
++ Object getTransferData(DataFlavor)
+}
+
+
+
+
+org.openide.explorer.propertysheet.JPanel <|-- org.openide.explorer.propertysheet.PropertySheet
+org.openide.explorer.propertysheet.PropertySheet +.. org.openide.explorer.propertysheet.PropertySheet$BeansListener
+org.openide.explorer.propertysheet.NodeAdapter <|-- org.openide.explorer.propertysheet.PropertySheet$BeansListener
+org.openide.explorer.propertysheet.PropertySheet +.. org.openide.explorer.propertysheet.PropertySheet$ScrollableSplittedPanel
+org.openide.explorer.propertysheet.Scrollable <|.. org.openide.explorer.propertysheet.PropertySheet$ScrollableSplittedPanel
+org.openide.explorer.propertysheet.SplittedPanel <|-- org.openide.explorer.propertysheet.PropertySheet$ScrollableSplittedPanel
+org.openide.explorer.propertysheet.PropertySheet +.. org.openide.explorer.propertysheet.PropertySheet$SheetListener
+org.openide.explorer.propertysheet.SheetButtonListener <|.. org.openide.explorer.propertysheet.PropertySheet$SheetListener
+org.openide.explorer.propertysheet.PropertySheet +.. org.openide.explorer.propertysheet.PropertySheet$RunNodes
+org.openide.explorer.propertysheet.Runnable <|.. org.openide.explorer.propertysheet.PropertySheet$RunNodes
+org.openide.explorer.propertysheet.PropertySheet +.. org.openide.explorer.propertysheet.PropertySheet$BeanPasteType
+org.openide.explorer.propertysheet.PasteType <|-- org.openide.explorer.propertysheet.PropertySheet$BeanPasteType
+org.openide.explorer.propertysheet.PropertySheet +.. org.openide.explorer.propertysheet.PropertySheet$BeanTransferableOwner
+org.openide.explorer.propertysheet.Transferable <|.. org.openide.explorer.propertysheet.PropertySheet$BeanTransferableOwner
+@enduml

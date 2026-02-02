@@ -1,0 +1,28 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.ui.ColorAction {
+- JComponent comp
+- ColorPanel panel
++ <<Create>> ColorAction(JComponent,String[])
++ void actionPerformed(ActionEvent)
+}
+
+
+class uml.ui.ColorAction$ColorPanel {
+# HashMap tiles
+# <<Create>> ColorPanel(String[])
++ void propertyChange(PropertyChangeEvent)
+}
+
+
+
+
+javax.swing.AbstractAction <|-- uml.ui.ColorAction
+uml.ui.ColorAction +.. uml.ui.ColorAction$ColorPanel
+uml.ui.PropertyChangeListener <|.. uml.ui.ColorAction$ColorPanel
+uml.ui.JPanel <|-- uml.ui.ColorAction$ColorPanel
+@enduml

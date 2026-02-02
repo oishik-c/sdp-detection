@@ -1,0 +1,502 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.loaders;
+
+import java.beans.PropertyEditor;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.*;
+import java.text.MessageFormat;
+import java.lang.reflect.*;
+import java.awt.datatransfer.Transferable;
+
+import org.openide.filesystems.*;
+import org.openide.filesystems.FileSystem;
+import org.openide.util.NbBundle;
+import org.openide.nodes.Node;
+import org.openide.nodes.FilterNode;
+import org.openide.nodes.NodeTransfer;
+import org.openide.nodes.Sheet;
+import org.openide.nodes.PropertySupport;
+import org.openide.util.HelpCtx;
+import org.openide.util.WeakListener;
+
+
+public class DataShadow extends DataObject {
+    
+    static final long serialVersionUID = 6305590675982925167L;
+
+    
+    private DataObject original;
+
+    
+    static final String SHADOW_EXTENSION = "shadow"; 
+
+    
+    protected DataShadow (
+        FileObject fo, DataObject original, DataLoader loader
+    ) throws DataObjectExistsException {
+        super (fo, loader);
+        this.original = original;
+    }
+
+    
+    private DataShadow (FileObject fo, DataObject original) throws DataObjectExistsException {
+        this (fo, original, DataLoaderPool.getShadowLoader ());
+    }
+
+    
+    public static DataShadow create (DataFolder folder, DataObject original)
+    throws IOException {
+        return create (folder, null, original);
+    }
+
+    
+    public static DataShadow create (
+        DataFolder folder,
+        final String name,
+        final DataObject original
+    ) throws IOException {
+        final FileObject fo = folder.getPrimaryFile ();
+        final DataShadow[] arr = new DataShadow[1];
+
+        fo.getFileSystem ().runAtomicAction (new FileSystem.AtomicAction () {
+                                                 public void run () throws IOException {
+                                                     String n;
+                                                     if (name == null) {
+                                                         n = FileUtil.findFreeFileName (fo, original.getName (), SHADOW_EXTENSION);
+                                                     } else {
+                                                         n = name;
+                                                     }
+
+
+                                                     FileObject file = writeOriginal (
+                                                                           fo.createData (n, SHADOW_EXTENSION), original
+                                                                       );
+
+                                                     DataObject obj = DataObject.find (file);
+                                                     if (obj instanceof DataShadow) {
+                                                         arr[0] = (DataShadow)obj;
+                                                     } else {
+                                                         
+                                                         throw new DataObjectNotFoundException (obj.getPrimaryFile ());
+                                                     }
+                                                 }
+                                             });
+
+        return arr[0];
+    }
+
+    
+    private static FileObject writeOriginal (FileObject fo, DataObject obj)
+    throws IOException {
+        FileLock lock = fo.lock ();
+        try {
+            Writer os = new OutputStreamWriter (fo.getOutputStream (lock));
+            FileObject pf = obj.getPrimaryFile ();
+            os.write (pf.getPackageNameExt ('/', '.'));
+            os.write ('\n');
+            os.write (pf.getFileSystem ().getSystemName ());
+            os.write ('\n');
+            os.close ();
+        } finally {
+            lock.releaseLock ();
+        }
+        return fo;
+    }
+
+    
+    static DataShadow deserialize (FileObject fileObject) throws java.io.IOException {
+        BufferedReader ois = new BufferedReader (new InputStreamReader (fileObject.getInputStream ()));
+
+        try {
+            String s = ois.readLine ();
+            String fs = ois.readLine ();
+
+            if (s == null) {
+                
+                throw new java.io.FileNotFoundException (fileObject.getPackageNameExt ('/', '.'));
+            }
+
+            Repository rep = org.openide.TopManager.getDefault ().getRepository ();
+            FileSystem fileSystem;
+            if (fs != null) {
+                
+                fileSystem = rep.findFileSystem (fs);
+            } else {
+                fileSystem = null;
+            }
+
+            FileObject fo;
+
+            if (fileSystem != null) {
+                
+                fo = fileSystem.findResource (s);
+            } else {
+                fo = null;
+            }
+
+            if (fo == null) {
+                fo = rep.findResource (s);
+            }
+
+            if (fo == null) {
+                throw new java.io.FileNotFoundException (s);
+            }
+
+            DataObject original = DataObject.find (fo);
+
+            return new DataShadow (fileObject, original);
+        } finally {
+            ois.close ();
+        }
+    }
+
+
+    
+    public DataObject getOriginal () {
+        return original;
+    }
+
+    
+    protected Node createNodeDelegate () {
+        return new ShadowNode (this);
+    }
+
+    
+    public boolean isDeleteAllowed () {
+        return !getPrimaryFile ().isReadOnly ();
+    }
+
+    
+    public boolean isCopyAllowed ()  {
+        return true;
+    }
+
+    
+    public boolean isMoveAllowed ()  {
+        return !getPrimaryFile ().isReadOnly ();
+    }
+
+    
+    public boolean isRenameAllowed () {
+        return !getPrimaryFile ().isReadOnly ();
+    }
+
+    
+    public HelpCtx getHelpCtx () {
+        return getOriginal ().getHelpCtx ();
+    }
+
+    
+    protected DataObject handleCopy (DataFolder f) throws IOException {
+        return handleCreateFromTemplate (f, getName ());
+    }
+
+    
+    protected void handleDelete () throws IOException {
+        FileLock lock = getPrimaryFile ().lock ();
+        try {
+            getPrimaryFile ().delete (lock);
+        } finally {
+            lock.releaseLock ();
+        }
+    }
+
+    
+    protected FileObject handleRename (String name) throws IOException {
+        FileLock lock = getPrimaryFile ().lock ();
+        try {
+            getPrimaryFile ().rename (lock, name, SHADOW_EXTENSION);
+        } finally {
+            lock.releaseLock ();
+        }
+        return getPrimaryFile ();
+    }
+
+    
+    protected FileObject handleMove (DataFolder f) throws IOException {
+        String name = FileUtil.findFreeFileName (f.getPrimaryFile (), getName (), SHADOW_EXTENSION);
+        return FileUtil.moveFile (getPrimaryFile (), f.getPrimaryFile (), name);
+    }
+
+    
+    protected DataShadow handleCreateShadow (DataFolder f) throws IOException {
+        return original.handleCreateShadow (f);
+    }
+
+
+    
+    protected DataObject handleCreateFromTemplate (
+        DataFolder f, String name
+    ) throws IOException {
+        if (name == null) name = getName ();
+
+        name = FileUtil.findFreeFileName (f.getPrimaryFile (), name, SHADOW_EXTENSION);
+        return new DataShadow (
+                   FileUtil.copyFile (getPrimaryFile (), f.getPrimaryFile (), name),
+                   original
+               );
+    }
+
+    
+    public Node.Cookie getCookie (Class c) {
+        if (c.isInstance (this)) {
+            return this;
+        }
+        return original.getCookie (c);
+    }
+
+    
+    protected static class ShadowNode extends FilterNode {
+        
+        private static MessageFormat format;
+        
+        private static MessageFormat descriptionFormat;
+
+        
+        private DataShadow obj;
+
+        
+        private Sheet sheet;
+
+        
+        public ShadowNode (DataShadow shadow) {
+            this (shadow, shadow.getOriginal ().getNodeDelegate ());
+        }
+
+        
+        private ShadowNode (DataShadow shadow, Node node) {
+            super (node);
+            this.obj = shadow;
+        }
+
+        
+        public Node cloneNode () {
+            ShadowNode sn = new ShadowNode (obj);
+            return sn;
+        }
+
+        
+        public void setName (String name) {
+            try {
+                obj.rename (name);
+                fireDisplayNameChange (null, null);
+                fireNameChange (null, null);
+            } catch (IOException ex) {
+                throw new IllegalArgumentException (ex.getMessage ());
+            }
+        }
+
+        
+        public String getName () {
+            return obj.getName ();
+        }
+
+        
+        public String getDisplayName () {
+            if (format == null) {
+                format = new MessageFormat (NbBundle.getBundle (DataShadow.class).getString ("FMT_shadowName"));
+            }
+            return format.format (createArguments ());
+        }
+
+        
+        private Object[] createArguments () {
+
+            return new Object[] {
+                       obj.getName (), 
+                       super.getDisplayName (), 
+                       systemNameOrFileName (obj.getPrimaryFile ()), 
+                       systemNameOrFileName (obj.getOriginal ().getPrimaryFile ()) 
+                   };
+        }
+
+        
+        private static String systemNameOrFileName (FileObject fo) {
+            if (fo.isRoot ()) {
+                try {
+                    return fo.getFileSystem ().getDisplayName ();
+                } catch (FileStateInvalidException ex) {
+                }
+            }
+            return fo.getPackageNameExt ('/', '.');
+        }
+
+        
+        public String getShortDescription () {
+            if (descriptionFormat == null) {
+                descriptionFormat = new MessageFormat (
+                                        NbBundle.getBundle (DataShadow.class).getString ("FMT_shadowHint")
+                                    );
+            }
+            return descriptionFormat.format (createArguments ());
+        }
+
+        
+        public boolean canDestroy () {
+            return obj.isDeleteAllowed ();
+        }
+
+        
+        public void destroy () throws IOException {
+            obj.delete ();
+            
+        }
+
+        
+        public final boolean canRename () {
+            return obj.isRenameAllowed ();
+        }
+
+        
+        public final boolean canCopy () {
+            return obj.isCopyAllowed ();
+        }
+
+        
+        public final boolean canCut () {
+            return obj.isMoveAllowed ();
+        }
+
+        
+        public Node.Cookie getCookie (Class cl) {
+            Node.Cookie c = obj.getCookie (cl);
+            if (c != null) {
+                return c;
+            } else {
+                return super.getCookie (cl);
+            }
+        }
+
+        
+        public PropertySet[] getPropertySets () {
+            Sheet s = sheet;
+            if (s == null) {
+                s = sheet = cloneSheet ();
+            }
+            return s.toArray ();
+        }
+
+        
+        public Transferable clipboardCopy () throws IOException {
+            return NodeTransfer.transferable (this, NodeTransfer.CLIPBOARD_COPY);
+        }
+
+        
+        public Transferable clipboardCut () throws IOException {
+            return NodeTransfer.transferable (this, NodeTransfer.CLIPBOARD_CUT);
+        }
+
+        
+        public Transferable drag () throws IOException {
+            return clipboardCopy ();
+        }
+
+        
+        protected org.openide.nodes.NodeListener createNodeListener () {
+            return new PropL (this);
+        }
+
+        
+        public boolean equals (Object o) {
+            if (o instanceof ShadowNode) {
+                ShadowNode sn = (ShadowNode)o;
+                return sn.obj == obj;
+            }
+            return false;
+        }
+
+        
+        public int hashCode () {
+            return obj.hashCode ();
+        }
+
+
+        
+        private Sheet cloneSheet () {
+            PropertySet[] sets = this.getOriginal ().getPropertySets ();
+
+            Sheet s = new Sheet ();
+            for (int i = 0; i < sets.length; i++) {
+                Sheet.Set ss = new Sheet.Set ();
+                ss.put (sets[i].getProperties ());
+                ss.setName (sets[i].getName ());
+                ss.setDisplayName (sets[i].getDisplayName ());
+                ss.setShortDescription (sets[i].getShortDescription ());
+
+                
+                modifySheetSet (ss);
+
+                s.put (ss);
+            }
+
+            return s;
+        }
+
+        
+        private void modifySheetSet (Sheet.Set ss) {
+            Property p = ss.remove (DataObject.PROP_NAME);
+            if (p != null) {
+                p = new PropertySupport.Name (this);
+                ss.put (p);
+
+                p = new Name ();
+                ss.put (p);
+            }
+        }
+
+        
+        private final class Name extends PropertySupport.ReadWrite {
+            public Name () {
+                super (
+                    "OriginalName", 
+                    String.class,
+                    DataObject.getString ("PROP_ShadowOriginalName"),
+                    DataObject.getString ("HINT_ShadowOriginalName")
+                );
+            }
+
+            public Object getValue () {
+                return obj.getOriginal ().getName();
+            }
+
+            public void setValue (Object val) throws IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
+                if (!canWrite())
+                    throw new IllegalAccessException();
+                if (!(val instanceof String))
+                    throw new IllegalArgumentException();
+
+                try {
+                    DataObject orig = obj.getOriginal ();
+                    orig.rename ((String)val);
+                    writeOriginal (obj.getPrimaryFile (), orig);
+                } catch (IOException ex) {
+                    throw new InvocationTargetException (ex);
+                }
+            }
+
+            public boolean canWrite () {
+                return obj.getOriginal ().isRenameAllowed();
+            }
+        }
+
+        
+        private static class PropL extends FilterNode.NodeAdapter {
+            public PropL (ShadowNode sn) {
+                super (sn);
+            }
+
+            
+        }
+
+    }
+}
+
+

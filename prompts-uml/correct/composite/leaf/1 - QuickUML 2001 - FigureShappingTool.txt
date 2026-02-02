@@ -1,0 +1,54 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class diagram.tool.FigureShappingTool {
+- {static} Cursor HZ_CURSOR
+- {static} Cursor VT_CURSOR
+- {static} Cursor SENW_CURSOR
+- {static} Cursor SWNE_CURSOR
+- {static} int QUAD_LEFT
+- {static} int QUAD_MIDDLE
+- {static} int QUAD_RIGHT
+- {static} int QUAD_TOP
+- {static} int QUAD_CENTER
+- {static} int QUAD_BOTTOM
+- {static} int MINIMUM_SIZE
+- MouseHandler mouseHandler
+- Graphics2D graphics
+- Point2D dragPoint
+- Point2D lastPoint
+- Rectangle2D.Double outline
+- Cursor originalCursor
+- Diagram diagram
+- Point2D center
+- Rectangle2D bounds
+- Figure figure
+# Figure[] relatedFigures
+- int sizingDirection
++ void install(Diagram)
++ void uninstall(Diagram)
+- void paintOutline(double,double,boolean)
+- void reshapeOutline(double,double)
+- void getQuadrant(Point2D)
+- boolean hasQuad(int)
+- Cursor getCursor()
+- Graphics2D getGraphics(Component)
+# void reset()
+}
+
+
+class diagram.tool.FigureShappingTool$MouseHandler {
++ void mousePressed(MouseEvent)
++ void mouseDragged(MouseEvent)
++ void mouseReleased(MouseEvent)
+}
+
+
+
+diagram.tool.AbstractTool <|-- diagram.tool.FigureShappingTool
+diagram.tool.FigureShappingTool +.. diagram.tool.FigureShappingTool$MouseHandler
+diagram.tool.MouseInputAdapter <|-- diagram.tool.FigureShappingTool$MouseHandler
+@enduml

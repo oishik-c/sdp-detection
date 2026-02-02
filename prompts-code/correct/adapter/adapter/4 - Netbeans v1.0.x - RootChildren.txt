@@ -1,0 +1,231 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.objectbrowser;
+
+import java.util.*;
+
+import org.openide.TopManager;
+import org.openide.filesystems.FileSystem;
+import org.openide.filesystems.FileStateInvalidException;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileEvent;
+import org.openide.filesystems.FileChangeAdapter;
+import org.openide.filesystems.FileChangeListener;
+import org.openide.filesystems.RepositoryListener;
+import org.openide.filesystems.RepositoryEvent;
+import org.openide.filesystems.RepositoryReorderedEvent;
+import org.openide.loaders.DataFilter;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.loaders.DataLoaderPool;
+import org.openide.nodes.FilterNode;
+import org.openide.nodes.Node;
+import org.openide.nodes.Children;
+import org.openide.nodes.Children.SortedMap;
+import org.openide.nodes.NodeAdapter;
+import org.openide.util.WeakListener;
+import org.openide.util.enum.AlterEnumeration;
+import org.openide.util.enum.EmptyEnumeration;
+import org.openide.util.enum.SingletonEnumeration;
+import org.openide.util.enum.SequenceEnumeration;
+
+
+public class TreeNode extends FilterNode {
+
+
+    
+
+    
+    TreeNode (Node original) {
+        this (original, new DataFilter () {
+                  public boolean acceptDataObject (DataObject d) {
+                      return d instanceof DataFolder;
+                  }
+              });
+    }
+
+    
+    TreeNode (Node original, DataFilter dataFilter) {
+        super (original, new RootChildren (dataFilter));
+    }
+
+
+    
+
+    static private class RootChildren extends Children.Keys implements RepositoryListener {
+
+        
+        private DataFilter          dataFilter;
+
+
+        
+
+        
+        RootChildren (DataFilter dataFilter) {
+            this.dataFilter = dataFilter;
+        }
+
+
+        
+
+        
+        protected void addNotify () {
+            refreshKeys ();
+            TopManager.getDefault ().getRepository ().addRepositoryListener (
+                new WeakListener.Repository (this)
+            );
+        }
+
+        
+        protected Node[] createNodes (Object key) {
+            try {
+                if ((!((FileSystem) key).isHidden ()) &&
+                        ((FileSystem) key).isValid ()
+                   ) {
+                    FileObject fo = ((FileSystem) key).getRoot ();
+                    DataFolder df = (DataFolder) DataObject.find (fo);
+                    if (dataFilter.acceptDataObject (df))
+                        return new Node [] {
+                                   
+                                   df.new FolderNode (new PackageChildren (fo, dataFilter)) {
+                                   String name;
+                                   public String getDisplayName () {
+                                       try {
+                                           if (name != null) return name;
+                                           FileObject file;
+                                           return name = getDataObject ().getPrimaryFile ().getFileSystem ().
+                                                         getDisplayName ();
+                                       } catch (FileStateInvalidException ee) {
+                                           return "???"; 
+                                       }
+                                   }
+                               }
+                           };
+                }
+            } catch (DataObjectNotFoundException ee) {
+            }
+            return new Node [0];
+        }
+
+        
+        protected void removeNotify () {
+            setKeys (java.util.Collections.EMPTY_SET);
+        }
+
+
+        
+
+        
+        public void fileSystemAdded (final RepositoryEvent ev) {
+            refreshKeys ();
+        }
+
+        
+        public void fileSystemRemoved (RepositoryEvent ev) {
+            refreshKeys ();
+        }
+
+        
+        public void fileSystemPoolReordered (RepositoryReorderedEvent ev) {
+        }
+
+
+        
+
+        
+        void refreshKeys () {
+            setKeys (TopManager.getDefault ().getRepository ().toArray ());
+        }
+    }
+
+    static private class PackageChildren extends Children.Keys {
+
+        
+        private FileObject          fileObject;
+        
+        private DataFilter          dataFilter;
+        
+        private FileChangeListener  myFerret = new FileChangeAdapter () {
+                                                   public void fileFolderCreated (FileEvent fe) {
+                                                       refreshKeys ();
+                                                   }
+                                                   public void fileDeleted (FileEvent fe) {
+                                                       refreshKeys ();
+                                                   }
+                                               };
+
+
+        
+
+        
+        PackageChildren (FileObject fo, DataFilter dataFilter) {
+            fileObject = fo;
+            this.dataFilter = dataFilter;
+        }
+
+
+        
+
+        
+        protected void addNotify () {
+            refreshKeys ();
+            fileObject.addFileChangeListener (myFerret);
+        }
+
+        
+        protected Node[] createNodes (Object key) {
+            try {
+                DataFolder df = (DataFolder) DataObject.find ((FileObject) key);
+                if (dataFilter.acceptDataObject (df))
+                    return new Node [] {
+                               df.new FolderNode (new PackageChildren ((FileObject) key, dataFilter))
+                           };
+            } catch (DataObjectNotFoundException ee) {
+            }
+            return new Node [0];
+        }
+
+        
+        protected void removeNotify () {
+            fileObject.removeFileChangeListener (myFerret);
+            setKeys (java.util.Collections.EMPTY_SET);
+        }
+
+
+        
+
+        
+        public void fileSystemAdded (final RepositoryEvent ev) {
+            refreshKeys ();
+        }
+
+        
+        public void fileSystemRemoved (RepositoryEvent ev) {
+            refreshKeys ();
+        }
+
+        
+        public void fileSystemPoolReordered (RepositoryReorderedEvent ev) {
+        }
+
+
+        
+
+        
+        void refreshKeys () {
+            Enumeration e = fileObject.getFolders (false);
+            ArrayList al = new ArrayList ();
+            while (e.hasMoreElements ())
+                al.add (e.nextElement ());
+            setKeys (al.toArray ());
+        }
+    }
+}
+
+

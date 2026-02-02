@@ -1,0 +1,53 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram;
+
+import java.util.Iterator;
+
+
+public interface SelectionModel {
+
+  
+  public boolean contains(Figure figure);
+
+  
+  public boolean contains(Link link);
+
+  
+  public void add(Figure figure);
+
+  
+  public void add(Figure f, boolean reset);
+
+  
+  public void remove(Figure figure);
+
+  
+  public void clear();
+
+
+  
+  public int size();
+
+
+  
+  public Iterator iterator();
+
+
+  
+  public Object[] toArray(Object[] array);
+
+
+
+  
+  public void addSelectionListener(DiagramSelectionListener listener);
+
+  
+  public void removeSelectionListener(DiagramSelectionListener listener);
+
+}

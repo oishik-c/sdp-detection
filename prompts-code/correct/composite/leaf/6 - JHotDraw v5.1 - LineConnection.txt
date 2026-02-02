@@ -1,0 +1,246 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.figures;
+
+import java.awt.Point;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.Vector;
+
+import CH.ifa.draw.framework.ConnectionFigure;
+import CH.ifa.draw.framework.Connector;
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.FigureChangeEvent;
+import CH.ifa.draw.standard.ChangeConnectionEndHandle;
+import CH.ifa.draw.standard.ChangeConnectionStartHandle;
+import CH.ifa.draw.util.StorableInput;
+import CH.ifa.draw.util.StorableOutput;
+
+
+public  class LineConnection extends PolyLineFigure implements ConnectionFigure {
+
+	protected Connector    fStart = null;
+	protected Connector    fEnd = null;
+
+	
+	private static final long serialVersionUID = 6883731614578414801L;
+	private int lineConnectionSerializedDataVersion = 1;
+
+	
+	public LineConnection() {
+		super(4);
+		setStartDecoration(new ArrowTip());
+		setEndDecoration(new ArrowTip());
+	}
+
+	
+	public boolean canConnect() {
+		return false;
+	}
+
+	
+	protected void basicMoveBy(int dx, int dy) {
+		
+		for (int i = 1; i < fPoints.size()-1; i++)
+			((Point) fPoints.elementAt(i)).translate(dx, dy);
+
+		updateConnection(); 
+	}
+
+	
+	public void connectStart(Connector start) {
+		fStart = start;
+		startFigure().addFigureChangeListener(this);
+	}
+
+	
+	public void connectEnd(Connector end) {
+		fEnd = end;
+		endFigure().addFigureChangeListener(this);
+		handleConnect(startFigure(), endFigure());
+	}
+
+	
+	public void disconnectStart() {
+		startFigure().removeFigureChangeListener(this);
+		fStart = null;
+	}
+
+	
+	public void disconnectEnd() {
+		handleDisconnect(startFigure(), endFigure());
+		endFigure().removeFigureChangeListener(this);
+		fEnd = null;
+	}
+
+	
+	public boolean connectsSame(ConnectionFigure other) {
+		return other.start() == start() && other.end() == end();
+	}
+
+	
+	protected void handleDisconnect(Figure start, Figure end) {}
+
+	
+	protected void handleConnect(Figure start, Figure end) {}
+
+	
+	public Figure startFigure() {
+		if (start() != null)
+			return start().owner();
+		return null;
+	}
+
+	
+	public Figure endFigure() {
+		if (end() != null)
+			return end().owner();
+		return null;
+	}
+
+	
+	public Connector start() {
+		return fStart;
+	}
+
+	
+	public Connector end() {
+		return fEnd;
+	}
+
+	
+	public boolean canConnect(Figure start, Figure end) {
+		return true;
+	}
+
+	
+	public void startPoint(int x, int y) {
+		willChange();
+		if (fPoints.size() == 0)
+			fPoints.addElement(new Point(x, y));
+		else
+			fPoints.setElementAt(new Point(x, y), 0);
+		changed();
+	}
+
+	
+	public void endPoint(int x, int y) {
+		willChange();
+		if (fPoints.size() < 2)
+			fPoints.addElement(new Point(x, y));
+		else
+			fPoints.setElementAt(new Point(x, y), fPoints.size()-1);
+		changed();
+	}
+
+	
+	public Point startPoint(){
+		Point p = (Point)fPoints.firstElement();
+		return new Point(p.x, p.y);
+	}
+
+	
+	public Point endPoint() {
+		Point p = (Point)fPoints.lastElement();
+		return new Point(p.x, p.y);
+	}
+
+	
+	public Vector handles() {
+		Vector handles = new Vector(fPoints.size());
+		handles.addElement(new ChangeConnectionStartHandle(this));
+		for (int i = 1; i < fPoints.size()-1; i++)
+			handles.addElement(new PolyLineHandle(this, locator(i), i));
+		handles.addElement(new ChangeConnectionEndHandle(this));
+		return handles;
+	}
+
+	
+	public void setPointAt(Point p, int i) {
+		super.setPointAt(p, i);
+		layoutConnection();
+	}
+
+	
+	public void insertPointAt(Point p, int i) {
+		super.insertPointAt(p, i);
+		layoutConnection();
+	}
+
+	
+	public void removePointAt(int i) {
+		super.removePointAt(i);
+		layoutConnection();
+	}
+
+	
+	public void updateConnection() {
+		if (fStart != null) {
+			Point start = fStart.findStart(this);
+			startPoint(start.x, start.y);
+		}
+		if (fEnd != null) {
+			Point end = fEnd.findEnd(this);
+			endPoint(end.x, end.y);
+		}
+	}
+
+	
+	public void layoutConnection() {
+		updateConnection();
+	}
+
+	public void figureChanged(FigureChangeEvent e) {
+		updateConnection();
+	}
+
+	public void figureRemoved(FigureChangeEvent e) {
+		if (listener() != null)
+			listener().figureRequestRemove(new FigureChangeEvent(this));
+	}
+
+	public void figureRequestRemove(FigureChangeEvent e) {}
+	public void figureInvalidated(FigureChangeEvent e) {}
+	public void figureRequestUpdate(FigureChangeEvent e) {}
+
+	public void release() {
+		super.release();
+		handleDisconnect(startFigure(), endFigure());
+		if (fStart != null) startFigure().removeFigureChangeListener(this);
+		if (fEnd   != null) endFigure().removeFigureChangeListener(this);
+	}
+
+	public void write(StorableOutput dw) {
+		super.write(dw);
+		dw.writeStorable(fStart);
+		dw.writeStorable(fEnd);
+	}
+
+	public void read(StorableInput dr) throws IOException {
+		super.read(dr);
+		Connector start = (Connector)dr.readStorable();
+		if (start != null)
+			connectStart(start);
+		Connector end = (Connector)dr.readStorable();
+		if (end != null)
+			connectEnd(end);
+		if (start != null && end != null)
+			updateConnection();
+	}
+
+	private void readObject(ObjectInputStream s)
+		throws ClassNotFoundException, IOException {
+
+		s.defaultReadObject();
+
+		if (fStart != null)
+			connectStart(fStart);
+		if (fEnd != null)
+			connectEnd(fEnd);
+	}
+}

@@ -1,0 +1,154 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.core;
+
+import java.net.URL;
+import java.util.Enumeration;
+
+import org.openide.filesystems.*;
+import org.openide.execution.NbClassLoader;
+import org.openide.util.WeakListener;
+
+
+class ClassLoaderSupport extends NbClassLoader
+    implements FileChangeListener, RepositoryListener {
+    
+    private FileChangeListener listener;
+
+    
+    private static Repository pool = NbTopManager.getDefaultRepository ();
+    
+    private static ClassLoaderSupport current;
+
+    
+    static ClassLoader currentClassLoader () {
+        ClassLoader c = current;
+        if (c == null) {
+            c = createClassLoader ();
+        }
+        return c;
+    }
+
+
+
+    
+    synchronized static ClassLoader createClassLoader () {
+        if (current == null) {
+            current = new ClassLoaderSupport ();
+        }
+        return current;
+    }
+
+    
+    synchronized static void resetLoader () {
+        if (current != null) {
+            current = null;
+        }
+    }
+
+    
+    public ClassLoaderSupport () {
+        Repository rep = NbTopManager.getDefaultRepository ();
+        rep.addRepositoryListener (WeakListener.repository (this, rep));
+        listener = WeakListener.fileChange (this, null);
+    }
+
+
+    
+    protected Class findClass (String name) throws ClassNotFoundException {
+        Class c = super.findClass (name);
+        if (c != null) {
+            FileObject fo;
+            int lastDot = name.lastIndexOf ('.');
+            if (lastDot == -1) {
+                fo = pool.find ("", name, "class"); 
+            } else {
+                fo = pool.find (name.substring (0, lastDot), name.substring (lastDot + 1), "class"); 
+            }
+            if (fo != null) {
+                
+                
+                fo.addFileChangeListener (listener);
+            }
+        }
+        return c;
+    }
+
+
+    
+    private void test (FileObject fo) {
+        if (current == this) {
+            reset ();
+        }
+        fo.removeFileChangeListener (listener);
+    }
+
+    
+    private synchronized void reset () {
+        if (current == this) {
+            current = null;
+        }
+    }
+
+    
+    private void testRemove (FileObject fo) {
+        if (current != this) {
+            fo.removeFileChangeListener (listener);
+        }
+    }
+
+
+
+    
+    public void fileSystemAdded (RepositoryEvent ev) {
+        reset ();
+    }
+
+    
+    public void fileSystemRemoved (RepositoryEvent ev) {
+        reset ();
+    }
+
+    
+    public void fileSystemPoolReordered (RepositoryReorderedEvent ev) {
+        reset ();
+    }
+
+
+    
+    public void fileFolderCreated (FileEvent fe) {
+        testRemove (fe.getFile ());
+    }
+
+    
+    public void fileDataCreated (FileEvent fe) {
+        testRemove (fe.getFile ());
+    }
+
+    
+    public void fileChanged (FileEvent fe) {
+        test (fe.getFile ());
+    }
+
+    
+    public void fileDeleted (FileEvent fe) {
+        test (fe.getFile ());
+    }
+
+    
+    public void fileRenamed (FileRenameEvent fe) {
+        test (fe.getFile ());
+    }
+
+    
+    public void fileAttributeChanged (FileAttributeEvent fe) {
+        testRemove (fe.getFile ());
+    }
+}
+
+

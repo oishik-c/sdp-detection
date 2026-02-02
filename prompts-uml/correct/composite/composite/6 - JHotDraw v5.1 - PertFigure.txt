@@ -1,0 +1,52 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.samples.pert.PertFigure {
+- {static} int BORDER
+- Rectangle fDisplayBox
+- Vector fPreTasks
+- Vector fPostTasks
+- {static} long serialVersionUID
+- int pertFigureSerializedDataVersion
++ <<Create>> PertFigure()
++ int start()
++ int end()
++ int duration()
++ void setEnd(int)
++ void addPreTask(PertFigure)
++ void addPostTask(PertFigure)
++ void removePreTask(PertFigure)
++ void removePostTask(PertFigure)
+- int asInt(int)
+- String taskName()
+- void setInt(int,int)
+# void basicMoveBy(int,int)
++ Rectangle displayBox()
++ void basicDisplayBox(Point,Point)
+- void drawBorder(Graphics)
++ void draw(Graphics)
++ Vector handles()
+- void initialize()
+- void layout()
+- boolean needsLayout()
++ void update(FigureChangeEvent)
++ void figureChanged(FigureChangeEvent)
++ void figureRemoved(FigureChangeEvent)
++ void notifyPostTasks()
++ void updateDurations()
++ boolean hasCycle(Figure)
++ void write(StorableOutput)
++ void writeTasks(StorableOutput,Vector)
++ void read(StorableInput)
++ Insets connectionInsets()
++ Vector readTasks(StorableInput)
+}
+
+
+
+
+CH.ifa.draw.standard.CompositeFigure <|-- CH.ifa.draw.samples.pert.PertFigure
+@enduml

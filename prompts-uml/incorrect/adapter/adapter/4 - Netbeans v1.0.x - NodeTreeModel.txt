@@ -1,0 +1,34 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.explorer.view.NodeTreeModel {
+- Listener listener
+~ {static} long serialVersionUID
++ <<Create>> NodeTreeModel()
++ <<Create>> NodeTreeModel(Node)
++ void setNode(Node)
+- Listener listener()
++ void valueForPathChanged(TreePath,Object)
+}
+
+
+class org.openide.explorer.view.NodeTreeModel$Listener {
+- Reference model
++ <<Create>> Listener(NodeTreeModel)
+- NodeTreeModel get(VisualizerEvent)
++ void added(VisualizerEvent.Added)
++ void removed(VisualizerEvent.Removed)
++ void reordered(VisualizerEvent.Reordered)
++ void update(VisualizerNode)
+}
+
+
+
+
+org.openide.explorer.view.DefaultTreeModel <|-- org.openide.explorer.view.NodeTreeModel
+org.openide.explorer.view.NodeTreeModel +.. org.openide.explorer.view.NodeTreeModel$Listener
+org.openide.explorer.view.NodeModel <|.. org.openide.explorer.view.NodeTreeModel$Listener
+@enduml

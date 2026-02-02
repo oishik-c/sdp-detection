@@ -1,0 +1,265 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.core;
+
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.beans.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+
+import org.openide.*;
+import org.openide.loaders.*;
+import org.openide.options.*;
+import org.openide.actions.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.actions.*;
+import org.openide.nodes.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.WeakListener;
+
+
+class ControlPanelNode extends AbstractNode {
+    
+    static final long serialVersionUID = 472235064406221888L;
+
+    
+    private static Node controlPanel;
+    
+    private static Node projectSettings;
+
+    
+    private static final String CP_ICON_BASE =
+        "/org/netbeans/core/resources/controlPanel"; 
+
+    
+    
+
+    
+    ControlPanelNode () {
+        this(NbControlPanel.getDefault());
+    }
+
+    
+    private ControlPanelNode (NbControlPanel options) {
+        
+        
+        super(new ControlPanelChildren(options));
+        initialize();
+        
+    }
+
+    
+    public static synchronized Node getDefault () {
+        if (controlPanel == null) {
+            controlPanel = new ControlPanelNode ();
+        }
+        return controlPanel;
+    }
+
+    
+    public static synchronized Node getProjectSettings () {
+        if (projectSettings == null) {
+            Places.Nodes ns = TopManager.getDefault ().getPlaces ().nodes ();
+
+            projectSettings = new ControlPanelNode ();
+            projectSettings.getChildren ().add (new Node[] {
+                                                    ns.repositorySettings ().cloneNode (),
+                                                    ns.workspaces ().cloneNode ()
+                                                });
+
+            projectSettings.setName (Main.getString ("CTL_Project_Settings"));
+            projectSettings.setShortDescription (Main.getString ("CTL_Project_Settings_Hint"));
+        }
+        return projectSettings;
+    }
+
+
+    private void initialize () {
+        setName(NbBundle.getBundle(ControlPanelNode.class).
+                getString("CTL_ControlPanel"));
+        setIconBase(CP_ICON_BASE);
+        getCookieSet ().add (new InstanceSupport.Instance (NbTopManager.getDefault ().getControlPanel ()));
+    }
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (ControlPanelNode.class);
+    }
+
+    
+    public SystemAction[] createActions () {
+        return new SystemAction[] {
+                   SystemAction.get(ToolsAction.class),
+                   SystemAction.get(PropertiesAction.class),
+               };
+    }
+
+
+    
+    public Node.Handle getHandle() {
+        return new Han (this == getDefault ());
+    }
+
+
+    
+
+    private static final class Han implements Node.Handle {
+        private boolean def;
+
+        static final long serialVersionUID =-2211277830988549398L;
+        
+        public Han (boolean def) {
+            this.def = def;
+        }
+
+        public Node getNode () {
+            return def ? getDefault () : getProjectSettings ();
+        }
+    }
+
+    
+    private static class ControlPanelItemNode extends BeanNode {
+        
+        public ControlPanelItemNode(SystemOption option) throws IntrospectionException {
+            super(option);
+        }
+
+
+        
+        public boolean canDestroy () {
+            return false;
+        }
+
+        
+        public boolean canCut () {
+            return false;
+        }
+
+        
+        public Node cloneNode () {
+            try {
+                return new ControlPanelItemNode ((SystemOption)getBean ());
+            } catch (IntrospectionException e) {
+                return super.cloneNode ();
+            }
+        }
+
+    } 
+
+    
+    private static final class ControlPanelChildren extends Children.Keys
+        implements PropertyChangeListener, NodeListener, java.util.Comparator {
+        
+        private NbControlPanel options;
+
+        
+        ControlPanelChildren (final NbControlPanel options) {
+            this.options = options;
+            
+            
+            options.addPropertyChangeListener(WeakListener.propertyChange (this, options));
+            if (getNode () == projectSettings) {
+                ServicesNode.getDefault ().addNodeListener (
+                    WeakListener.node (this, ServicesNode.getDefault ())
+                );
+            }
+            setBefore (true);
+        }
+
+        
+        private void update () {
+            
+            List l = Arrays.asList (options.getSystemOptions());
+            
+            Set s = new TreeSet (this);
+            s.addAll (l);
+
+            if (getNode () == projectSettings) {
+                s.add (ServicesNode.getDefault ());
+            }
+
+            setKeys (s);
+        }
+
+        
+        protected void addNotify () {
+            update ();
+        }
+
+        
+        protected Node[] createNodes (Object key) {
+
+            if (key == ServicesNode.getDefault ()) {
+                Node[] arr = ServicesNode.getDefault ().getChildren ().getNodes ();
+                arr = (Node[])arr.clone ();
+                for (int i = 0; i < arr.length; i++) {
+                    arr[i] = arr[i].cloneNode ();
+                }
+                return arr;
+            }
+
+            SystemOption op = (SystemOption)key;
+            try {
+                Node n = new ControlPanelNode.ControlPanelItemNode(op);
+                return new Node[] { n };
+            } catch (IntrospectionException e) {
+                
+                
+                return new Node[] { };
+            }
+        }
+
+        
+        public void propertyChange(final java.beans.PropertyChangeEvent p1) {
+            if (p1.getSource () == ServicesNode.getDefault ()) {
+                
+                return;
+            } else {
+                update ();
+            }
+        }
+
+        
+        public void childrenAdded(NodeMemberEvent ev) {
+            refreshKey (ServicesNode.getDefault ());
+        }
+        
+        public void childrenRemoved(NodeMemberEvent ev) {
+            refreshKey (ServicesNode.getDefault ());
+        }
+        
+        public void childrenReordered(NodeReorderEvent ev) {
+            refreshKey (ServicesNode.getDefault ());
+        }
+
+        
+        public void nodeDestroyed(NodeEvent ev) {
+        }
+
+        
+        public int compare(Object oi, Object oj) {
+            if (oi == oj) return 0;
+
+            if (oi instanceof Node) return -1;
+            if (oj instanceof Node) return 1;
+
+            String namei = ((SystemOption) oi).displayName();
+            String namej = ((SystemOption) oj).displayName();
+            return namei.compareTo(namej);
+        }
+
+
+    } 
+
+}
+
+

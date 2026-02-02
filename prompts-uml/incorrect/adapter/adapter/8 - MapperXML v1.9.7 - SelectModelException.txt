@@ -1,0 +1,31 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.model.SelectModelException {
++ {static} int REASON_OFFSET
++ {static} int REASON_HOLDER_LIST_MISMATCH
+- {static} String[] messages
+- String displayPropertyName
+- String[] listPropertyNames
+- String[] propertyNames
+- boolean nullAllowed
+- String nullDisplay
++ <<Create>> SelectModelException(int,String,String[],String[],boolean,String)
+# <<Create>> SelectModelException(String,int)
++ {static} String getReasonMessage(int)
+# void setDiagnosticsInfo()
++ String getDisplayPropertyName()
++ String[] getListPropertyNames()
++ String[] getPropertyNames()
++ boolean isNullAllowed()
++ String getNullDisplay()
+}
+
+
+
+
+com.taursys.model.ModelException <|-- com.taursys.model.SelectModelException
+@enduml

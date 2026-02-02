@@ -1,0 +1,44 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package org.acm.seguin.awt;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JList;
+
+
+class MoveItemAdapter implements ActionListener {
+	private OrderableListModel olm;
+	private JList list;
+	private int direction;
+
+
+	
+	public MoveItemAdapter(OrderableListModel model, JList list, int direction) {
+		olm = model;
+		this.list = list;
+		this.direction = direction;
+	}
+
+
+	
+	public void actionPerformed(ActionEvent evt) {
+		int item = list.getSelectedIndex();
+		if (item == -1) {
+			return;
+		}
+
+		int newPos = item + direction;
+		if ((newPos < 0) || (newPos >= olm.getSize())) {
+			return;
+		}
+
+		olm.swap(item, newPos);
+
+		list.setSelectedIndex(newPos);
+	}
+}

@@ -1,0 +1,109 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.windows.TopComponent {
+~ {static} long serialVersionUID
+- {static} Registry registry
++ {static} int CLOSE_EACH
++ {static} int CLOSE_LAST
+- {static} SystemAction[] systemActions
+- NodeName nodeName
+- WindowManager.Component manager
+- int closeOperation
+~ short serialVersion
++ <<Create>> TopComponent()
++ <<Create>> TopComponent(DataObject)
++ {static} Registry getRegistry()
++ Node[] getActivatedNodes()
++ void setActivatedNodes(Node[])
++ UndoRedo getUndoRedo()
++ void open()
++ void open(Workspace)
++ boolean isOpened()
++ boolean isOpened(Workspace)
++ boolean close()
++ boolean close(Workspace)
++ boolean canClose(Workspace,boolean)
++ SystemAction[] getSystemActions()
++ void setCloseOperation(int)
++ int getCloseOperation()
+# void componentActivated()
+# void componentDeactivated()
++ void requestFocus()
++ void setName(String)
++ void setIcon(Image)
++ Image getIcon()
++ org.openide.util.HelpCtx getHelpCtx()
+~ WindowManager.Component getManager()
++ void writeExternal(ObjectOutput)
++ void readExternal(ObjectInput)
+# Object writeReplace()
+}
+
+
+interface org.openide.windows.TopComponent$Cloneable {
++ TopComponent cloneComponent()
+}
+
+class org.openide.windows.TopComponent$NodeName {
+- Reference top
+- Node node
++ <<Create>> NodeName(TopComponent)
+~ void attach(Node)
++ void propertyChange(PropertyChangeEvent)
+}
+
+
+class org.openide.windows.TopComponent$FocusMan {
+- FocusManager delegate
+- {static} HashSet posted
+- <<Create>> FocusMan(FocusManager)
++ {static} void install()
++ void processKeyEvent(java.awt.Component,java.awt.event.KeyEvent)
++ void focusNextComponent(java.awt.Component)
++ void focusPreviousComponent(java.awt.Component)
+~ {static} void process(KeyEvent,java.awt.Component)
+}
+
+
+interface org.openide.windows.TopComponent$Registry {
++ {static} String PROP_OPENED
++ {static} String PROP_ACTIVATED
++ {static} String PROP_CURRENT_NODES
++ {static} String PROP_ACTIVATED_NODES
++ Set getOpened()
++ TopComponent getActivated()
++ Node[] getCurrentNodes()
++ Node[] getActivatedNodes()
++ void addPropertyChangeListener(PropertyChangeListener)
++ void removePropertyChangeListener(PropertyChangeListener)
+}
+
+
+class org.openide.windows.TopComponent$Replacer {
+~ {static} long serialVersionUID
+~ TopComponent tc
++ <<Create>> Replacer(TopComponent)
+- void writeObject(ObjectOutputStream)
+- void readObject(ObjectInputStream)
+- Object readResolve()
+- {static} Method findReadResolveMethod(Class)
+}
+
+
+
+
+java.io.Externalizable <|.. org.openide.windows.TopComponent
+javax.swing.JComponent <|-- org.openide.windows.TopComponent
+org.openide.windows.TopComponent +.. org.openide.windows.TopComponent$Cloneable
+org.openide.windows.TopComponent +.. org.openide.windows.TopComponent$NodeName
+org.openide.windows.NodeAdapter <|-- org.openide.windows.TopComponent$NodeName
+org.openide.windows.TopComponent +.. org.openide.windows.TopComponent$FocusMan
+org.openide.windows.FocusManager <|-- org.openide.windows.TopComponent$FocusMan
+org.openide.windows.TopComponent +.. org.openide.windows.TopComponent$Registry
+org.openide.windows.TopComponent +.. org.openide.windows.TopComponent$Replacer
+org.openide.windows.Serializable <|.. org.openide.windows.TopComponent$Replacer
+@enduml

@@ -1,0 +1,369 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.tool;
+
+
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
+import java.util.EventObject;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.SwingUtilities;
+import javax.swing.event.MouseInputAdapter;
+
+import diagram.Diagram;
+import diagram.DiagramUI;
+import diagram.Figure;
+import diagram.FigureEditor;
+import diagram.Link;
+import diagram.SelectionModel;
+
+
+public class EditingTool extends AbstractTool {
+
+  
+  protected MouseHandler mouseHandler = new MouseHandler();
+  protected FocusHandler focusHandler = new FocusHandler();
+
+  
+  protected Action actionStart  = new StartEditingAction();
+  protected Action actionStop   = new StopEditingAction();
+  protected Action actionCancel = new CancelEditingAction();
+
+  
+  private Diagram diagram;
+  
+  private Figure figure;
+  
+  private Component dispatchComponent;
+  
+  private Component editorComponent;
+  
+  private Rectangle editorBounds = new Rectangle();
+  
+  private FigureEditor editor;
+  
+  private Figure[] selected = new Figure[1];
+
+
+  
+  public void install(Diagram diagram) {
+
+    diagram.addMouseListener(mouseHandler);
+    diagram.addMouseMotionListener(mouseHandler);
+    diagram.addFocusListener(focusHandler);
+    
+    ActionMap map = diagram.getActionMap();
+
+    map.put("startEditing", actionStart);
+    map.put("stopEditing", actionStop);
+    map.put("cancelEditing", actionCancel);
+
+  }
+
+
+  
+  public void uninstall(Diagram diagram) {
+
+    diagram.removeMouseListener(mouseHandler);
+    diagram.removeMouseMotionListener(mouseHandler);
+    diagram.removeFocusListener(focusHandler);
+
+    ActionMap map = diagram.getActionMap();
+
+    map.remove("startEditing");
+    map.remove("stopEditing");
+    map.remove("cancelEditing");
+
+  }
+
+  
+  protected boolean isEditing() {
+    return (editor != null);
+  }
+ 
+  
+  
+  protected class MouseHandler extends MouseInputAdapter {
+
+    
+    private Link[] links = new Link[4];
+
+    private final boolean shouldIgnore(MouseEvent e) { 
+      return !(!e.isConsumed() && SwingUtilities.isLeftMouseButton(e));
+    }
+
+    
+    private final void setDispatchComponent(MouseEvent e) { 
+      
+      Point p = SwingUtilities.convertPoint(diagram, e.getPoint(), editorComponent);
+      dispatchComponent = SwingUtilities.getDeepestComponentAt(editorComponent, p.x, p.y);
+      
+    }
+  
+  
+    
+    private final boolean repostEvent(MouseEvent e) { 
+
+      if(dispatchComponent == null)
+        return false; 
+      
+      MouseEvent e2 = SwingUtilities.convertMouseEvent(diagram, e, dispatchComponent);
+      dispatchComponent.dispatchEvent(e2); 
+      return true; 
+      
+    }
+    
+    
+    
+    public void mousePressed(MouseEvent e) {
+
+      
+      
+      if(!isEditing() && shouldIgnore(e))
+        return;
+
+      
+      Diagram diagram = (Diagram)e.getSource();
+      Figure pressedFigure = findPressedFigure(diagram, e.getPoint());
+
+      
+      
+      if(isEditing() && pressedFigure != figure)
+        stopEditing(diagram, figure);
+
+      
+      
+      if(isEditing() || startEditing(diagram, pressedFigure, e)) {
+
+        setDispatchComponent(e); 
+        repostEvent(e); 
+      
+        e.consume();
+
+      } 
+
+    }
+    
+      
+    public void mouseReleased(MouseEvent e) {
+      
+      if(!isEditing() || shouldIgnore(e))
+        return;
+      
+      repostEvent(e); 
+      dispatchComponent = null;
+      
+    }
+    
+    
+    public void mouseDragged(MouseEvent e) {
+      
+      if(!isEditing() || shouldIgnore(e)) 
+        return;     
+      
+      repostEvent(e); 
+      
+    }
+
+    
+    protected Figure findPressedFigure(Diagram diagram, Point2D pt) {
+
+      Figure pressedFigure = diagram.findFigure(pt);
+      
+      
+      
+      if(pressedFigure == null) {
+
+        
+        links = (Link[])diagram.getModel().toArray(links);
+        for(int i=0; i < links.length && links[i] != null; i++) {
+
+          if(diagram.getModel().getValue(links[i]) == null)
+            continue;
+
+          
+          FigureEditor editor = diagram.getFigureEditor(links[i].getClass());
+          editorBounds = (Rectangle) editor.getDecoratedBounds(diagram, links[i], editorBounds);
+          
+          if(editorBounds.contains(pt))
+            return links[i];
+
+        }
+
+      }
+
+      return pressedFigure;
+
+    }
+
+
+  } 
+
+  
+  
+  protected class FocusHandler extends FocusAdapter {
+
+    public void focusGained(FocusEvent e) {
+      repaintEditorCell((Diagram)e.getSource());
+    }
+
+    public void focusLost(FocusEvent e) {
+      repaintEditorCell((Diagram)e.getSource());
+    }
+
+    private final void repaintEditorCell(Diagram diagram) {
+      diagram.paintImmediately(editorBounds);
+    }
+
+  } 
+
+
+  
+  protected boolean startEditing(Diagram diagram, Figure figure, EventObject e) {
+
+    if(figure != null && diagram != null) {
+
+      
+      editor = diagram.getFigureEditor(figure.getClass());
+      if(editor == null || !editor.isCellEditable(e)) {
+        editor = null;
+        return false;
+      }
+
+      
+      SelectionModel selectionModel = diagram.getSelectionModel();
+      if(editor.shouldSelectCell(e)) 
+        selectionModel.add(figure, true);
+      
+      
+      boolean isSelected = selectionModel.contains(figure);
+      editorComponent = editor.getFigureEditorComponent(diagram, figure, isSelected);
+      if(editorComponent == null)
+        throw new RuntimeException("Bad FigureEditor!");
+
+      fireToolStarted();
+      
+      
+      editorBounds = (Rectangle)editor.getDecoratedBounds(diagram, figure, editorBounds);
+      
+      editorComponent.setBounds(editorBounds.x, editorBounds.y, 
+                                editorBounds.width, editorBounds.height);
+      
+      
+      
+      diagram.add(editorComponent);
+      editorComponent.validate();
+      editorComponent.setVisible(true);
+      
+      editorComponent.requestFocus();
+      
+      this.diagram = diagram;
+      this.figure = figure;
+      
+      return true;
+
+    }
+
+    return false;
+
+  }
+
+  
+  protected void stopEditing(Diagram diagram, Figure figure) {
+
+    diagram.getModel().setValue(figure, editor.getCellEditorValue());
+    editor.stopCellEditing();
+    removeEditor();
+
+    fireToolFinished();
+
+  }
+
+  
+  protected void removeEditor() {
+
+    editorBounds = (Rectangle)editorComponent.getBounds(editorBounds);
+    diagram.remove(editorComponent);
+
+    
+    diagram.requestFocus();
+    DiagramUI ui = (DiagramUI)diagram.getUI();
+
+    ui.damageFigure(figure);
+    ui.repaintRegion(editorBounds);
+
+    
+    diagram = null;
+    editor = null;
+    figure = null;
+    editorComponent = null;
+   
+  }
+
+  
+
+  
+  private class StartEditingAction extends AbstractAction {
+
+    public void actionPerformed(ActionEvent e) { 
+
+      Diagram diagram = (Diagram)e.getSource(); 
+      SelectionModel model = diagram.getSelectionModel();
+
+      if(model.size() != 1)
+        return;
+      
+      selected = (Figure[])model.toArray(selected);
+      startEditing(diagram, selected[0], e);
+
+    }
+
+  } 
+
+  
+  private class StopEditingAction extends AbstractAction {
+
+    public void actionPerformed(ActionEvent e) { 
+
+      if(!isEditing())
+        return;
+      
+      editor.stopCellEditing();
+      removeEditor();
+
+    }
+
+  } 
+
+  
+  private class CancelEditingAction extends AbstractAction {
+
+    public void actionPerformed(ActionEvent e) { 
+
+      if(!isEditing())
+        return;
+
+      editor.cancelCellEditing();
+      removeEditor();
+
+    }
+
+  } 
+
+
+
+}

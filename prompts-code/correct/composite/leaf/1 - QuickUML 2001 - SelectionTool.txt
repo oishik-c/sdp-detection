@@ -1,0 +1,142 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.tool;
+
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+import javax.swing.SwingUtilities;
+
+import diagram.Diagram;
+import diagram.DiagramUI;
+import diagram.Figure;
+import diagram.SelectionModel;
+
+
+public class SelectionTool extends AbstractTool {
+
+  private Figure[] figures = new Figure[4]; 
+
+  private MouseHandler mouseHandler = new MouseHandler();
+
+  
+  public void install(Diagram diagram) {
+
+    diagram.addMouseListener(mouseHandler);
+
+  }
+
+    
+  public void uninstall(Diagram diagram) {
+
+    diagram.removeMouseListener(mouseHandler);
+
+  }
+
+  
+  protected class MouseHandler extends MouseAdapter {
+  
+    
+    public void mouseClicked(MouseEvent e) {
+      
+      
+      if(e.isConsumed() || !SwingUtilities.isLeftMouseButton(e) || e.getClickCount() > 1)
+        return;
+      
+      
+      
+      Diagram diagram = (Diagram)e.getSource();
+      Figure node = (Figure)diagram.findFigure(e.getPoint());
+      
+      SelectionModel selectionModel = diagram.getSelectionModel();
+      
+      
+      if(e.isShiftDown() && node != null) {
+        
+        if(selectionModel.contains(node))
+          selectionModel.remove(node);
+      else
+        selectionModel.add(node);
+        
+        
+        DiagramUI ui = (DiagramUI)diagram.getUI();
+        ui.refreshFigure(node);
+        
+        
+      } else if(!e.isShiftDown())
+        deselectAll(diagram, selectionModel, node);
+
+    }
+    
+    
+    public void mousePressed(MouseEvent e) {
+      
+      
+      if(e.isConsumed() || e.isShiftDown() || !SwingUtilities.isLeftMouseButton(e) || 
+         e.getClickCount() > 1)
+        return; 
+      
+      
+      Diagram diagram = (Diagram)e.getSource();
+      Figure node = (Figure)diagram.findFigure(e.getPoint());
+      
+      SelectionModel selectionModel = diagram.getSelectionModel();
+      
+      
+      if(selectionModel.size() <= 1 && node != null) 
+        deselectAll(diagram, selectionModel, node);
+      
+    }
+
+  } 
+
+   
+  private final void deselectAll(Diagram diagram, SelectionModel model, Figure except) {
+
+    
+    Figure[] items = (Figure[])model.toArray((Object[])figures);
+    DiagramUI ui = (DiagramUI)diagram.getUI();
+    
+    
+    
+    for(int i=0; i<items.length && items[i] != null; i++) {
+
+      Figure node = items[i];
+
+      
+      if(except == null || node != except) {
+        
+        ui.damageFigure(node);
+        model.remove(node);
+
+      }
+
+    }
+ 
+    
+    if(except != null && !model.contains(except)) {
+
+      
+      ui.damageFigure(except);
+      model.add(except);
+
+    }
+
+    
+    if(items.length > 0 && items[0] != null) 
+      ui.refreshFigure(items[0]);
+    else if(except != null)
+      ui.refreshFigure(except);
+
+    java.util.Arrays.fill(items, 0, items.length, null);
+    
+  }
+
+
+}
+

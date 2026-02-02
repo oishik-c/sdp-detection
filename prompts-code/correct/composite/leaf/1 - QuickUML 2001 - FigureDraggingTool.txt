@@ -1,0 +1,231 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.tool;
+
+import java.awt.Cursor;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
+import java.util.ArrayList;
+
+import javax.swing.SwingUtilities;
+import javax.swing.event.MouseInputAdapter;
+
+import diagram.Diagram;
+import diagram.DiagramUI;
+import diagram.Figure;
+import diagram.SelectionModel;
+import diagram.figures.FigureBorder;
+
+
+public class FigureDraggingTool extends AbstractTool {
+
+  
+  private static final Cursor MV_CURSOR = new Cursor(Cursor.MOVE_CURSOR);
+
+  
+  private Cursor originalCursor = null;
+
+  
+  protected Figure[] selectedFigures = new Figure[4];
+  protected Figure[] relatedFigures = new Figure[4];
+  
+  
+  private ArrayList relatedList = new ArrayList();
+
+  
+  private Diagram diagram;
+
+  
+  private Point2D dragPoint;
+
+  private MouseHandler mouseHandler  = new MouseHandler();
+
+  
+  public void install(Diagram diagram) {
+
+    diagram.addMouseListener(mouseHandler);
+    diagram.addMouseMotionListener(mouseHandler);
+
+  }
+
+  
+  public void uninstall(Diagram diagram) {
+
+    diagram.removeMouseListener(mouseHandler);
+    diagram.removeMouseMotionListener(mouseHandler);
+
+    reset();
+
+  }
+
+  
+  protected class MouseHandler extends MouseInputAdapter {
+
+    
+    private final boolean shouldIgnore(MouseEvent e) {
+      
+      if(e.isControlDown() || e.isAltDown() || e.getClickCount() > 1)
+        return true;
+      
+      return (e.isConsumed() || !SwingUtilities.isLeftMouseButton(e) || dragPoint != null);
+      
+    }
+    
+    
+    public void mousePressed(MouseEvent e) {
+      
+      
+      if(shouldIgnore(e))
+        return;
+      
+      
+      diagram = (Diagram)e.getSource();
+      Point2D pt = e.getPoint();
+      
+      Diagram diagram = (Diagram)e.getSource();
+      SelectionModel selectionModel = diagram.getSelectionModel();
+      
+      
+      if(selectionModel == null || selectionModel.size() < 1)
+        return;
+      
+      
+      Figure node = (Figure)diagram.findFigure(e.getPoint());
+      
+      
+      if(node == null || !selectionModel.contains(node) || 
+         FigureBorder.isBorderPoint(node, pt))
+        return;
+      
+      e.consume();
+      fireToolStarted();
+
+      
+      selectedFigures = (Figure[])selectionModel.toArray(selectedFigures);
+      getRelatedFigures();
+      
+      dragPoint = pt;
+      
+      
+      originalCursor = diagram.getCursor();
+      diagram.setCursor(MV_CURSOR);
+      
+    }
+    
+    
+    public void mouseDragged(MouseEvent e) {
+      
+      
+      if(!e.isConsumed() && dragPoint != null) {
+        
+        e.consume();
+        
+        
+        Point2D pt = e.getPoint();
+        
+        double dx = pt.getX() - dragPoint.getX();
+        double dy = pt.getY() - dragPoint.getY();
+        
+        DiagramUI ui = (DiagramUI)diagram.getUI();
+        
+        Figure[] selected = selectedFigures;
+        Figure[] related = relatedFigures;
+        
+        
+        for(int j=0; j < related.length && related[j] != null; j++)
+          ui.damageFigure(related[j]);
+        
+        
+        Figure figure = null;
+        for(int i=0; i < selected.length && selected[i] != null; i++) {
+          
+          figure = selected[i];
+          
+          ui.damageFigure(figure);
+          figure.translate(dx, dy);
+          ui.damageFigure(figure);
+          
+        }
+        
+        
+        for(int j=0; j < related.length && related[j] != null; j++) 
+          ui.damageFigure(related[j]);
+        
+        
+        
+        ui.refreshFigure(figure);
+        
+        dragPoint = pt;
+        
+      }
+      
+    }
+    
+    
+    public void mouseReleased(MouseEvent e) {
+      
+      if(dragPoint == null)
+        return;
+      
+      e.consume();
+
+      
+      ((DiagramUI)diagram.getUI()).repaintRegion(null);
+      
+      reset();
+      fireToolFinished();      
+      
+    }
+    
+  }
+  
+
+  
+  protected void getRelatedFigures() {
+
+    ArrayList list = relatedList;
+
+    Figure[] figures = selectedFigures;
+    Figure[] cache = relatedFigures;
+
+    
+    DiagramUI ui = (DiagramUI)diagram.getUI();
+    for(int i=0; i < figures.length && figures[i] != null; i++) {
+      
+      
+      cache = ui.getConnected(figures[i], cache);
+      for(int j=0; j<cache.length && cache[j] != null; j++)
+        relatedList.add(cache[j]);
+
+    }
+
+    
+    relatedFigures = (Figure[])list.toArray(relatedFigures);
+    list.clear();
+
+  }
+
+
+
+  
+  protected void reset() {
+
+    
+    if(diagram != null && originalCursor != null)
+      diagram.setCursor(originalCursor);
+    
+    
+    diagram = null;
+    dragPoint = null;
+
+    java.util.Arrays.fill(selectedFigures, 0, selectedFigures.length, null);
+    java.util.Arrays.fill(relatedFigures, 0, relatedFigures.length, null);
+
+  }
+
+}

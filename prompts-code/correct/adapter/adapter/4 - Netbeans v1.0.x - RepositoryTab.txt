@@ -1,0 +1,687 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.core;
+
+import java.awt.*;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
+import java.beans.*;
+import java.text.MessageFormat;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.IOException;
+import java.io.ObjectStreamException;
+import java.util.*;
+import java.util.List;
+
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.border.EmptyBorder;
+
+import org.openide.*;
+import org.openide.actions.*;
+import org.openide.awt.SplittedPanel;
+import org.openide.awt.ToolbarToggleButton;
+import org.openide.loaders.*;
+import org.openide.explorer.*;
+import org.openide.explorer.view.BeanTreeView;
+import org.openide.explorer.view.TreeView;
+import org.openide.explorer.propertysheet.PropertySheet;
+import org.openide.explorer.propertysheet.PropertySheetView;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.WeakListener;
+import org.openide.util.actions.SystemAction;
+import org.openide.util.io.NbMarshalledObject;
+import org.openide.util.RequestProcessor;
+import org.openide.windows.CloneableTopComponent;
+import org.openide.windows.Workspace;
+import org.openide.windows.Mode;
+import org.openide.windows.TopComponent;
+
+import org.netbeans.core.windows.WellKnownModeNames;
+import org.netbeans.core.windows.DeferredPerformer;
+import org.netbeans.core.windows.WindowManagerImpl;
+
+
+public final class NbMainExplorer extends CloneableTopComponent
+    implements DeferredPerformer.DeferredCommand {
+
+    static final long serialVersionUID=6021472310669753679L;
+    
+
+    
+    private static MessageFormat formatExplorerTitle;
+
+    
+    private List prevRoots;
+
+    
+    private Map rootsToTCs;
+
+    
+    private Node currentRoot;
+
+    
+    private transient RootsListener rootsListener;
+    
+    private transient PropertyChangeListener weakRootsL;
+    
+    private transient boolean listenerInitialized;
+
+    
+    public static final int MIN_HEIGHT = 150;
+    
+    public static final int DEFAULT_WIDTH = 350;
+
+    
+    public NbMainExplorer () {
+        
+        rootsListener = new RootsListener();
+        weakRootsL = WeakListener.propertyChange(rootsListener, TopManager.getDefault());
+        TopManager.getDefault().addPropertyChangeListener(weakRootsL);
+    }
+
+    public HelpCtx getHelpCtx () {
+        return ExplorerPanel.getHelpCtx (getActivatedNodes (),
+                                         new HelpCtx (NbMainExplorer.class));
+    }
+
+    
+    public void open (Workspace workspace) {
+        WindowManagerImpl.deferredPerformer().putRequest(this, workspace);
+    }
+
+    
+    public void performCommand (Object context) {
+        if (context == null) {
+            
+            refreshRoots ();
+        } else {
+            
+            Workspace workspace = (Workspace)context;
+            super.open(workspace);
+            close(workspace);
+            
+            NbMainExplorer singleton = NbMainExplorer.getExplorer();
+            singleton.openRoots(workspace);
+        }
+    }
+
+    
+    public void openRoots () {
+        openRoots(TopManager.getDefault().getWindowManager().getCurrentWorkspace());
+    }
+
+    
+    public void openRoots (Workspace workspace) {
+        
+        ExplorerTab toBeActivated = MainTab.lastActivated;
+        
+        refreshRoots();
+        Node[] rootsArray = (Node[])getRoots().toArray(new Node[0]);
+        TopComponent tc = null;
+        for (int i = 0; i < rootsArray.length; i++) {
+            tc = getRootPanel(rootsArray[i]);
+            if (tc != null) {
+                tc.open(workspace);
+            }
+        }
+        
+        if (toBeActivated == null) {
+            toBeActivated = getRootPanel(rootsArray[0]);
+        }
+        final ExplorerTab localActivated = toBeActivated;
+        SwingUtilities.invokeLater(new Runnable () {
+                                       public void run () {
+                                           localActivated.requestFocus();
+                                       }
+                                   });
+    }
+
+    
+    final void refreshRoots () {
+        
+        if (!listenerInitialized) {
+            IDESettings ideS = (IDESettings)IDESettings.findObject(IDESettings.class);
+            if (ideS != null) {
+                ideS.addPropertyChangeListener(weakRootsL);
+                listenerInitialized = true;
+            }
+        }
+
+        List curRoots = getRoots ();
+        
+        
+        if (prevRoots != null) {
+            HashSet toRemove = new HashSet(prevRoots);
+            toRemove.removeAll(curRoots);
+            
+            for (Iterator it = rootsToTCs.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry me = (Map.Entry)it.next();
+                Node r = (Node)me.getKey();
+                if (toRemove.contains(r)) {
+                    
+                    
+                    closeEverywhere((TopComponent)me.getValue());
+                }
+            }
+        } else {
+            
+            prevRoots();
+        }
+
+        
+        List workspaces = whereOpened(
+                              (TopComponent[])rootsToTCs().values().toArray(new TopComponent[0])
+                          );
+        for (Iterator iter = curRoots.iterator(); iter.hasNext(); ) {
+            Node r = (Node)iter.next();
+            ExplorerTab tc = getRootPanel(r);
+            if (tc == null) {
+                
+                
+                
+                tc = createTC(r);
+                for (Iterator iter2 = workspaces.iterator(); iter2.hasNext(); ) {
+                    tc.open((Workspace)iter2.next());
+                }
+            }
+        }
+        
+        prevRoots = curRoots;
+
+        
+        
+        
+    }
+
+    
+    private static void closeEverywhere (TopComponent tc) {
+        Workspace[] workspaces =
+            TopManager.getDefault().getWindowManager().getWorkspaces();
+        for (int i = 0; i < workspaces.length; i++) {
+            if (tc.isOpened(workspaces[i])) {
+                tc.close(workspaces[i]);
+            }
+        }
+    }
+
+    
+    private static List whereOpened (TopComponent[] tcs) {
+        Workspace[] workspaces =
+            TopManager.getDefault().getWindowManager().getWorkspaces();
+        ArrayList result = new ArrayList(workspaces.length);
+        for (int i = 0; i < workspaces.length; i++) {
+            for (int j = 0; j < tcs.length; j++) {
+                if (tcs[j].isOpened(workspaces[i])) {
+                    result.add(workspaces[i]);
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    
+    private static List getRoots () {
+        Places.Nodes ns = TopManager.getDefault().getPlaces().nodes();
+        
+        LinkedList result = new LinkedList();
+        
+        result.add(ns.repository());
+        
+        if (NbProjectOperation.hasProjectDesktop()) {
+            result.add(NbProjectOperation.getProjectDesktop());
+        }
+        
+        result.addAll(Arrays.asList(ns.roots()));
+        
+        result.add(ns.environment());
+
+        return result;
+    }
+
+    
+    private ExplorerTab createTC (Node rc) {
+        
+        MainTab panel = null;
+        Places.Nodes ns = TopManager.getDefault().getPlaces().nodes();
+        if (rc.equals(NbProjectOperation.getProjectDesktop())) {
+            
+            panel = new ProjectsTab();
+        } else if (rc.equals(ns.repository())) {
+            panel = new RepositoryTab ();
+        } else if (rc.equals(ns.environment())) {
+            
+            panel = new MainTab();
+        } else {
+            
+            panel = new ModuleTab();
+        }
+        panel.setRootContext(rc);
+        rootsToTCs().put(rc, panel);
+        return panel;
+    }
+
+    
+    private Map rootsToTCs () {
+        if (rootsToTCs == null) {
+            rootsToTCs = new HashMap(7);
+        }
+        return rootsToTCs;
+    }
+
+    
+    private List prevRoots () {
+        if (prevRoots == null) {
+            prevRoots = new LinkedList();
+        }
+        return prevRoots;
+    }
+
+    
+    public void readExternal (ObjectInput in)
+    throws IOException, ClassNotFoundException {
+        super.readExternal(in);
+        
+        
+        int cnt = in.readInt ();
+        for (int i = 0; i < cnt; i++) {
+            in.readObject();
+        }
+        in.readObject();
+        
+        in.readBoolean ();
+        in.readBoolean ();
+        in.readInt();
+        in.readInt();
+    }
+
+    
+    final ExplorerTab getRootPanel (Node root) {
+        return (ExplorerTab)rootsToTCs().get(root);
+    }
+
+
+    
+    
+
+    
+    public static NbMainExplorer getExplorer () {
+        if (explorer == null) {
+            explorer = new NbMainExplorer ();
+        }
+        return explorer;
+    }
+
+    
+    private static Mode explorerMode (Workspace workspace) {
+        Mode result = workspace.findMode(WellKnownModeNames.EXPLORER);
+        if (result == null) {
+            
+            String displayName = NbBundle.getBundle(NbMainExplorer.class).
+                                 getString("CTL_ExplorerTitle");
+            result = workspace.createMode(
+                         WellKnownModeNames.EXPLORER, displayName,
+                         NbMainExplorer.class.getResource(
+                             "/org/netbeans/core/resources/frames/explorer.gif" 
+                         )
+                     );
+        }
+        return result;
+    }
+
+    
+    private static NbMainExplorer explorer;
+
+
+    
+    public static class ExplorerTab extends ExplorerPanel
+        implements DeferredPerformer.DeferredCommand {
+        static final long serialVersionUID =-8202452314155464024L;
+        
+        private TreeView view;
+        
+        private PropertyChangeListener rcListener, weakRcL, weakIdeL;
+        
+        private boolean valid = true;
+
+        public ExplorerTab () {
+            super();
+            view = initGui();
+            
+            IDESettings ideS = (IDESettings)IDESettings.findObject(IDESettings.class);
+            setConfirmDelete(ideS.getConfirmDelete());
+            
+            weakIdeL = WeakListener.propertyChange(rcListener(), ideS);
+        }
+
+        
+        protected TreeView initGui () {
+            TreeView view = new BeanTreeView();
+            setLayout(new BorderLayout());
+            add(view);
+            return view;
+        }
+
+        
+        public void requestFocus () {
+            super.requestFocus();
+            view.requestFocus();
+        }
+
+        
+        public void open (Workspace workspace) {
+            performCommand(null);
+            super.open(workspace);
+        }
+
+        
+        public void setRootContext (Node rc) {
+            
+            if (weakRcL != null) {
+                getExplorerManager().getRootContext().
+                removePropertyChangeListener(weakRcL);
+            }
+            getExplorerManager().setRootContext(rc);
+            initializeWithRootContext(rc);
+        }
+
+        public Node getRootContext () {
+            return getExplorerManager().getRootContext();
+        }
+
+        
+        public void readExternal (java.io.ObjectInput oi)
+        throws java.io.IOException, ClassNotFoundException {
+            super.readExternal(oi);
+            
+            
+            
+            
+            valid = false;
+            WindowManagerImpl.deferredPerformer().putRequest(this, null);
+        }
+
+        
+        public void performCommand (Object context) {
+            if (!valid) {
+                valid = true;
+                validateRootContext();
+            }
+        }
+
+        
+        protected void validateRootContext () {
+            initializeWithRootContext(getExplorerManager().getRootContext());
+        }
+
+        private PropertyChangeListener rcListener () {
+            if (rcListener == null) {
+                rcListener = new RootContextListener();
+            }
+            return rcListener;
+        }
+
+        
+        private void initializeWithRootContext (Node rc) {
+            
+            setIcon(rc.getIcon(BeanInfo.ICON_COLOR_16x16));
+            setToolTipText(rc.getShortDescription());
+            setName(rc.getDisplayName());
+            updateTitle();
+            
+            if (weakRcL == null) {
+                weakRcL = WeakListener.propertyChange(rcListener(), rc);
+            }
+            rc.addPropertyChangeListener(weakRcL);
+        }
+
+        
+        private final class RootContextListener extends Object
+            implements PropertyChangeListener {
+            public void propertyChange (PropertyChangeEvent evt) {
+                String propName = evt.getPropertyName();
+                Object source = evt.getSource();
+                if (source instanceof IDESettings) {
+                    
+                    setConfirmDelete(((IDESettings)source).getConfirmDelete());
+                    return;
+                }
+                
+                Node n = (Node)source;
+                if (Node.PROP_DISPLAY_NAME.equals(propName) ||
+                        Node.PROP_NAME.equals(propName)) {
+                    setName(n.getDisplayName());
+                } else if (Node.PROP_ICON.equals(propName)) {
+                    setIcon(n.getIcon(BeanInfo.ICON_COLOR_16x16));
+                } else if (Node.PROP_SHORT_DESCRIPTION.equals(propName)) {
+                    setToolTipText(n.getShortDescription());
+                }
+            }
+        } 
+
+    } 
+
+    
+    public static class MainTab extends ExplorerTab {
+        static final long serialVersionUID =4233454980309064344L;
+
+        
+        private static MainTab lastActivated;
+
+        public void open (Workspace workspace) {
+            Workspace realWorkspace = (workspace == null)
+                                      ? TopManager.getDefault().getWindowManager().getCurrentWorkspace()
+                                      : workspace;
+            Mode ourMode = realWorkspace.findMode(this);
+            if (ourMode == null) {
+                explorerMode(realWorkspace).dockInto(this);
+            }
+            super.open(workspace);
+        }
+
+        
+        protected void updateTitle () {
+            
+        }
+
+        
+        protected void componentActivated () {
+            super.componentActivated();
+            lastActivated = this;
+        }
+
+        
+        protected void validateRootContext () {
+            super.validateRootContext();
+            registerRootContext(getExplorerManager().getRootContext());
+        }
+
+        
+        protected void registerRootContext (Node rc) {
+            NbMainExplorer explorer = NbMainExplorer.getExplorer();
+            explorer.prevRoots().add(rc);
+            explorer.rootsToTCs().put(rc, this);
+        }
+
+    } 
+
+    
+    public static class RepositoryTab extends MainTab
+        implements OperationListener {
+        static final long serialVersionUID =4233454980309064344L;
+
+        
+        private RequestProcessor.Task previousTask;
+
+        
+        public RepositoryTab () {
+            DataLoaderPool pool = TopManager.getDefault ().getLoaderPool ();
+            pool.addOperationListener (
+                WeakListener.operation (this, pool)
+            );
+        }
+
+        
+        public void operationPostCreate (OperationEvent ev) {
+        }
+        
+        public void operationCopy (OperationEvent.Copy ev) {
+        }
+        
+        public void operationMove (OperationEvent.Move ev) {
+        }
+        
+        public void operationDelete (OperationEvent ev) {
+        }
+        
+        public void operationRename (OperationEvent.Rename ev) {
+        }
+        
+        public void operationCreateShadow (OperationEvent.Copy ev) {
+        }
+        
+        public void operationCreateFromTemplate (final OperationEvent.Copy ev) {
+            RequestProcessor.Task t = previousTask;
+            if (t != null) {
+                t.cancel ();
+            }
+
+            previousTask = RequestProcessor.postRequest (new Runnable () {
+                               public void run () {
+                                   previousTask = null;
+
+                                   selectNode (ev.getObject ());
+                               }
+                           }, 2000);
+        }
+
+
+        
+        private void selectNode (DataObject obj) {
+            Stack stack = new Stack ();
+
+            while (obj != null) {
+                stack.push (obj);
+                obj = obj.getFolder ();
+            }
+
+            Node current = getExplorerManager ().getRootContext ();
+            while (!stack.isEmpty ()) {
+                Node n = findDataObject (current, (DataObject)stack.pop ());
+                if (n == null) {
+                    break;
+                }
+                current = n;
+            }
+
+            try {
+                getExplorerManager ().setSelectedNodes (new Node[] { current });
+            } catch (PropertyVetoException e) {
+                
+                throw new InternalError ();
+            }
+        }
+
+        
+        private static Node findDataObject (Node node, DataObject obj) {
+            Node n = node.getChildren ().findChild (obj.getNodeDelegate ().getName ());
+            if (n != null) return n;
+
+            Node[] arr = node.getChildren ().getNodes ();
+            for (int i = 0; i < arr.length; i++) {
+                if (obj == arr[i].getCookie (DataObject.class)) {
+                    return arr[i];
+                }
+            }
+
+            return null;
+        }
+    }
+
+    
+    public static class ProjectsTab extends MainTab {
+        static final long serialVersionUID =-8178367548546385799L;
+
+        
+        protected void validateRootContext () {
+            Node projectsRc = NbProjectOperation.getProjectDesktop();
+            setRootContext(projectsRc);
+            registerRootContext(projectsRc);
+        }
+
+    } 
+
+    
+    public static class ModuleTab extends MainTab {
+        static final long serialVersionUID =8089827754534653731L;
+
+        
+        protected void validateRootContext () {
+            
+            Class nodeClass = getExplorerManager().getRootContext().getClass();
+            Node[] roots = TopManager.getDefault().getPlaces().nodes().roots();
+            for (int i = 0; i < roots.length; i++) {
+                if (nodeClass.equals(roots[i].getClass())) {
+                    setRootContext(roots[i]);
+                    registerRootContext(roots[i]);
+                    break;
+                }
+            }
+        }
+
+    } 
+
+    
+    public static class SettingsTab extends ExplorerTab {
+        static final long serialVersionUID =9087127908986061114L;
+
+        
+        protected TreeView initGui () {
+            TreeView view = new BeanTreeView();
+            SplittedPanel split = new SplittedPanel();
+            PropertySheetView propertyView = new PropertySheetView();
+            split.add(view, SplittedPanel.ADD_LEFT);
+            split.add(propertyView, SplittedPanel.ADD_RIGHT);
+            
+            setLayout(new BorderLayout());
+            add(split, BorderLayout.CENTER);
+
+            return view;
+        }
+
+        
+        protected void updateTitle () {
+            
+        }
+
+    }
+
+    
+    private final class RootsListener extends Object
+        implements PropertyChangeListener {
+        public void propertyChange (PropertyChangeEvent evt) {
+            if (TopManager.PROP_PLACES.equals(evt.getPropertyName())) {
+                
+                
+                WindowManagerImpl.deferredPerformer().
+                putRequest(NbMainExplorer.getExplorer(), null);
+            }
+        }
+    } 
+
+    public static void main (String[] args) throws Exception {
+        NbMainExplorer e = new NbMainExplorer ();
+        e.open ();
+    }
+}
+
+

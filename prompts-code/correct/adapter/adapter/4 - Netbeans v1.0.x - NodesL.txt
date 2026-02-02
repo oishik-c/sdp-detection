@@ -1,0 +1,145 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.util.actions;
+
+import java.beans.*;
+
+import org.openide.TopManager;
+import org.openide.nodes.*;
+import org.openide.util.WeakListener;
+
+
+public abstract class ProjectSensitiveAction extends CallableSystemAction {
+    
+    private static final String PROP_LISTENER = "listener"; 
+
+    
+    static final long serialVersionUID =1813729754448097488L;
+    protected void initialize () {
+        super.initialize ();
+        NodesL l = new NodesL (getClass ());
+        putProperty(PROP_LISTENER, l);
+    }
+
+    
+    protected void addNotify () {
+        
+        NodesL l = (NodesL)getProperty (PROP_LISTENER);
+        l.setActive (true);
+    }
+
+    
+    protected void removeNotify () {
+        NodesL l = (NodesL)getProperty (PROP_LISTENER);
+        l.setActive (false);
+    }
+
+    
+    public boolean isEnabled () {
+        NodesL l = (NodesL)getProperty (PROP_LISTENER);
+        if (!l.isActive ()) {
+            l.checkEnabled (this);
+        }
+        return super.isEnabled ();
+    }
+
+    
+    public void actionPerformed (java.awt.event.ActionEvent ev) {
+        Object s = ev == null ? null : ev.getSource ();
+        if (s instanceof Node) {
+            performAction ((Node)s);
+        } else {
+            performAction (projectDesktop ());
+        }
+    }
+
+    
+    public void performAction() {
+        performAction (projectDesktop ());
+    }
+
+    
+    protected abstract void performAction (Node project);
+
+    
+    protected abstract boolean enable (Node project);
+
+
+    
+    static Node projectDesktop () {
+        return TopManager.getDefault ().getPlaces ().nodes ().projectDesktop ();
+    }
+
+    
+    private static final class NodesL extends NodeAdapter {
+        
+        private Class clazz;
+        
+        private NodeListener listener;
+
+        
+        public NodesL (Class clazz) {
+            this.clazz = clazz;
+        }
+
+        
+        void setActive (boolean active) {
+            if (listener == null && active) {
+                listener = WeakListener.node (this, TopManager.getDefault ());
+                TopManager.getDefault ().addPropertyChangeListener (listener);
+                projectDesktop ().addNodeListener (listener);
+                checkEnabled (action ());
+                return;
+            }
+
+            if (listener != null && !active) {
+                TopManager.getDefault ().removePropertyChangeListener (listener);
+                projectDesktop ().removeNodeListener (listener);
+                listener = null;
+            }
+        }
+
+        
+        boolean isActive () {
+            return listener != null;
+        }
+
+        
+        public void propertyChange (PropertyChangeEvent ev) {
+            ProjectSensitiveAction a = action ();
+
+            if (TopManager.PROP_PLACES.equals (ev.getPropertyName ())) {
+                
+                setActive (false);
+                
+                setActive (true);
+                return;
+            }
+
+            if (Node.PROP_COOKIE.equals (ev.getPropertyName ())) {
+                checkEnabled (action ());
+                return;
+            }
+        }
+
+        
+        private ProjectSensitiveAction action () {
+            return (ProjectSensitiveAction)findObject (clazz);
+        }
+
+        
+        void checkEnabled (ProjectSensitiveAction a) {
+            
+            if (a == null) return;
+
+            a.setEnabled (a.enable (projectDesktop ()));
+        }
+    }
+
+}
+

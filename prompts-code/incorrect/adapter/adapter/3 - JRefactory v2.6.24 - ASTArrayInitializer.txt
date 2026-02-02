@@ -1,0 +1,46 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.parser.ast;
+
+import org.acm.seguin.parser.JavaParser;
+import org.acm.seguin.parser.JavaParserVisitor;
+
+
+public class ASTArrayInitializer extends SimpleNode {
+	
+	private boolean finalComma = false;
+
+
+	
+	public ASTArrayInitializer(int id) {
+		super(id);
+	}
+
+
+	
+	public ASTArrayInitializer(JavaParser p, int id) {
+		super(p, id);
+	}
+
+
+	
+	public void setFinalComma(boolean way) {
+		finalComma = way;
+	}
+
+
+	
+	public boolean isFinalComma() {
+		return finalComma;
+	}
+
+
+	
+	public Object jjtAccept(JavaParserVisitor visitor, Object data) {
+		return visitor.visit(this, data);
+	}
+}

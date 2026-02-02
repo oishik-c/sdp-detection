@@ -1,0 +1,120 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.tools;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.border.*;
+import org.apache.velocity.VelocityContext;
+
+
+public class ClassInfoPanel extends WizardPanel {
+  JPanel jPanel7 = new JPanel();
+  JLabel jLabel1 = new JLabel();
+  JTextField jtfClassName = new JTextField();
+  JLabel jLabel2 = new JLabel();
+  Border border1;
+  TitledBorder titledBorder1;
+  JButton jbSelectPackage = new JButton();
+  JTextField jtfPackageName = new JTextField();
+  GridBagLayout gridBagLayout1 = new GridBagLayout();
+  
+
+  public static final String CLASS_NAME = "className";
+  public static final String PACKAGE_NAME = "packageName";
+
+  
+  public ClassInfoPanel() {
+    try {
+      jbInit();
+    }
+    catch(Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void jbInit() throws Exception {
+    border1 = BorderFactory.createLineBorder(Color.white,1);
+    titledBorder1 = new TitledBorder(BorderFactory.createLineBorder(Color.white,1),"Class Information:");
+    jtfPackageName.setPreferredSize(new Dimension(350, 22));
+    jtfPackageName.setToolTipText("Package name");
+    jLabel1.setHorizontalAlignment(SwingConstants.RIGHT);
+    jLabel1.setText("Package:");
+    jtfClassName.setPreferredSize(new Dimension(140, 22));
+    jtfClassName.setToolTipText("Class name");
+    jLabel2.setPreferredSize(new Dimension(113, 18));
+    jLabel2.setHorizontalAlignment(SwingConstants.RIGHT);
+    jLabel2.setText("Class name:");
+    jPanel7.setLayout(gridBagLayout1);
+    jPanel7.setBorder(titledBorder1);
+    jPanel7.setMinimumSize(new Dimension(480, 150));
+    jPanel7.setPreferredSize(new Dimension(480, 150));
+    jbSelectPackage.setEnabled(false);
+    jbSelectPackage.setToolTipText("Select Package");
+    jbSelectPackage.setText("Select Package");
+
+
+
+
+
+    this.add(jPanel7, null);
+    jPanel7.add(jtfPackageName, new GridBagConstraints(1, 0, 1, 2, 1.0, 0.0
+            ,GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(6, 10, 39, 0), -28, 2));
+    jPanel7.add(jbSelectPackage, new GridBagConstraints(2, 0, 1, 2, 0.0, 0.0
+            ,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(6, 12, 39, 16), -103, -1));
+    jPanel7.add(jtfClassName, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0
+            ,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(20, 10, 0, 178), 4, 2));
+    jPanel7.add(jLabel2, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
+            ,GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(22, 2, 0, 0), -27, 0));
+    jPanel7.add(jLabel1, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0
+            ,GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(6, 2, 0, 0), 33, 0));
+  }
+
+  
+  private String getPackageName() {
+    String pkgName = jtfPackageName.getText();
+    return pkgName;
+  }
+
+  
+  private String checkForErrors() {
+    String errorMessages = "";
+
+
+
+
+    return errorMessages;
+  }
+
+  
+  public void checkPage() throws Exception {
+
+    String errorMessages = checkForErrors();
+    if (errorMessages.length()!=0) {
+      JOptionPane.showMessageDialog(null, 
+        errorMessages,
+        "Errors Encountered",
+        JOptionPane.ERROR_MESSAGE,
+        null);
+      throw new Exception();
+    }
+    putContext(PACKAGE_NAME, getPackageName());
+    putContext(CLASS_NAME, jtfClassName.getText());
+  }
+
+
+
+
+
+
+
+
+
+
+
+}

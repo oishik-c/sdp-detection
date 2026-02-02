@@ -1,0 +1,26 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.util.Iconkit {
+- Hashtable fMap
+- Vector fRegisteredImages
+- Component fComponent
+- {static} int ID
+- {static} Iconkit fgIconkit
+- {static} boolean fgDebug
++ <<Create>> Iconkit(Component)
++ {static} Iconkit instance()
++ void loadRegisteredImages(Component)
++ void registerImage(String)
++ Image registerAndLoadImage(Component,String)
++ Image loadImage(String)
++ Image loadImageResource(String)
++ Image getImage(String)
+- Image basicGetImage(String)
+}
+
+
+@enduml

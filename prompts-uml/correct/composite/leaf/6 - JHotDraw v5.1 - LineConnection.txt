@@ -1,0 +1,53 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.figures.LineConnection {
+# Connector fStart
+# Connector fEnd
+- {static} long serialVersionUID
+- int lineConnectionSerializedDataVersion
++ <<Create>> LineConnection()
++ boolean canConnect()
+# void basicMoveBy(int,int)
++ void connectStart(Connector)
++ void connectEnd(Connector)
++ void disconnectStart()
++ void disconnectEnd()
++ boolean connectsSame(ConnectionFigure)
+# void handleDisconnect(Figure,Figure)
+# void handleConnect(Figure,Figure)
++ Figure startFigure()
++ Figure endFigure()
++ Connector start()
++ Connector end()
++ boolean canConnect(Figure,Figure)
++ void startPoint(int,int)
++ void endPoint(int,int)
++ Point startPoint()
++ Point endPoint()
++ Vector handles()
++ void setPointAt(Point,int)
++ void insertPointAt(Point,int)
++ void removePointAt(int)
++ void updateConnection()
++ void layoutConnection()
++ void figureChanged(FigureChangeEvent)
++ void figureRemoved(FigureChangeEvent)
++ void figureRequestRemove(FigureChangeEvent)
++ void figureInvalidated(FigureChangeEvent)
++ void figureRequestUpdate(FigureChangeEvent)
++ void release()
++ void write(StorableOutput)
++ void read(StorableInput)
+- void readObject(ObjectInputStream)
+}
+
+
+
+
+CH.ifa.draw.framework.ConnectionFigure <|.. CH.ifa.draw.figures.LineConnection
+CH.ifa.draw.figures.PolyLineFigure <|-- CH.ifa.draw.figures.LineConnection
+@enduml

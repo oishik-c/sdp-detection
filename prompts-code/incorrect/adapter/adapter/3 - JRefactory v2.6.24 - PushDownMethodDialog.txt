@@ -1,0 +1,53 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.uml.refactor;
+
+import java.util.Iterator;
+
+import org.acm.seguin.refactor.Refactoring;
+import org.acm.seguin.refactor.RefactoringFactory;
+import org.acm.seguin.refactor.method.PushDownMethodRefactoring;
+import org.acm.seguin.summary.MethodSummary;
+import org.acm.seguin.summary.TypeSummary;
+import org.acm.seguin.uml.UMLPackage;
+
+
+class PushDownMethodDialog extends ChildrenCheckboxDialog
+{
+	private MethodSummary methodSummary;
+
+
+	
+	public PushDownMethodDialog(UMLPackage init, TypeSummary initType, MethodSummary method)
+	{
+		super(init, initType);
+
+		methodSummary = method;
+
+		setTitle("Push field " + methodSummary.toString() + " from " + parentType.getName() + " to:");
+	}
+
+
+	
+	protected Refactoring createRefactoring()
+	{
+		PushDownMethodRefactoring pushDown = RefactoringFactory.get().pushDownMethod();
+		pushDown.setMethod(methodSummary);
+
+		Iterator iter = children.getCheckboxes();
+		while (iter.hasNext())
+		{
+			TypeCheckbox next = (TypeCheckbox) iter.next();
+			if (next.isSelected())
+			{
+				pushDown.addChild(next.getTypeSummary());
+			}
+		}
+
+		return pushDown;
+	}
+}

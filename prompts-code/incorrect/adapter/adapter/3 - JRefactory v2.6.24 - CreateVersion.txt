@@ -1,0 +1,115 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package org.acm.seguin.tools.build;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.StringTokenizer;
+
+
+public class CreateVersion {
+	private String major;
+	private String minor;
+	private String build;
+
+	private String output;
+
+
+	
+	public CreateVersion(String input, String output) {
+		StringTokenizer tok = new StringTokenizer(input, ".");
+
+		major = tok.nextToken();
+		minor = tok.nextToken();
+		build = tok.nextToken();
+
+		this.output = output;
+	}
+
+
+	
+	public void run() {
+try {
+		PrintWriter printer = new PrintWriter(new FileWriter(output));
+
+		printer.println("package org.acm.seguin;");
+		printer.println("");
+		printer.println("/**");
+		printer.println(" *  The current version of JRefactory");
+		printer.println(" *");
+		printer.println(" *@author    Chris Seguin");
+		printer.println(" */");
+		printer.println("public class JRefactoryVersion {");
+		printer.println("	/**");
+		printer.println("	 *  Gets the MajorVersion attribute of the JRefactoryVersion object");
+		printer.println("	 *");
+		printer.println("	 *@return    The MajorVersion value");
+		printer.println("	 */");
+		printer.println("	public int getMajorVersion() {");
+		printer.println("		return " + major + ";");
+		printer.println("	}");
+		printer.println("");
+		printer.println("");
+		printer.println("	/**");
+		printer.println("	 *  Gets the MinorVersion attribute of the JRefactoryVersion object");
+		printer.println("	 *");
+		printer.println("	 *@return    The MinorVersion value");
+		printer.println("	 */");
+		printer.println("	public int getMinorVersion() {");
+		printer.println("		return " + minor + ";");
+		printer.println("	}");
+		printer.println("");
+		printer.println("");
+		printer.println("	/**");
+		printer.println("	 *  Gets the Build attribute of the JRefactoryVersion object");
+		printer.println("	 *");
+		printer.println("	 *@return    The Build value");
+		printer.println("	 */");
+		printer.println("	public int getBuild() {");
+		printer.println("		return " + build + ";");
+		printer.println("	}");
+		printer.println("");
+		printer.println("");
+		printer.println("	/**");
+		printer.println("	 *  Converts the JRefactoryVersion to a string");
+		printer.println("	 *");
+		printer.println("	 *@return    a string representing the version");
+		printer.println("	 */");
+		printer.println("	public String toString() {");
+		printer.println("		StringBuffer buffer = new StringBuffer();");
+		printer.println("");
+		printer.println("		buffer.append(getMajorVersion());");
+		printer.println("		buffer.append('.');");
+		printer.println("");
+		printer.println("		buffer.append(getMinorVersion());");
+		printer.println("		buffer.append('.');");
+		printer.println("");
+		printer.println("		buffer.append(getBuild());");
+		printer.println("");
+		printer.println("		return buffer.toString();");
+		printer.println("	}");
+		printer.println("");
+		printer.println("   public static void main(String[] args) {");
+		printer.println("       System.out.println(\"Version:  \" + (new JRefactoryVersion()).toString());");
+		printer.println("   }");
+		printer.println("}");
+
+		printer.flush();
+		printer.close();
+	}
+	catch (IOException ioe) {
+	ioe.printStackTrace();
+	}
+	}
+
+
+	
+	public static void main(String[] args) {
+		CreateVersion cv = new CreateVersion(args[0], args[1]);
+		cv.run();
+	}
+}

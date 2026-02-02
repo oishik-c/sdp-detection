@@ -1,0 +1,687 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.filesystems;
+
+import java.io.*;
+import java.util.*;
+import java.lang.ref.*;
+
+import javax.swing.event.EventListenerList;
+
+import org.openide.TopManager;
+import org.openide.util.WeakListener;
+import org.openide.util.Utilities;
+import org.openide.util.enum.*;
+
+
+final class MultiFileObject extends AbstractFolder
+    implements FileChangeListener {
+    
+    static final long serialVersionUID = -2343651324897646809L;
+
+    
+    private static final char EXT_SEP = '.';
+
+    
+    private static final char PATH_SEP = '/';
+
+    
+    private Set delegates;
+
+    
+    private FileObject leader;
+
+    
+    private Reference lock;
+
+    
+    private FileChangeListener weakL;
+
+    
+    public MultiFileObject(MultiFileSystem fs, MultiFileObject parent, String name) {
+        super (fs, parent, name);
+
+        weakL = WeakListener.fileChange (this, null);
+
+        update ();
+    }
+
+    
+    public MultiFileObject (MultiFileSystem fs) {
+        this (fs, null, ""); 
+    }
+
+    
+    public FileSystem getLeaderFileSystem () throws FileStateInvalidException {
+        return leader.getFileSystem();
+    }
+
+    
+    private void update () {
+        FileSystem[] arr = getMultiFileSystem ().systems;
+
+        Set now = delegates == null ? Collections.EMPTY_SET : delegates;
+        HashSet del = new HashSet (arr.length * 2);
+        FileObject led = null;
+
+        String name = toString ();
+
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] != null) {
+                FileObject fo = arr[i].findResource (name);
+                if (fo != null) {
+                    del.add (fo);
+
+                    if (!now.remove (fo)) {
+                        
+                        fo.addFileChangeListener(weakL);
+                    }
+
+
+                    if (led == null) {
+                        led = fo;
+                    }
+                }
+            }
+        }
+
+        Iterator it = now.iterator ();
+        while (it.hasNext()) {
+            FileObject fo = (FileObject)it.next ();
+            fo.removeFileChangeListener (weakL);
+        }
+
+
+        if (led != null) {
+            
+            
+            if (led != this.leader && this.leader != null) {
+                getMultiFileSystem ().notifyMigration (this);
+            }
+            this.leader = led;
+        }
+        this.delegates = del;
+    }
+
+    
+    private MultiFileSystem getMultiFileSystem () {
+        return (MultiFileSystem)getFileSystem ();
+    }
+
+    
+    private MultiFileObject getMultiChild (String name) {
+        return (MultiFileObject)getChild (name);
+    }
+
+    
+    private FileObject writable () throws IOException {
+        MultiFileSystem fs = getMultiFileSystem ();
+        FileSystem single = fs.createWritableOn (toString ());
+
+        if (single != leader.getFileSystem()) {
+            
+            
+
+            if (leader.isFolder()) {
+                leader = FileUtil.createFolder (single.getRoot (), toString ());
+            } else {
+                FileObject folder = FileUtil.createFolder(single.getRoot (), getParent ().toString ());
+                leader = leader.copy (folder, leader.getName (), leader.getExt ());
+            }
+
+            MfLock l = (MfLock)(lock == null ? null : lock.get ());
+            if (l != null) {
+                
+                FileLock prev = l.lock;
+                l.lock = leader.lock ();
+                if (prev != null) {
+                    
+                    prev.releaseLock ();
+                }
+            }
+        }
+
+        return leader;
+    }
+
+    
+    private Enumeration delegates () {
+        return getMultiFileSystem ().delegates (toString ());
+    }
+
+    
+    private static void updateFoldersLock (FileObject fo) throws IOException {
+        while (fo != null) {
+            MultiFileObject mfo = (MultiFileObject)fo;
+
+            MfLock l = (MfLock)(mfo.lock == null ? null : mfo.lock.get ());
+            if (l != null) {
+                
+                mfo.writable ();
+            }
+
+            fo = fo.getParent ();
+        }
+    }
+
+    
+    
+    
+
+    
+    protected final String[] list () {
+        LinkedList list = new LinkedList ();
+        HashSet mask = new HashSet (37);
+
+        Iterator it = delegates.iterator();
+
+        while (it.hasNext()) {
+            FileObject folder = (FileObject)it.next ();
+            if (folder == null || !folder.isFolder ()) continue;
+
+            FileObject[] add = folder.getChildren ();
+
+            for (int j = 0; j < add.length; j++) {
+                String e = add[j].getExt ();
+                String name = add[j].getName ();
+                if (e != null && e.length () != 0) {
+                    name = name + '.' + e;
+                }
+                if (name.endsWith (MultiFileSystem.MASK)) {
+                    name = name.substring (0, name.length () - MultiFileSystem.MASK.length ());
+                    mask.add (name);
+                } else {
+                    list.add (name);
+                }
+            }
+        }
+
+        if (!mask.isEmpty ()) {
+            list.removeAll (mask);
+        }
+
+        String[] arr = (String[])list.toArray (new String[list.size()]);
+        return arr;
+    }
+
+    
+    protected synchronized void refresh (
+        String add, String remove, boolean fire, boolean expected
+    ) {
+        update ();
+        super.refresh (add, remove, fire, expected);
+    }
+
+    
+    protected final AbstractFolder createFile (String name) {
+        return new MultiFileObject (getMultiFileSystem (), this, name);
+    }
+
+    
+    
+    
+
+    
+    public boolean isFolder () {
+        return leader.isFolder ();
+    }
+
+    
+    public java.util.Date lastModified() {
+        return leader.lastModified ();
+    }
+
+    
+    public boolean isData () {
+        return leader.isData ();
+    }
+
+    
+    public boolean isReadOnly () {
+        MultiFileSystem fs = getMultiFileSystem ();
+
+        if (fs.isReadOnly ()) {
+            return true;
+        }
+
+        if (leader.isReadOnly ()) {
+            
+            try {
+                FileSystem simple = fs.createWritableOn (toString ());
+                return simple == leader.getFileSystem ();
+            } catch (IOException e) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    
+    public String getMIMEType () {
+        return leader.getMIMEType ();
+    }
+
+    
+    public long getSize () {
+        return leader.getSize ();
+    }
+
+    
+    public InputStream getInputStream () throws java.io.FileNotFoundException {
+        return leader.getInputStream ();
+    }
+
+    
+    public synchronized OutputStream getOutputStream (FileLock lock)
+    throws java.io.IOException {
+        testLock (lock);
+        MfLock l = (MfLock)lock;
+
+        
+        FileObject fo = writable ();
+
+        return fo.getOutputStream (l.lock);
+    }
+
+    
+    public synchronized FileLock lock () throws IOException {
+        if (lock != null) {
+            FileLock f = (FileLock)lock.get ();
+            if (f != null) {
+                
+                throw new FileAlreadyLockedException();
+            }
+        }
+
+
+        FileLock l;
+
+        
+        FileSystem single = getMultiFileSystem ().createWritableOn (toString ());
+        if (single == leader.getFileSystem()) {
+            
+            l = new MfLock (leader.lock ());
+        } else {
+            
+            l = new MfLock ();
+        }
+
+
+        lock = new WeakReference (l);
+        
+        
+
+        return l;
+    }
+
+    
+    private FileLock testLock (FileLock l) throws java.io.IOException {
+        if (lock == null || lock.get () != l) {
+            FSException.io ("EXC_InvalidLock", toString (), getMultiFileSystem ().getDisplayName ()); 
+        }
+
+        return ((MfLock)l).lock;
+    }
+
+    
+    
+    public void setImportant (boolean b) {
+        Enumeration en = delegates ();
+        while (en.hasMoreElements ()) {
+            FileObject fo = (FileObject)en.nextElement ();
+            fo.setImportant (b);
+        }
+        if (!b) {
+            getMultiFileSystem ().markUnimportant (this);
+        }
+    }
+
+
+
+    
+    public Object getAttribute(String attrName) {
+        Enumeration en = delegates ();
+        while (en.hasMoreElements ()) {
+            FileObject fo = (FileObject)en.nextElement ();
+            Object obj = fo.getAttribute (attrName);
+            if (obj != null) {
+                return obj;
+            }
+        }
+        return null;
+    }
+
+    
+    public void setAttribute(String attrName, Object value) throws IOException {
+        writable ().setAttribute (attrName, value);
+    }
+
+    
+    public Enumeration getAttributes() {
+        return leader.getAttributes ();
+    }
+
+
+    
+    public synchronized FileObject createFolder (String name) throws IOException {
+        MultiFileSystem fs = getMultiFileSystem ();
+        if (fs.isReadOnly()) {
+            FSException.io ("EXC_FSisRO", fs.getDisplayName ()); 
+        }
+        if (isReadOnly()) {
+            FSException.io ("EXC_FisRO", name, fs.getDisplayName ()); 
+        }
+
+        String fullName = toString () + PATH_SEP + name;
+        FileSystem simple = fs.createWritableOn (fullName);
+
+        
+        FileUtil.createFolder (simple.getRoot (), fullName);
+        
+        MultiFileSystem.unmaskFile (simple, fullName);
+
+        refresh (name, null);
+
+        MultiFileObject fo = getMultiChild (name);
+
+        if (fo == null) {
+            
+            throw new FileStateInvalidException (FileSystem.getString ("EXC_ApplicationCreateError", toString (), name));
+        }
+
+        if (hasListeners ()) {
+            fileCreated0(new FileEvent(fo), false);
+        }
+
+        return fo;
+    }
+
+    
+    public synchronized FileObject createData (String name, String ext) throws IOException {
+        MultiFileSystem fs = getMultiFileSystem ();
+        if (fs.isReadOnly()) {
+            FSException.io ("EXC_FSisRO", fs.getDisplayName ()); 
+        }
+        if (isReadOnly()) {
+            FSException.io ("EXC_FisRO", name, fs.getDisplayName ()); 
+        }
+
+        String n = "".equals (ext) ? name : name + EXT_SEP + ext; 
+        String fullName = toString () + PATH_SEP + n;
+
+        FileSystem simple = fs.createWritableOn (fullName);
+
+        
+        FileUtil.createData (simple.getRoot (), fullName);
+
+        
+        MultiFileSystem.unmaskFile (simple, fullName);
+
+        refresh (n, null);
+
+        MultiFileObject fo = getMultiChild (n);
+
+        if (fo == null) {
+            
+            throw new FileStateInvalidException (FileSystem.getString ("EXC_ApplicationCreateError", toString (), n));
+        }
+
+        if (hasListeners ()) {
+            fileCreated0(new FileEvent(fo), true);
+        }
+
+        return fo;
+    }
+
+    
+    public void rename(FileLock lock, String name, String ext) throws IOException {
+        MultiFileSystem fs = getMultiFileSystem ();
+
+        if (parent == null) {
+            FSException.io ("EXC_CannotRenameRoot", fs.getDisplayName ()); 
+        }
+
+        synchronized (parent) {
+            
+            testLock (lock);
+            MfLock l = (MfLock)lock;
+
+
+            String newFullName =  parent.toString () + PATH_SEP + name;
+            if (isData ()) {
+                newFullName += EXT_SEP + ext;
+            }
+            String oldFullName = toString ();
+
+            if (isReadOnly ()) {
+                FSException.io ("EXC_CannotRename", toString (), getMultiFileSystem ().getDisplayName (), newFullName); 
+            }
+            if (getFileSystem ().isReadOnly()) {
+                FSException.io ("EXC_FSisRO", getMultiFileSystem ().getDisplayName ()); 
+            }
+
+            String on = getName ();
+            String oe = getExt ();
+
+            
+            FileSystem single = fs.createWritableOn (newFullName);
+
+            if (single == leader.getFileSystem ()) {
+                
+                
+                leader.rename (l.lock, name, ext);
+            } else {
+                
+                
+
+                if (isData ()) {
+                    
+                    FileObject folder = FileUtil.createFolder(single.getRoot (), getParent ().toString ());
+                    leader = leader.copy (folder, name, ext);
+                } else {
+                    
+                    FileObject fo = FileUtil.createFolder (single.getRoot (), newFullName);
+                    copyContent (this, fo);
+
+                    leader = fo;
+                    update ();
+                }
+
+                if (l.lock != null) {
+                    l.lock.releaseLock ();
+                }
+                l.lock = leader.lock ();
+            }
+
+            if (getMultiFileSystem ().delegates (oldFullName).hasMoreElements ()) {
+                
+                
+                MultiFileSystem.maskFile (single, oldFullName);
+                updateFoldersLock (getParent ());
+            }
+
+            String oldName = this.name;
+            this.name = name;
+            
+            this.fullName = null;
+
+            
+
+            parent.refresh (name, oldName);
+
+            
+
+            if (hasAtLeastOneListeners ()) {
+                fileRenamed0 (new FileRenameEvent(this, on, oe));
+            }
+        }
+    }
+
+    
+    public void delete (FileLock lock) throws IOException {
+        if (parent == null) {
+            FSException.io (
+                "EXC_CannotDeleteRoot", getMultiFileSystem ().getDisplayName () 
+            );
+        }
+
+        MultiFileSystem fs = getMultiFileSystem ();
+
+        synchronized (parent) {
+            testLock (lock);
+            MfLock l = (MfLock)lock;
+
+            String fullName = toString ();
+            
+
+            FileSystem single = fs.createWritableOn (fullName);
+
+            if (single == leader.getFileSystem ()) {
+                
+                
+                leader.delete (l.lock);
+            }
+
+
+            if (getMultiFileSystem ().delegates (fullName).hasMoreElements ()) {
+                
+                
+                MultiFileSystem.maskFile (single, fullName);
+                updateFoldersLock (getParent ());
+            }
+
+
+            String n = name;
+            
+            
+            systemName = null;
+
+            parent.refresh (null, n);
+
+            
+
+            if (hasAtLeastOneListeners ()) {
+                fileDeleted0 (new FileEvent(this));
+            }
+        }
+    }
+
+    
+    
+    
+
+    
+    public FileObject copy (FileObject target, String name, String ext)
+    throws IOException {
+        return leader.copy (target, name, ext);
+    }
+
+
+    
+    public FileObject move (FileLock lock, FileObject target, String name, String ext)
+    throws IOException {
+        MultiFileSystem fs = getMultiFileSystem ();
+
+        if (parent == null) {
+            FSException.io (
+                "EXC_CannotDeleteRoot", fs.getDisplayName () 
+            );
+        }
+
+        FileLock l = testLock (lock);
+
+        if (fs.isReadOnly() || l == null) {
+            FSException.io ("EXC_FSisRO", fs.getDisplayName ()); 
+        }
+
+        return leader.move (l, target, name, ext);
+    }
+
+    
+    
+    
+
+    
+    public void fileFolderCreated(FileEvent fe) {
+        refresh ();
+    }
+
+    
+    public void fileDataCreated(FileEvent fe) {
+        refresh ();
+    }
+
+    
+    public void fileChanged(FileEvent fe) {
+        if (fe.getFile() == leader && hasAtLeastOneListeners ()) {
+            fileChanged0 (new FileEvent (this));
+        }
+    }
+
+    
+    public void fileDeleted(FileEvent fe) {
+        refresh ();
+    }
+
+    
+    public void fileRenamed(FileRenameEvent fe) {
+        refresh ();
+    }
+
+    
+    public void fileAttributeChanged(FileAttributeEvent fe) {
+        if (fe.getFile() == leader && hasAtLeastOneListeners ()) {
+            fileAttributeChanged0 (new FileAttributeEvent (
+                                       this, fe.getName(), fe.getOldValue(), fe.getNewValue()
+                                   ));
+        }
+    }
+
+    
+    private static void copyContent (FileObject source, FileObject target) throws IOException {
+        FileObject[] srcArr = source.getChildren ();
+
+        for (int i = 0; i < srcArr.length; i++) {
+            FileObject child = srcArr[i];
+
+            if (child.isData ()) {
+                FileUtil.copyFile (child, target, child.getName (), child.getExt ());
+            } else {
+                FileObject targetChild = target.createFolder (child.getName ());
+                copyContent (child, targetChild);
+            }
+        }
+    }
+
+
+    
+    private class MfLock extends FileLock {
+        private FileLock lock;
+
+        public MfLock () {
+        }
+
+        public MfLock (FileLock l) {
+            lock = l;
+        }
+
+        public void releaseLock () {
+            if (this.isValid()) {
+                super.releaseLock();
+                if  (lock != null) {
+                    lock.releaseLock();
+                }
+                MultiFileObject.this.lock = null;
+            }
+        }
+    } 
+
+}
+
+

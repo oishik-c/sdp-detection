@@ -1,0 +1,542 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.loaders;
+
+import java.lang.ref.WeakReference;
+import java.io.*;
+import java.util.*;
+
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+
+import org.openide.*;
+import org.openide.filesystems.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.enum.SequenceEnumeration;
+import org.openide.util.enum.SingletonEnumeration;
+import org.openide.util.WeakListener;
+import org.openide.util.Mutex;
+import org.openide.nodes.Node;
+import org.openide.nodes.CookieSet;
+
+
+public class MultiDataObject extends DataObject {
+    
+    static final long serialVersionUID = -7750146802134210308L;
+
+    
+    private Entry primary;
+
+    
+    private HashMap secondary = new HashMap (11);
+
+    
+    private CookieSet cookieSet;
+
+
+    
+    private EntryL cookieL = new EntryL ();
+
+    
+    private FileChangeListener entryL = WeakListener.fileChange (cookieL, null);
+
+    
+    public MultiDataObject(FileObject fo, MultiFileLoader loader) throws DataObjectExistsException {
+        super(fo, loader);
+    }
+
+    
+    public final MultiFileLoader getMultiFileLoader () {
+        return (MultiFileLoader)getLoader ();
+    }
+
+    
+    public Set files () {
+        
+
+        getMultiFileLoader ().checkFiles (this);
+
+        HashSet s;
+        synchronized (secondary) {
+            s = new HashSet (secondary.keySet ());
+            s.add (getPrimaryFile ());
+        }
+        return s;
+    }
+
+    
+    public boolean isDeleteAllowed() {
+        return !getPrimaryFile ().isReadOnly ();
+    }
+
+    
+    public boolean isCopyAllowed() {
+        return true;
+    }
+
+    
+    public boolean isMoveAllowed() {
+        return !getPrimaryFile ().isReadOnly ();
+    }
+
+    
+    public boolean isRenameAllowed () {
+        return !getPrimaryFile ().isReadOnly ();
+    }
+
+    
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+    
+    protected Node createNodeDelegate () {
+        DataNode dataNode = (DataNode) super.createNodeDelegate ();
+        return dataNode;
+    }
+
+    
+    protected final void addSecondaryEntry (Entry fe) {
+        synchronized (secondary) {
+            secondary.put (fe.getFile (), fe);
+            fe.getFile ().addFileChangeListener (entryL);
+        }
+
+        firePropertyChangeLater (PROP_FILES, null, null);
+    }
+
+    
+    protected final void removeSecondaryEntry (Entry fe) {
+        synchronized (secondary) {
+            secondary.remove (fe.getFile ());
+        }
+
+        firePropertyChangeLater (PROP_FILES, null, null);
+    }
+
+    
+    final void markSecondaryEntriesRecognized (DataLoader.RecognizedFiles recognized) {
+        synchronized (secondary) {
+            Iterator it = secondary.keySet ().iterator ();
+            while (it.hasNext ()) {
+                FileObject fo=(FileObject)it.next ();
+                recognized.markRecognized (fo);
+            }
+        }
+    }
+
+
+    
+    protected final Entry registerEntry (FileObject fo) {
+        synchronized (secondary) {
+            if (fo == null) {
+                
+                return primary;
+            }
+            if (fo.equals (getPrimaryFile ())) {
+                return primary;
+            }
+
+            Entry e = (Entry)secondary.get (fo);
+            if (e != null) {
+                return e;
+            }
+
+            
+            e = getMultiFileLoader ().createSecondaryEntry (this, fo);
+            addSecondaryEntry (e);
+
+            return e;
+        }
+    }
+
+    
+    final void removeFile (FileObject fo) {
+        synchronized (secondary) {
+            Entry e = (Entry)secondary.get (fo);
+            if (e != null) {
+                removeSecondaryEntry (e);
+            }
+        }
+    }
+
+    
+    public final Entry getPrimaryEntry () {
+        synchronized (secondary) {
+            if (primary == null) {
+                primary = getMultiFileLoader ().createPrimaryEntry (this, getPrimaryFile ());
+            }
+            return primary;
+        }
+    }
+
+    
+    public final Set secondaryEntries () {
+        synchronized (this) {
+            return new HashSet (secondary.values ());
+        }
+    }
+
+    
+    public final Entry findSecondaryEntry (FileObject fo) {
+        return (Entry)secondary.get (fo);
+    }
+
+
+    
+
+    
+    protected FileLock takePrimaryFileLock () throws IOException {
+        return getPrimaryEntry ().takeLock ();
+    }
+
+    
+    
+    private static String existInFolder(FileObject fo, FileObject folder) {
+        String orig = fo.getName ();
+        String name = FileUtil.findFreeFileName(
+                          folder, orig, fo.getExt ()
+                      );
+        if (name.length () <= orig.length ()) {
+            return ""; 
+        } else {
+            return name.substring (orig.length ());
+        }
+    }
+
+    
+    protected synchronized DataObject handleCopy (DataFolder df) throws IOException {
+        FileObject fo;
+
+        synchronized (secondary) {
+            String suffix = existInFolder(
+                                getPrimaryEntry().getFile(),
+                                df.getPrimaryFile ()
+                            );
+            if (suffix == null)
+                throw new org.openide.util.UserCancelException();
+
+            fo = getPrimaryEntry ().copy (df.getPrimaryFile (), suffix);
+            Iterator it = secondary.values ().iterator ();
+            while (it.hasNext ()) {
+                ((Entry)it.next()).copy (df.getPrimaryFile (), suffix);
+            }
+        }
+        try {
+            return getMultiFileLoader ().createMultiObject (fo);
+        } catch (DataObjectExistsException ex) {
+            return ex.getDataObject ();
+        }
+    }
+
+    
+    protected void handleDelete() throws IOException {
+        synchronized (secondary) {
+            Iterator it = secondary.entrySet ().iterator ();
+            while (it.hasNext ()) {
+                Map.Entry e = (Map.Entry)it.next ();
+                ((Entry)e.getValue ()).delete ();
+                it.remove ();
+            }
+            getPrimaryEntry().delete();
+        }
+    }
+
+    
+    protected FileObject handleRename (String name) throws IOException {
+        synchronized (secondary) {
+            getPrimaryEntry ().file = getPrimaryEntry().rename (name);
+
+            HashMap add = null;
+
+            Iterator it = secondary.entrySet ().iterator ();
+            while (it.hasNext ()) {
+                Map.Entry e = (Map.Entry)it.next ();
+                FileObject fo = ((Entry)e.getValue ()).rename (name);
+                if (fo == null) {
+                    
+                    it.remove ();
+                } else {
+                    if (!fo.equals (e.getKey ())) {
+                        
+                        if (add == null) add = new HashMap ();
+                        Entry entry = (Entry)e.getValue ();
+                        add.put (fo, entry);
+                        entry.file = fo;
+
+                        
+                        it.remove ();
+                    }
+                }
+            }
+
+            
+            if (add != null) {
+                secondary.putAll (add);
+                firePropertyChangeLater (PROP_FILES, null, null);
+            }
+
+            return getPrimaryEntry ().file;
+        }
+    }
+
+    
+    protected FileObject handleMove (DataFolder df) throws IOException {
+        synchronized (secondary) {
+            String suffix = existInFolder(getPrimaryEntry().getFile(), df.getPrimaryFile ());
+            if (suffix == null)
+                throw new org.openide.util.UserCancelException();
+
+            getPrimaryEntry ().file = getPrimaryEntry ().move (df.getPrimaryFile (), suffix);
+
+            HashMap add = null;
+
+            Iterator it = secondary.entrySet ().iterator ();
+            while (it.hasNext ()) {
+                Map.Entry e = (Map.Entry)it.next ();
+                FileObject fo = ((Entry)e.getValue ()).move (df.getPrimaryFile (), suffix);
+                if (fo == null) {
+                    
+                    it.remove ();
+                } else {
+                    if (!fo.equals (e.getKey ())) {
+                        
+                        if (add == null) add = new HashMap ();
+                        Entry entry = (Entry)e.getValue ();
+                        add.put (fo, entry);
+                        entry.file = fo;
+
+                        
+                        it.remove ();
+                    }
+                }
+            }
+
+            
+            if (add != null) {
+                secondary.putAll (add);
+                firePropertyChangeLater (PROP_FILES, null, null);
+            }
+
+            return getPrimaryEntry ().file;
+        }
+    }
+
+    
+    protected DataObject handleCreateFromTemplate (
+        DataFolder df, String name
+    ) throws IOException {
+        FileObject fo;
+
+        synchronized (secondary) {
+
+            if (name == null) {
+                name = FileUtil.findFreeFileName(
+                           df.getPrimaryFile (), getPrimaryFile ().getName (), getPrimaryFile ().getExt ()
+                       );
+            }
+
+            fo = getPrimaryEntry().createFromTemplate (df.getPrimaryFile (), name);
+            Iterator it = secondary.values ().iterator ();
+            while (it.hasNext ()) {
+                ((Entry)it.next()).createFromTemplate (df.getPrimaryFile (), name);
+            }
+        }
+        try {
+            return getMultiFileLoader ().createMultiObject (fo);
+        } catch (DataObjectExistsException ex) {
+            return ex.getDataObject ();
+        }
+    }
+
+    
+    
+    
+    
+    public synchronized void setCookieSet (CookieSet s) {
+        if (cookieSet != null) {
+            cookieSet.removeChangeListener (cookieL);
+        }
+
+        s.addChangeListener (cookieL);
+        cookieSet = s;
+
+        fireCookieChange ();
+    }
+
+    
+    public CookieSet getCookieSet () {
+        CookieSet s = cookieSet;
+        if (s != null) return s;
+        synchronized (this) {
+            if (cookieSet != null) return cookieSet;
+
+            
+            setCookieSet (new CookieSet ());
+            return cookieSet;
+        }
+    }
+
+    
+    public Node.Cookie getCookie (Class type) {
+        CookieSet c = cookieSet;
+        if (c != null) {
+            Node.Cookie cookie = c.getCookie (type);
+            if (cookie != null) return cookie;
+        }
+        return super.getCookie (type);
+    }
+
+    
+    final void fireCookieChange () {
+        firePropertyChange (PROP_COOKIE, null, null);
+    }
+
+    
+    private void firePropertyChangeLater (
+        final String name, final Object oldV, final Object newV
+    ) {
+        Mutex.EVENT.readAccess (new Runnable () {
+                                    public void run () {
+                                        firePropertyChange (name, oldV, newV);
+                                    }
+                                });
+    }
+
+    
+    public abstract class Entry implements java.io.Serializable {
+        
+        static final long serialVersionUID = 6024795908818133571L;
+
+        
+        FileObject file;
+
+        
+        private transient WeakReference lock;
+
+        protected Entry (FileObject file) {
+            this.file = file;
+        }
+
+        
+        public final FileObject getFile () {
+            return file;
+        }
+
+        
+        public final MultiDataObject getDataObject () {
+            return MultiDataObject.this;
+        }
+
+        
+        public abstract FileObject copy (FileObject f, String suffix) throws IOException;
+
+        
+        public abstract FileObject rename (String name) throws IOException;
+
+        
+        public abstract FileObject move (FileObject f, String suffix) throws IOException;
+
+        
+        public abstract void delete () throws IOException;
+
+        
+        public abstract FileObject createFromTemplate (FileObject f, String name) throws IOException;
+
+        
+        public FileLock takeLock() throws IOException {
+            FileLock l = lock == null ? null : (FileLock)lock.get ();
+            if (l == null || !l.isValid ()){
+                l = getFile ().lock ();
+                lock = new WeakReference (l);
+            }
+            return l;
+        }
+
+        
+        public boolean isLocked() {
+            FileLock l = lock == null ? null : (FileLock)lock.get ();
+            return l != null && l.isValid ();
+        }
+
+        public boolean equals(Object o) {
+            if (! (o instanceof Entry)) return false;
+            return file.equals(((Entry) o).file);
+        }
+
+        public int hashCode() {
+            return file.hashCode();
+        }
+
+        
+        protected Object writeReplace () {
+            return new EntryReplace (file);
+        }
+    }
+
+
+    
+    private class EntryL extends FileChangeAdapter implements ChangeListener {
+        
+        public void fileDeleted (FileEvent fe) {
+            removeFile (fe.getFile ());
+        }
+
+        
+        public void stateChanged (ChangeEvent ev) {
+            fireCookieChange ();
+        }
+    }
+
+    
+    private static final class EntryReplace extends Object implements java.io.Serializable {
+        
+        static final long serialVersionUID = -1498798537289529182L;
+
+        
+        private FileObject file;
+        
+        private transient Entry entry;
+
+        public EntryReplace (FileObject fo) {
+            file = fo;
+        }
+
+        private void readObject (ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject ();
+            try {
+                DataObject obj = DataObject.find (file);
+                if (obj instanceof MultiDataObject) {
+                    MultiDataObject m = (MultiDataObject)obj;
+
+                    if (file.equals (m.getPrimaryFile ())) {
+                        
+                        entry = m.getPrimaryEntry ();
+                    } else {
+                        
+                        Entry e = (Entry)m.findSecondaryEntry (file);
+                        if (e == null) {
+                            throw new InvalidObjectException (obj.toString ());
+                        }
+                        
+                        entry = e;
+                    }
+                }
+            } catch (DataObjectNotFoundException ex) {
+                throw new InvalidObjectException (ex.getMessage ());
+            }
+        }
+
+        public Object readResolve () {
+            return entry;
+        }
+    }
+}
+
+

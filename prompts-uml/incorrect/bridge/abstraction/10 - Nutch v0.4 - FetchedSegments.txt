@@ -1,0 +1,36 @@
+Given the following uml code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.nutch.searcher.FetchedSegments {
+- HashMap segments
++ <<Create>> FetchedSegments(String)
++ String[] getSegmentNames()
++ byte[] getContent(HitDetails)
++ String[] getAnchors(HitDetails)
++ String getSummary(HitDetails,Query)
++ String[] getSummary(HitDetails[],Query)
+- Segment getSegment(HitDetails)
+- int getDocNo(HitDetails)
+}
+
+
+class net.nutch.searcher.FetchedSegments$Segment {
+- ArrayFile.Reader fetcher
+- ArrayFile.Reader content
+- ArrayFile.Reader text
++ <<Create>> Segment(File)
++ FetcherOutput getFetcherOutput(int)
++ byte[] getContent(int)
++ String getText(int)
+}
+
+
+
+
+net.nutch.searcher.HitSummarizer <|.. net.nutch.searcher.FetchedSegments
+net.nutch.searcher.HitContent <|.. net.nutch.searcher.FetchedSegments
+net.nutch.searcher.FetchedSegments +.. net.nutch.searcher.FetchedSegments$Segment
+@enduml

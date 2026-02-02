@@ -1,0 +1,22 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.search.SearchResultIntersection {
+- HashMap cache
+- int scanners
+- ScannerListener target
+- boolean TRACE
++ <<Create>> SearchResultIntersection(ScannerListener,int)
+- boolean cacheHit(Node)
++ void scannerFound(ScannerEvent)
+- void t(String)
+}
+
+
+
+
+org.netbeans.modules.search.ScannerListener <|.. org.netbeans.modules.search.SearchResultIntersection
+@enduml

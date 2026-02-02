@@ -1,0 +1,41 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.ui.CardinalityTool {
+# MouseHandler mouseHandler
+# Popup popup
+# CompositionItem item
+# CompositionLink link
+# Diagram diagram
++ void install(Diagram)
++ void uninstall(Diagram)
+# void startEditing(Point)
+# void stopEditing(String)
+# void reset()
+}
+
+
+class uml.ui.CardinalityTool$MouseHandler {
++ void mouseClicked(MouseEvent)
+}
+
+class uml.ui.CardinalityTool$Popup {
+# JTextField text
+# int n
++ <<Create>> Popup()
++ void show(Point)
+# void firePopupMenuWillBecomeInvisible()
+}
+
+
+
+
+diagram.tool.AbstractTool <|-- uml.ui.CardinalityTool
+uml.ui.CardinalityTool +.. uml.ui.CardinalityTool$MouseHandler
+uml.ui.MouseAdapter <|-- uml.ui.CardinalityTool$MouseHandler
+uml.ui.CardinalityTool +.. uml.ui.CardinalityTool$Popup
+uml.ui.JPopupMenu <|-- uml.ui.CardinalityTool$Popup
+@enduml

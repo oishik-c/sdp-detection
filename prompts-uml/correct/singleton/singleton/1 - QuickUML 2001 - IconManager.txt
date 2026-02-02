@@ -1,0 +1,21 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.ui.IconManager {
+- {static} IconManager instance
+- WeakHashMap resourceMap
+- HashMap imageMap
+- <<Create>> IconManager()
++ {static} IconManager getInstance()
+# Image loadImageResource(String)
++ void registerImageResource(Component,String)
++ Image getImageResource(Component,String)
+- Image trackImage(MediaTracker,String)
++ Icon getIconResource(Component,String)
+}
+
+
+@enduml

@@ -1,0 +1,25 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.ide.jbuilder.UndoAction {
+- PropertyChangeSupport support
+- HashMap values
+- boolean enabled
++ <<Create>> UndoAction()
++ void setEnabled(boolean)
++ Object getValue(String)
++ boolean isEnabled()
++ void putValue(String,Object)
++ void addPropertyChangeListener(PropertyChangeListener)
++ void removePropertyChangeListener(PropertyChangeListener)
+}
+
+
+
+
+javax.swing.Action <|.. org.acm.seguin.ide.jbuilder.UndoAction
+org.acm.seguin.ide.common.UndoAdapter <|-- org.acm.seguin.ide.jbuilder.UndoAction
+@enduml

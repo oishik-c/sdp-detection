@@ -1,0 +1,41 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.editor.ext.StringCache {
+- {static} int DEFAULT_MAX_SIZE
+- {static} int DEFAULT_INITIAL_CAPACITY
+~ int maxSize
+~ int size
+~ StringMap strMap
+- Entry chain
+- Entry endChain
+- Entry freeEntry
++ int statQueries
++ int statHits
++ <<Create>> StringCache()
++ <<Create>> StringCache(int)
++ <<Create>> StringCache(int,int)
+- void toStart(Entry)
++ String getString(char[],int,int)
+- void removeString(String)
+- void storeString(String)
++ void putSurviveString(String)
++ String toString()
+}
+
+
+class org.netbeans.editor.ext.StringCache$Entry {
+~ String str
+~ Entry next
+~ Entry prev
+~ <<Create>> Entry(String,Entry)
+}
+
+
+
+
+org.netbeans.editor.ext.StringCache +.. org.netbeans.editor.ext.StringCache$Entry
+@enduml

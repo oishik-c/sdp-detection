@@ -1,0 +1,20 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.filesystems.FileChangeAdapter {
++ void fileFolderCreated(FileEvent)
++ void fileDataCreated(FileEvent)
++ void fileChanged(FileEvent)
++ void fileDeleted(FileEvent)
++ void fileRenamed(FileRenameEvent)
++ void fileAttributeChanged(FileAttributeEvent)
+}
+
+
+
+org.openide.filesystems.FileChangeListener <|.. org.openide.filesystems.FileChangeAdapter
+org.openide.filesystems.Object <|-- org.openide.filesystems.FileChangeAdapter
+@enduml

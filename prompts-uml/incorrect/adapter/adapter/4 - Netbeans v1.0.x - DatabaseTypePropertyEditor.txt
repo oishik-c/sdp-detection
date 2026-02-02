@@ -1,0 +1,33 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.db.explorer.DatabaseTypePropertyEditor {
+- int[] constants
+- String[] names
+- int index
+- String name
+- PropertyChangeSupport support
++ <<Create>> DatabaseTypePropertyEditor()
++ <<Create>> DatabaseTypePropertyEditor(int[],String[])
++ Object getValue()
++ void setValue(Object)
++ String getAsText()
++ void setAsText(String)
++ String getJavaInitializationString()
++ String[] getTags()
++ boolean isPaintable()
++ void paintValue(Graphics,Rectangle)
++ boolean supportsCustomEditor()
++ Component getCustomEditor()
++ void addPropertyChangeListener(PropertyChangeListener)
++ void removePropertyChangeListener(PropertyChangeListener)
+}
+
+
+
+
+org.netbeans.modules.db.explorer.PropertyEditor <|.. org.netbeans.modules.db.explorer.DatabaseTypePropertyEditor
+@enduml

@@ -1,0 +1,81 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.debugger.support.nodes.ThreadNode {
+~ {static} long serialVersionUID
++ {static} String PROP_THREAD_NAME
++ {static} String PROP_THREAD_STATE
++ {static} String PROP_THREAD_CLASS
++ {static} String PROP_THREAD_METHOD
++ {static} String PROP_THREAD_LINE
++ {static} String PROP_THREAD_STACK_DEPTH
++ {static} String PROP_THREAD_FRAME_INDEX
++ {static} String PROP_THREAD_SUSPENDED
++ {static} int STATE_MAIN
++ {static} int STATE_STOPPED
+# {static} String ICON_CURRENT
+# {static} String ICON_SUSPENDED
+# {static} String ICON_RUNNING
+# {static} Image threadFolderIcon
+# {static} Image threadFolderIcon32
+# {static} Image threadCurrentIcon
+# {static} Image threadCurrentIcon32
+# {static} Image threadRunningIcon
+# {static} Image threadRunningIcon32
+- {static} SystemAction[] staticActions
+- {static} ResourceBundle bundle
+- AbstractDebugger debugger
+- AbstractThread thread
+- ThreadListener threadListener
+- Node[] children
+- CallStackNode callStack
+- LocalesRootNode locales
+- int state
+- VariableHome variableHome
+- boolean oldSuspended
++ <<Create>> ThreadNode(VariableHome,AbstractThread)
+# void finalize()
+- void initialize()
+- void initializeChildren()
+- void createProperties()
++ SystemAction[] getActions()
++ SystemAction getDefaultAction()
++ void destroy()
++ boolean canSetCurrent()
++ void setCurrent()
++ void setSuspended(boolean)
++ boolean isSuspended()
++ void goToSource()
++ boolean canGoToSource()
+~ {static} String getLocalizedString(String)
+~ void refreshIcon()
++ boolean equals(Object)
++ int hashCode()
+~ void changeProperties()
+~ void setName()
+~ void changeChildren()
+~ AbstractThread getDebuggerThread()
+}
+
+
+class org.netbeans.modules.debugger.support.nodes.ThreadNode$ThreadListener {
+- WeakReference node
+- AbstractDebugger debugger
+- AbstractThread thread
+~ <<Create>> ThreadListener(ThreadNode)
++ void propertyChange(PropertyChangeEvent)
+}
+
+
+
+
+org.netbeans.modules.debugger.support.actions.SuspendCookie <|.. org.netbeans.modules.debugger.support.nodes.ThreadNode
+org.netbeans.modules.debugger.support.actions.SwitchOnCookie <|.. org.netbeans.modules.debugger.support.nodes.ThreadNode
+org.netbeans.modules.debugger.support.actions.GoToSourceCookie <|.. org.netbeans.modules.debugger.support.nodes.ThreadNode
+org.openide.nodes.AbstractNode <|-- org.netbeans.modules.debugger.support.nodes.ThreadNode
+org.netbeans.modules.debugger.support.nodes.ThreadNode +.. org.netbeans.modules.debugger.support.nodes.ThreadNode$ThreadListener
+org.netbeans.modules.debugger.support.nodes.PropertyChangeListener <|.. org.netbeans.modules.debugger.support.nodes.ThreadNode$ThreadListener
+@enduml

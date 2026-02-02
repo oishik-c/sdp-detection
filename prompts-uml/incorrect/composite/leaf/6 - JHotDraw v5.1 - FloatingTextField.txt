@@ -1,0 +1,25 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.util.FloatingTextField {
+- TextField fEditWidget
+- Container fContainer
++ <<Create>> FloatingTextField()
++ void createOverlay(Container)
++ void createOverlay(Container,Font)
++ void addActionListener(ActionListener)
++ void removeActionListener(ActionListener)
++ void setBounds(Rectangle,String)
++ String getText()
++ Dimension getPreferredSize(int)
++ void endOverlay()
+}
+
+
+
+
+CH.ifa.draw.util.Object <|-- CH.ifa.draw.util.FloatingTextField
+@enduml

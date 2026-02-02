@@ -1,0 +1,52 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class diagram.tool.ClipboardTool {
+# {static} ThreadLocal diagramKey
+# Action actionCut
+# Action actionCopy
+# Action actionPaste
+- Figure[] figures
+- Figure[] related
+- ArrayList clipboard
+- ArrayList copyboard
++ void install(Diagram)
++ void uninstall(Diagram)
++ {static} void setDiagram(Diagram)
++ {static} Diagram getDiagram()
+# boolean prepareSelection()
++ void doCopy()
++ void doCut()
++ void doPaste()
+- void doPaste(Figure,DiagramModel,SelectionModel,DiagramUI)
+}
+
+
+class diagram.tool.ClipboardTool$CutAction {
++ <<Create>> CutAction()
++ void actionPerformed(ActionEvent)
+}
+
+class diagram.tool.ClipboardTool$CopyAction {
++ <<Create>> CopyAction()
++ void actionPerformed(ActionEvent)
+}
+
+class diagram.tool.ClipboardTool$PasteAction {
++ <<Create>> PasteAction()
++ void actionPerformed(ActionEvent)
+}
+
+
+
+diagram.tool.AbstractTool <|-- diagram.tool.ClipboardTool
+diagram.tool.ClipboardTool +.. diagram.tool.ClipboardTool$CutAction
+diagram.tool.AbstractAction <|-- diagram.tool.ClipboardTool$CutAction
+diagram.tool.ClipboardTool +.. diagram.tool.ClipboardTool$CopyAction
+diagram.tool.AbstractAction <|-- diagram.tool.ClipboardTool$CopyAction
+diagram.tool.ClipboardTool +.. diagram.tool.ClipboardTool$PasteAction
+diagram.tool.AbstractAction <|-- diagram.tool.ClipboardTool$PasteAction
+@enduml

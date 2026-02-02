@@ -1,0 +1,48 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class net.sourceforge.pmd.AbstractRule {
+- String name
+- Properties properties
+- String message
+- String description
+- String example
+- boolean m_include
+- int m_priority
++ String getDescription()
++ void setDescription(String)
++ String getExample()
++ void setExample(String)
++ boolean hasProperty(String)
++ void addProperty(String,String)
++ double getDoubleProperty(String)
++ int getIntProperty(String)
++ boolean getBooleanProperty(String)
++ String getStringProperty(String)
++ String getName()
++ void setName(String)
++ String getMessage()
++ void setMessage(String)
++ boolean equals(Object)
++ int hashCode()
+# void visitAll(List,RuleContext)
++ void apply(List,RuleContext)
++ RuleViolation createRuleViolation(RuleContext,int)
++ RuleViolation createRuleViolation(RuleContext,int,String)
++ Properties getProperties()
++ boolean include()
++ void setInclude(boolean)
++ int getPriority()
++ String getPriorityName()
++ void setPriority(int)
+}
+
+
+
+
+net.sourceforge.pmd.Rule <|.. net.sourceforge.pmd.AbstractRule
+net.sourceforge.pmd.ast.JavaParserVisitorAdapter <|-- net.sourceforge.pmd.AbstractRule
+@enduml

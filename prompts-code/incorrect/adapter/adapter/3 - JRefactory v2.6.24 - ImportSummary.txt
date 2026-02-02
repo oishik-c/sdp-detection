@@ -1,0 +1,79 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.summary;
+import org.acm.seguin.parser.ast.ASTImportDeclaration;
+import org.acm.seguin.parser.ast.ASTName;
+
+
+public class ImportSummary extends Summary {
+	
+	private PackageSummary packageSummary;
+	private String type;
+
+
+	
+	public ImportSummary(Summary parentSummary, ASTImportDeclaration importDecl) {
+		
+		super(parentSummary);
+
+		
+		ASTName name = (ASTName) importDecl.jjtGetChild(0);
+
+		if (importDecl.isImportingPackage()) {
+			type = null;
+			packageSummary = PackageSummary.getPackageSummary(name.getName());
+		}
+		else {
+			int last = name.getNameSize() - 1;
+			type = name.getNamePart(last).intern();
+			String packageName = getPackageName(last, name);
+			packageSummary = PackageSummary.getPackageSummary(packageName);
+		}
+	}
+
+
+	
+	public PackageSummary getPackage() {
+		return packageSummary;
+	}
+
+
+	
+	public String getType() {
+		return type;
+	}
+
+
+	
+	public Object accept(SummaryVisitor visitor, Object data) {
+		return visitor.visit(this, data);
+	}
+
+
+	
+	private String getPackageName(int last, ASTName name) {
+		if (last > 0) {
+			StringBuffer buffer = new StringBuffer(name.getNamePart(0));
+			for (int ndx = 1; ndx < last; ndx++) {
+				buffer.append(".");
+				buffer.append(name.getNamePart(ndx));
+			}
+			return buffer.toString();
+		}
+		return "";
+	}
+
+	public String toString() {
+		if (type == null)
+			return "ImportSummary<" + packageSummary.getName() + ".*>";
+		return "ImportSummary<" +  packageSummary.getName() + "." + type + ">";
+	}
+
+	public String getName() {
+		return type;
+	}
+}

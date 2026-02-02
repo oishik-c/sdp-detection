@@ -1,0 +1,195 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.beaninfo.editors;
+
+import java.util.*;
+
+import java.awt.event.*;
+import javax.swing.*;
+
+import org.openide.*;
+import org.openide.compiler.CompilerType;
+import org.openide.explorer.*;
+import org.openide.execution.*;
+import org.openide.nodes.*;
+import org.openide.util.HelpCtx;
+
+
+public class ServiceTypePanel extends ExplorerPanel {
+    
+    private Class clazz;
+
+    
+    private List services;
+
+    
+    private ServiceType none;
+
+    static final long serialVersionUID =861345226525021334L;
+    
+    public ServiceTypePanel(Class clazz, String name, ServiceType none) {
+        this.clazz = clazz;
+        this.none = none;
+        update ();
+
+        initComponents ();
+
+        setBorder (new javax.swing.border.TitledBorder(name));
+
+        getExplorerManager ().addPropertyChangeListener (new java.beans.PropertyChangeListener () {
+                    public void propertyChange (java.beans.PropertyChangeEvent ev) {
+                        firePropertyChange ();
+                    }
+                });
+    }
+
+    public HelpCtx getHelpCtx () {
+        return getHelpCtx (getExplorerManager ().getSelectedNodes (),
+                           new HelpCtx (ServiceTypePanel.class));
+    }
+
+    
+    public void setServiceType (ServiceType s) {
+        int i = services.indexOf (s);
+
+        if (i < 0) i = 0;
+
+        Node[] nodes = getExplorerManager ().getRootContext ().getChildren ().getNodes ();
+        if (i >= nodes.length) return;
+
+        try {
+            getExplorerManager ().setSelectedNodes (new Node[] {
+                                                        nodes[i]
+                                                    });
+        } catch (java.beans.PropertyVetoException ex) {
+            throw new InternalError();
+        }
+
+        firePropertyChange ();
+    }
+
+    
+    public ServiceType getServiceType () {
+        Node[] arr = getExplorerManager ().getSelectedNodes ();
+        if (arr.length > 0) {
+            return ((MN) arr[0]).getServiceType ();
+        }
+        return null;
+    }
+
+    
+    void firePropertyChange () {
+        firePropertyChange ("serviceType", null, null); 
+    }
+
+    
+    private void update () {
+        Children ch = new Children.Array ();
+        AbstractNode n = new AbstractNode (ch);
+
+        ch.add ((Node[])nodes ().toArray (new Node[0]));
+
+        getExplorerManager ().setRootContext (n);
+    }
+
+    
+    private List nodes () {
+        services = new ArrayList (20);
+        List l = new LinkedList ();
+        Enumeration en = TopManager.getDefault ().getServices ().services (clazz);
+        while (en.hasMoreElements ()) {
+            try {
+                Object service = en.nextElement ();
+                l.add (new MN ((ServiceType)service));
+
+                services.add (service);
+            } catch (java.beans.IntrospectionException ex) {
+            }
+        }
+        try {
+            if (none != null) {
+                l.add (new MN (none));
+                services.add (none);
+            }
+        } catch (java.beans.IntrospectionException ex) {
+        }
+        return l;
+    }
+
+    
+    private void initComponents () {
+        setLayout (new java.awt.BorderLayout ());
+        setPreferredSize (new java.awt.Dimension(480, 320));
+
+        listView1 = new org.openide.explorer.view.ListView ();
+        listView1.setTraversalAllowed (false);
+        listView1.setSelectionMode (1);
+        listView1.setPopupAllowed (false);
+
+
+        add (listView1, "Center"); 
+
+        propertySheetView1 = new org.openide.explorer.propertysheet.PropertySheetView ();
+
+
+        add (propertySheetView1, "East"); 
+
+    }
+
+
+    private void removeButtonPressed (java.awt.event.ActionEvent evt) {
+    }
+
+    private void addButtonPressed (java.awt.event.ActionEvent evt) {
+    }
+
+
+    
+    private org.openide.explorer.view.ListView listView1;
+    private org.openide.explorer.propertysheet.PropertySheetView propertySheetView1;
+    
+
+    private static final class MN extends BeanNode {
+        public MN (ServiceType t) throws java.beans.IntrospectionException {
+            super (t);
+        }
+
+        public ServiceType getServiceType () {
+            return (ServiceType)getBean ();
+        }
+
+        
+        public Node.PropertySet[] getPropertySets () {
+            final Node.PropertySet[] sets = super.getPropertySets ();
+            Node.PropertySet[] nue = new Node.PropertySet[sets.length];
+            for (int i = 0; i < sets.length; i++) {
+                final int ii = i;
+                nue[i] = new Node.PropertySet () {
+                             {
+                                 setName (sets[ii].getName ());
+                                 setDisplayName (sets[ii].getDisplayName ());
+                                 setShortDescription (sets[ii].getShortDescription ());
+                             }
+                             public Node.Property[] getProperties () {
+                                 Node.Property[] props = sets[ii].getProperties ();
+                                 List nueprops = new ArrayList ();
+                                 for (int j = 0; j < props.length; j++)
+                                     if (! props[j].getName ().equals ("name")) 
+                                         nueprops.add (props[j]);
+                                 return (Node.Property[]) nueprops.toArray (new Node.Property[nueprops.size ()]);
+                             }
+                         };
+            }
+            return nue;
+        }
+
+    }
+
+}
+
+

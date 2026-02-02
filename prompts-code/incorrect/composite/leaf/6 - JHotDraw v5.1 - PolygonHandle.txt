@@ -1,0 +1,47 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.contrib;
+
+import java.awt.Point;
+
+import CH.ifa.draw.framework.DrawingView;
+import CH.ifa.draw.framework.Locator;
+import CH.ifa.draw.standard.AbstractHandle;
+
+
+
+public class PolygonHandle extends AbstractHandle {
+
+  private int fIndex;
+  private Locator fLocator;
+
+  
+  public PolygonHandle(PolygonFigure owner, Locator l, int index) {
+	super(owner);
+	fLocator = l;
+	fIndex = index;
+  }  
+
+  public void invokeStep (int x, int y, int anchorX, int anchorY, DrawingView view) {
+	myOwner().setPointAt(new Point(x, y), fIndex);
+  }  
+
+  public void invokeEnd  (int x, int y, int anchorX, int anchorY, DrawingView view) {
+	myOwner().smoothPoints();
+  }  
+
+  public Point locate() {
+	return fLocator.locate(owner());
+  }  
+
+  private PolygonFigure myOwner() {
+	return (PolygonFigure)owner();
+  }  
+}
+
+

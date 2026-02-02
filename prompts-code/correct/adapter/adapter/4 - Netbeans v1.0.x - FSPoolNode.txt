@@ -1,0 +1,339 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.core;
+
+import java.awt.Image;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.beans.*;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
+
+import org.openide.util.datatransfer.PasteType;
+import org.openide.util.datatransfer.NewType;
+import org.openide.TopManager;
+import org.openide.filesystems.Repository;
+import org.openide.filesystems.RepositoryListener;
+import org.openide.filesystems.RepositoryEvent;
+import org.openide.filesystems.RepositoryReorderedEvent;
+import org.openide.filesystems.FileSystem;
+import org.openide.filesystems.FileSystemCapability;
+import org.netbeans.core.actions.AddJarAction;
+import org.netbeans.core.actions.AddFSAction;
+import org.netbeans.core.actions.UnmountFSAction;
+import org.openide.actions.*;
+import org.openide.loaders.InstanceSupport;
+import org.openide.cookies.InstanceCookie;
+import org.openide.util.actions.SystemAction;
+import org.openide.nodes.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.WeakListener;
+import org.openide.util.actions.SystemAction;
+
+import org.netbeans.core.actions.*;
+
+
+class FSPoolNode extends AbstractNode implements RepositoryListener {
+    
+    static final long serialVersionUID = -4473075136923511393L;
+
+    
+    private static FSPoolNode fsPoolNode;
+
+    
+    private FSPoolNode (DSMap children) {
+        super (children);
+        init ();
+        setIconBase ("/org/netbeans/core/resources/repository"); 
+        setName(NbBundle.getBundle(FSPoolNode.class).getString("CTL_FSPool_name"));
+        setShortDescription(NbBundle.getBundle(FSPoolNode.class).getString("HINT_FSPool_name"));
+        getCookieSet ().add (new Index ());
+        getCookieSet ().add (new InstanceSupport.Instance (NbTopManager.getDefault ().getRepository ()));
+    }
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (FSPoolNode.class);
+    }
+
+    
+    private static FSPoolNode createFSPoolNode() {
+        FSPoolNode ret = new FSPoolNode(new DSMap ());
+        return ret;
+    }
+
+    
+    public static FSPoolNode getFSPoolNode() {
+        if (fsPoolNode == null)
+            fsPoolNode = createFSPoolNode();
+        return fsPoolNode;
+    }
+
+    
+    private void init () {
+        Repository rep = NbTopManager.getDefaultRepository ();
+        rep.addRepositoryListener (WeakListener.repository (this, rep));
+        refresh ();
+    }
+
+    
+    public Handle getHandle() {
+        return new FSNHandle();
+    }
+
+    
+    public SystemAction[] createActions() {
+        return new SystemAction[] {
+                   SystemAction.get (AddFSAction.class),
+                   SystemAction.get (AddJarAction.class),
+                   null,
+                   SystemAction.get (ReorderAction.class),
+                   null,
+                   SystemAction.get (PasteAction.class),
+                   null,
+                   SystemAction.get(NewAction.class),
+                   null,
+                   SystemAction.get(ToolsAction.class),
+                   SystemAction.get(PropertiesAction.class)
+               };
+    }
+
+    
+    public NewType[] getNewTypes () {
+        return ModuleFSSection.listOfNewTypes(true);
+    }
+
+    
+    protected void createPasteTypes (Transferable t, List l) {
+        InstanceCookie cookie = (InstanceCookie)NodeTransfer.cookie (t,
+                                NodeTransfer.DND_COPY | NodeTransfer.CLIPBOARD_COPY, InstanceCookie.class
+                                                                    );
+        try {
+            if (cookie != null && FileSystem.class.isAssignableFrom (cookie.instanceClass ())) {
+                l.add (new Paste (cookie));
+            }
+        } catch (IOException e) {
+            
+        } catch (ClassNotFoundException e) {
+            
+        }
+
+    }
+
+    
+    static class FSNHandle implements Handle {
+        static final long serialVersionUID =-1379725782887327704L;
+        public Node getNode() {
+            return getFSPoolNode();
+        }
+    }
+
+    
+    public void fileSystemAdded (RepositoryEvent ev) {
+        refresh ();
+    }
+
+    
+    public void fileSystemRemoved (RepositoryEvent ev) {
+        refresh ();
+    }
+    
+    public void fileSystemPoolReordered(RepositoryReorderedEvent ev) {
+        refresh ();
+    }
+
+    
+    void refresh () {
+        refresh (null);
+    }
+
+    
+    void refresh (FileSystem fs) {
+        ((DSMap)getChildren ()).refresh (fs);
+    }
+
+
+    
+    static class FSNode extends BeanNode implements PropertyChangeListener {
+        
+        private FileSystem fs;
+
+        
+        public FSNode(final FileSystem system) throws IntrospectionException {
+            super(system);
+            fs = system;
+            fs.addPropertyChangeListener (WeakListener.propertyChange (this, fs));
+            propertyChange (null);
+        }
+
+        public HelpCtx getHelpCtx () {
+            return new HelpCtx (FSNode.class);
+        }
+
+        public void propertyChange (PropertyChangeEvent ev) {
+            super.setName (fs.getDisplayName ());
+        }
+
+        
+        protected void createProperties(Object bean, BeanInfo info) {
+            super.createProperties (bean, info);
+
+            FileSystemCapability cap = ((FileSystem)bean).getCapability ();
+            try {
+                if (cap != null) {
+                    BeanInfo bi = Introspector.getBeanInfo (cap.getClass (), FileSystemCapability.class);
+                    Descriptor d = computeProperties (cap, bi);
+
+                    Sheet.Set ss = new Sheet.Set ();
+                    ss.setName ("Capabilities"); 
+                    ss.setDisplayName (Main.getString ("PROP_Capabilities"));
+                    ss.setShortDescription (Main.getString ("HINT_Capabilities"));
+
+                    ss.put (d.property);
+                    ss.put (d.expert);
+
+                    getSheet ().put (ss);
+                }
+            } catch (IntrospectionException e) {
+            }
+        }
+
+
+        
+        public boolean canDestroy () {
+            return !fs.isDefault ();
+        }
+
+        
+        public boolean canCut () {
+            return canDestroy ();
+        }
+
+        
+        public void destroy () {
+            NbTopManager.getDefaultRepository ().removeFileSystem (fs);
+        }
+
+        
+        public Transferable clipboardCut () throws IOException {
+            Transferable t = clipboardCopy ();
+            destroy ();
+            return t;
+        }
+
+        
+        public SystemAction[] getActions() {
+            return new SystemAction[] {
+                       SystemAction.get (MoveUpAction.class),
+                       SystemAction.get (MoveDownAction.class),
+                       null,
+                       SystemAction.get (CutAction.class),
+                       SystemAction.get (CopyAction.class),
+                       null,
+                       SystemAction.get(UnmountFSAction.class),
+                       null,
+                       SystemAction.get(ToolsAction.class),
+                       SystemAction.get(PropertiesAction.class)
+                   };
+        }
+
+        
+        public Node.Cookie getCookie (Class c) {
+            if (c == UnmountFSCookie.class && !fs.isDefault ()) {
+                return new UnmountFSCookie() {
+                           
+                           public void unmount() {
+                               FSNode.this.destroy ();
+                           }
+                       };
+            }
+            return super.getCookie (c);
+        }
+    }
+
+
+    
+    static class DSMap extends Children.Keys {
+        protected Node[] createNodes (Object key) {
+            FileSystem fs = (FileSystem)key;
+            try {
+                return new Node[] { new FSNode (fs) };
+            } catch (java.beans.IntrospectionException ex) {
+                return new Node[] {};
+            }
+        }
+
+        
+        public void refresh (FileSystem fs) {
+            Repository fileSystemPool = NbTopManager.getDefaultRepository ();
+            Enumeration en = fileSystemPool.getFileSystems ();
+            ArrayList list = new ArrayList ();
+            while (en.hasMoreElements ()) {
+                Object o = en.nextElement ();
+                if (fs != o) {
+                    list.add (o);
+                }
+            }
+            setKeys (list);
+        }
+    }
+
+
+    
+    private final class Index extends org.openide.nodes.Index.Support {
+        
+        public Node[] getNodes () {
+            return getChildren ().getNodes ();
+        }
+
+        
+        public int getNodesCount () {
+            return getNodes ().length;
+        }
+
+        
+        public void reorder (int[] perm) {
+            NbTopManager.getDefaultRepository ().reorder (perm);
+        }
+
+    }
+
+
+    
+    private static final class Paste extends PasteType {
+        private InstanceCookie cookie;
+
+        public Paste (InstanceCookie c) {
+            cookie = c;
+        }
+
+        
+        public String getName () {
+            return NbBundle.getBundle (Paste.class).getString ("PT_filesystem");
+        }
+
+        
+        public Transferable paste () throws IOException {
+            try {
+                FileSystem fs = (FileSystem)cookie.instanceCreate ();
+                
+                TopManager.getDefault ().getRepository ().addFileSystem (fs);
+            } catch (ClassNotFoundException e) {
+                throw new org.openide.util.io.OperationException (e);
+            } catch (ClassCastException e) {
+                throw new org.openide.util.io.OperationException (e);
+            }
+
+            
+            return null;
+        }
+    }
+}
+
+

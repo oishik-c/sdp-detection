@@ -1,0 +1,137 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.core.NbMainExplorer {
+~ {static} long serialVersionUID
+- {static} MessageFormat formatExplorerTitle
+- List prevRoots
+- Map rootsToTCs
+- Node currentRoot
+- RootsListener rootsListener
+- PropertyChangeListener weakRootsL
+- boolean listenerInitialized
++ {static} int MIN_HEIGHT
++ {static} int DEFAULT_WIDTH
+- {static} NbMainExplorer explorer
++ <<Create>> NbMainExplorer()
++ HelpCtx getHelpCtx()
++ void open(Workspace)
++ void performCommand(Object)
++ void openRoots()
++ void openRoots(Workspace)
+~ void refreshRoots()
+- {static} void closeEverywhere(TopComponent)
+- {static} List whereOpened(TopComponent[])
+- {static} List getRoots()
+- ExplorerTab createTC(Node)
+- Map rootsToTCs()
+- List prevRoots()
++ void readExternal(ObjectInput)
+~ ExplorerTab getRootPanel(Node)
++ {static} NbMainExplorer getExplorer()
+- {static} Mode explorerMode(Workspace)
++ {static} void main(String[])
+}
+
+
+class org.netbeans.core.NbMainExplorer$ExplorerTab {
+~ {static} long serialVersionUID
+- TreeView view
+- PropertyChangeListener rcListener
+- boolean valid
++ <<Create>> ExplorerTab()
+# TreeView initGui()
++ void requestFocus()
++ void open(Workspace)
++ void setRootContext(Node)
++ Node getRootContext()
++ void readExternal(java.io.ObjectInput)
++ void performCommand(Object)
+# void validateRootContext()
+- PropertyChangeListener rcListener()
+- void initializeWithRootContext(Node)
+}
+
+
+class org.netbeans.core.NbMainExplorer$ExplorerTab$RootContextListener {
++ void propertyChange(PropertyChangeEvent)
+}
+
+class org.netbeans.core.NbMainExplorer$MainTab {
+~ {static} long serialVersionUID
+- {static} MainTab lastActivated
++ void open(Workspace)
+# void updateTitle()
+# void componentActivated()
+# void validateRootContext()
+# void registerRootContext(Node)
+}
+
+
+class org.netbeans.core.NbMainExplorer$RepositoryTab {
+~ {static} long serialVersionUID
+- RequestProcessor.Task previousTask
++ <<Create>> RepositoryTab()
++ void operationPostCreate(OperationEvent)
++ void operationCopy(OperationEvent.Copy)
++ void operationMove(OperationEvent.Move)
++ void operationDelete(OperationEvent)
++ void operationRename(OperationEvent.Rename)
++ void operationCreateShadow(OperationEvent.Copy)
++ void operationCreateFromTemplate(OperationEvent.Copy)
+- void selectNode(DataObject)
+- {static} Node findDataObject(Node,DataObject)
+}
+
+
+class org.netbeans.core.NbMainExplorer$ProjectsTab {
+~ {static} long serialVersionUID
+# void validateRootContext()
+}
+
+
+class org.netbeans.core.NbMainExplorer$ModuleTab {
+~ {static} long serialVersionUID
+# void validateRootContext()
+}
+
+
+class org.netbeans.core.NbMainExplorer$SettingsTab {
+~ {static} long serialVersionUID
+# TreeView initGui()
+# void updateTitle()
+}
+
+
+class org.netbeans.core.NbMainExplorer$RootsListener {
++ void propertyChange(PropertyChangeEvent)
+}
+
+
+
+org.netbeans.core.DeferredCommand <|.. org.netbeans.core.NbMainExplorer
+org.openide.windows.CloneableTopComponent <|-- org.netbeans.core.NbMainExplorer
+org.netbeans.core.NbMainExplorer +.. org.netbeans.core.NbMainExplorer$ExplorerTab
+org.netbeans.core.DeferredCommand <|.. org.netbeans.core.NbMainExplorer$ExplorerTab
+org.netbeans.core.ExplorerPanel <|-- org.netbeans.core.NbMainExplorer$ExplorerTab
+org.netbeans.core.NbMainExplorer$ExplorerTab +.. org.netbeans.core.NbMainExplorer$ExplorerTab$RootContextListener
+org.netbeans.core.PropertyChangeListener <|.. org.netbeans.core.NbMainExplorer$ExplorerTab$RootContextListener
+org.netbeans.core.Object <|-- org.netbeans.core.NbMainExplorer$ExplorerTab$RootContextListener
+org.netbeans.core.NbMainExplorer +.. org.netbeans.core.NbMainExplorer$MainTab
+org.netbeans.core.ExplorerTab <|-- org.netbeans.core.NbMainExplorer$MainTab
+org.netbeans.core.NbMainExplorer +.. org.netbeans.core.NbMainExplorer$RepositoryTab
+org.netbeans.core.OperationListener <|.. org.netbeans.core.NbMainExplorer$RepositoryTab
+org.netbeans.core.MainTab <|-- org.netbeans.core.NbMainExplorer$RepositoryTab
+org.netbeans.core.NbMainExplorer +.. org.netbeans.core.NbMainExplorer$ProjectsTab
+org.netbeans.core.MainTab <|-- org.netbeans.core.NbMainExplorer$ProjectsTab
+org.netbeans.core.NbMainExplorer +.. org.netbeans.core.NbMainExplorer$ModuleTab
+org.netbeans.core.MainTab <|-- org.netbeans.core.NbMainExplorer$ModuleTab
+org.netbeans.core.NbMainExplorer +.. org.netbeans.core.NbMainExplorer$SettingsTab
+org.netbeans.core.ExplorerTab <|-- org.netbeans.core.NbMainExplorer$SettingsTab
+org.netbeans.core.NbMainExplorer +.. org.netbeans.core.NbMainExplorer$RootsListener
+org.netbeans.core.PropertyChangeListener <|.. org.netbeans.core.NbMainExplorer$RootsListener
+org.netbeans.core.Object <|-- org.netbeans.core.NbMainExplorer$RootsListener
+@enduml

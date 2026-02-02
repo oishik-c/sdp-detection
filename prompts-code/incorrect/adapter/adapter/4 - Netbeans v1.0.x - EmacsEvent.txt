@@ -1,0 +1,55 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.emacs;
+
+import java.util.*;
+
+public class EmacsEvent extends EventObject {
+
+    private final String type;
+    private final Object[] args;
+    private boolean outOfSequence;
+
+    public EmacsEvent (Object source, String type, Object[] args) {
+        this (source, type, args, false);
+    }
+
+    public EmacsEvent (Object source, String type, Object[] args, boolean oos) {
+        super (source);
+        this.type = type;
+        this.args = args;
+        this.outOfSequence = oos;
+    }
+
+    public String getType () {
+        return type;
+    }
+
+    public Object[] getArgs () {
+        return args;
+    }
+
+    public boolean isOutOfSequence () {
+        return outOfSequence;
+    }
+
+    public String toString () {
+        StringBuffer buf = new StringBuffer ("EmacsEvent[");
+        if (outOfSequence) buf.append ("OutOfSequence:");
+        buf.append (source);
+        buf.append (',');
+        buf.append (type);
+        for (int i = 0; i < args.length; i++) {
+            buf.append (',');
+            buf.append (args[i]);
+        }
+        buf.append (']');
+        return buf.toString ();
+    }
+
+}

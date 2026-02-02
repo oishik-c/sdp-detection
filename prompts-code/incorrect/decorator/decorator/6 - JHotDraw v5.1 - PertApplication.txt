@@ -1,0 +1,56 @@
+Given the following java code, determine whether it contains an instance of the decorator design pattern playing the role of decorator.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.samples.pert;
+
+import java.awt.Panel;
+
+import CH.ifa.draw.application.DrawApplication;
+import CH.ifa.draw.figures.LineFigure;
+import CH.ifa.draw.figures.TextFigure;
+import CH.ifa.draw.figures.TextTool;
+import CH.ifa.draw.framework.Tool;
+import CH.ifa.draw.standard.ConnectionTool;
+import CH.ifa.draw.standard.CreationTool;
+
+public  class PertApplication extends DrawApplication {
+
+	static private final String PERTIMAGES = "/CH/ifa/draw/samples/pert/images/";
+
+	PertApplication() {
+		super("PERT Editor");
+	}
+
+	protected void createTools(Panel palette) {
+		super.createTools(palette);
+
+		Tool tool;
+		tool = new TextTool(view(), new TextFigure());
+		palette.add(createToolButton(IMAGES+"TEXT", "Text Tool", tool));
+
+		
+		
+		
+
+		tool = new PertFigureCreationTool(view());
+		palette.add(createToolButton(PERTIMAGES+"PERT", "Task Tool", tool));
+
+		tool = new ConnectionTool(view(), new PertDependency());
+		palette.add(createToolButton(IMAGES+"CONN", "Dependency Tool", tool));
+
+		tool = new CreationTool(view(), new LineFigure());
+		palette.add(createToolButton(IMAGES+"Line", "Line Tool", tool));
+	}
+
+	
+
+	public static void main(String[] args) {
+		PertApplication pert = new PertApplication();
+		pert.open();
+	}
+}
+

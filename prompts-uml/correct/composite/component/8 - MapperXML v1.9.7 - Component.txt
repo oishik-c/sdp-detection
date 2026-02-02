@@ -1,0 +1,56 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class com.taursys.xml.Component {
+- ArrayList parameterListeners
+- ArrayList inputListeners
+- ArrayList renderListeners
+- ArrayList recycleListeners
+- ArrayList triggerListeners
+~ com.taursys.xml.Container parent
+- boolean visible
+- ArrayList eventTypeList
+- boolean notifySet
++ <<Create>> Component()
++ com.taursys.xml.Container getParent()
++ void setVisible(boolean)
++ boolean isVisible()
+# void removeEventType(String)
+# void addEventType(String)
++ void addNotify()
++ void removeNotify()
+# void lazyAddNotify()
+# void lazyRemoveNotify()
+# boolean isNotifySet()
++ void dispatchEvent(EventObject)
+# void processEvent(EventObject)
+# void processParameterEvent(ParameterEvent)
++ void removeParameterListener(ParameterListener)
++ void addParameterListener(ParameterListener)
+# void fireParameterReceived(ParameterEvent)
+# void processInputEvent(InputEvent)
++ void removeInputListener(InputListener)
++ void addInputListener(InputListener)
+# void fireInputReceived(InputEvent)
++ void processRenderEvent(RenderEvent)
++ void removeRenderListener(RenderListener)
++ void addRenderListener(RenderListener)
+# void fireRender(RenderEvent)
+# void processTriggerEvent(TriggerEvent)
++ void removeTriggerListener(TriggerListener)
++ void addTriggerListener(TriggerListener)
+# void fireActionPerformed(TriggerEvent)
++ void processRecycleEvent(RecycleEvent)
++ void removeRecycleListener(RecycleListener)
++ void addRecycleListener(RecycleListener)
+# void fireRecycle(RecycleEvent)
+}
+
+
+
+
+com.taursys.util.MapperComponent <|.. com.taursys.xml.Component
+@enduml

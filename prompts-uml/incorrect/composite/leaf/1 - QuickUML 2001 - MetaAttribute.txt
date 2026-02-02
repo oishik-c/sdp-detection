@@ -1,0 +1,25 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.builder.MetaAttribute {
+- int access
+# <<Create>> MetaAttribute()
++ <<Create>> MetaAttribute(String)
+# void parseAttribute(String)
++ int getAccess()
++ void setAccess(int)
++ String getType()
++ boolean isArray()
++ int getArraySize()
++ int compareTo(Object)
++ String toString()
+}
+
+
+
+
+uml.builder.MetaComponent <|-- uml.builder.MetaAttribute
+@enduml

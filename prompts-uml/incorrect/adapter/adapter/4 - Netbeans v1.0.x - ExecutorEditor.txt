@@ -1,0 +1,34 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.beaninfo.editors.ExecutorEditor {
++ {static} Executor NO_EXECUTOR
++ <<Create>> ExecutorEditor()
+}
+
+
+class org.netbeans.beaninfo.editors.ExecutorEditor$NoExecutor {
+~ {static} long serialVersionUID
+- <<Create>> NoExecutor()
+# String displayName()
++ HelpCtx getHelpCtx()
++ ExecutorTask execute(ExecInfo)
+- Object readResolve()
+}
+
+
+class org.netbeans.beaninfo.editors.ExecutorEditor$NoExecutorBeanInfo {
+# String iconResource()
+}
+
+
+
+org.netbeans.beaninfo.editors.ServiceTypeEditor <|-- org.netbeans.beaninfo.editors.ExecutorEditor
+org.netbeans.beaninfo.editors.ExecutorEditor +.. org.netbeans.beaninfo.editors.ExecutorEditor$NoExecutor
+org.netbeans.beaninfo.editors.Executor <|-- org.netbeans.beaninfo.editors.ExecutorEditor$NoExecutor
+org.netbeans.beaninfo.editors.ExecutorEditor +.. org.netbeans.beaninfo.editors.ExecutorEditor$NoExecutorBeanInfo
+org.netbeans.beaninfo.editors.NoServiceTypeBeanInfo <|-- org.netbeans.beaninfo.editors.ExecutorEditor$NoExecutorBeanInfo
+@enduml

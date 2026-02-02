@@ -1,0 +1,21 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.samples.pert.PertDependency {
+- {static} long serialVersionUID
+- int pertDependencySerializedDataVersion
++ <<Create>> PertDependency()
++ void handleConnect(Figure,Figure)
++ void handleDisconnect(Figure,Figure)
++ boolean canConnect(Figure,Figure)
++ Vector handles()
+}
+
+
+
+
+CH.ifa.draw.figures.LineConnection <|-- CH.ifa.draw.samples.pert.PertDependency
+@enduml

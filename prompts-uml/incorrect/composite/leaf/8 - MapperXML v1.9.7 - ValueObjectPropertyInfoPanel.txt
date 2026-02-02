@@ -1,0 +1,37 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.tools.ValueObjectPropertyInfoPanel {
++ {static} String PROPERTY_LIST
+- JScrollPane holdersScrollPane
+- MTable propertiesTable
+- VOListValueHolder holder
+- JLabel nameLabel
+- JLabel typeLabel
+- JLabel classLabel
+- MTextField nameField
+- MTextField typeField
+- MTextField getSetDescriptionField
+- JButton addButton
+- MButton removeButton
+- DefaultTableCellRenderer cellRenderer
+- MTableColumn propertyNameColumn
+- MTableColumn propertyTypeColumn
+- GridBagLayout gridBagLayout1
++ <<Create>> ValueObjectPropertyInfoPanel()
+- void jbInit()
+~ void addButton_actionPerformed(ActionEvent)
+~ void removeButton_actionPerformed(ActionEvent)
+- String checkForErrors()
++ void checkPage()
++ {static} void main(String[])
+}
+
+
+
+
+com.taursys.tools.WizardPanel <|-- com.taursys.tools.ValueObjectPropertyInfoPanel
+@enduml

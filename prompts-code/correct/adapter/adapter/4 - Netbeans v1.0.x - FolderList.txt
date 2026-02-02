@@ -1,0 +1,467 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.loaders;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyVetoException;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.lang.ref.Reference;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+
+import org.openide.TopManager;
+import org.openide.util.datatransfer.*;
+import org.openide.filesystems.*;
+import org.openide.util.RequestProcessor;
+import org.openide.util.WeakListener;
+import org.openide.util.HelpCtx;
+import org.openide.util.actions.CallableSystemAction;
+
+
+final class FolderList extends Object implements FileChangeListener {
+    
+    static final long serialVersionUID = -592616022226761148L;
+
+    
+    private static final int LATER_PRIORITY = Thread.NORM_PRIORITY;
+
+    
+    private static final RequestProcessor PROCESSOR = new RequestProcessor (
+                "Folder recognizer" 
+            );
+
+
+    
+    protected DataFolder folder;
+
+    
+    transient private long time;
+
+    
+    transient private RequestProcessor.Task refreshTask;
+
+    
+    transient private HashMap primaryFiles = null;
+
+    
+    transient private List order;
+
+    
+    public FolderList (DataFolder df, boolean attach) {
+        folder = df;
+        if (attach) {
+            FileObject fo = df.getPrimaryFile ();
+
+            
+            
+            fo.addFileChangeListener (WeakListener.fileChange (this, fo));
+        }
+    }
+
+    void reassign(DataFolder df) {
+        
+        folder = df;
+        FileObject fo = df.getPrimaryFile ();
+
+        
+        
+        fo.addFileChangeListener (WeakListener.fileChange (this, fo));
+    }
+
+    
+    public DataObject[] getChildren () {
+        ArrayList res = getChildrenList ();
+        DataObject[] arr = new DataObject[res.size ()];
+        res.toArray (arr);
+        return arr;
+    }
+
+    
+    public ArrayList getChildrenList () {
+        ListTask lt = getChildrenList (null);
+        lt.task.waitFinished ();
+        return lt.result;
+    }
+
+    
+    public RequestProcessor.Task computeChildrenList (FolderListListener filter) {
+        return getChildrenList (filter).task;
+    }
+
+    private ListTask getChildrenList (FolderListListener filter) {
+        ListTask lt = new ListTask (filter);
+        int priority = Thread.currentThread().getPriority();
+
+        
+        lt.task = PROCESSOR.post (lt, 0, priority);
+        return lt;
+    }
+
+    
+    public void changeComparator () {
+        PROCESSOR.post (new Runnable () {
+                            public void run () {
+                                
+                                
+                                if (primaryFiles != null) {
+                                    
+                                    ArrayList v = getObjects (null);
+                                    if (v.size () != 0) {
+                                        
+                                        order = null;
+                                        ArrayList r = getObjects (null);
+                                        fireChildrenChange (r, v);
+                                    }
+                                }
+                            }
+                        }, 0, Thread.MIN_PRIORITY);
+    }
+
+    
+    public void refresh () {
+        refresh (Long.MAX_VALUE);
+    }
+
+    
+    private RequestProcessor.Task doRefreshIfNotDone () {
+        if (refreshTask == null) {
+            synchronized (this) {
+                if (refreshTask == null) {
+                    refresh ();
+                }
+            }
+        }
+        return refreshTask;
+    }
+
+    
+    private void refresh (final long now) {
+        refreshTask = PROCESSOR.post (new Runnable () {
+                                          public void run () {
+                                              if (now > time) {
+                                                  
+                                                  
+                                                  time = System.currentTimeMillis();
+                                                  if (primaryFiles != null) {
+                                                      
+                                                      createBoth (null, true);
+                                                  }
+                                              }
+                                          }
+                                      }, 0, LATER_PRIORITY);
+    }
+
+    
+    
+    
+
+    
+    public void fileChanged (FileEvent fe) {
+        FileObject fo = fe.getFile ();
+        if (fo.isData ()) {
+            
+            
+            if (primaryFiles != null) {
+                
+                try {
+                    DataObject obj = DataObject.find (fo);
+                    if (!primaryFiles.containsKey (obj.getPrimaryFile ())) {
+                        
+                        
+                        
+
+                        
+                        
+                        refresh (fe.getTime ());
+                    }
+                } catch (DataObjectNotFoundException ex) {
+                    
+                }
+            }
+        }
+    }
+
+    
+    public void fileDeleted (FileEvent fe) {
+        
+        
+        
+        if (primaryFiles == null || primaryFiles.containsKey (fe.getFile ())) {
+            
+            
+            refresh (fe.getTime ());
+            
+        }
+    }
+
+    
+    public void fileDataCreated (FileEvent fe) {
+        refresh (fe.getTime ());
+    }
+
+    
+    public void fileFolderCreated (FileEvent fe) {
+        refresh (fe.getTime ());
+    }
+
+    
+    public void fileRenamed (FileRenameEvent fe) {
+    }
+
+    
+    public void fileAttributeChanged (FileAttributeEvent fe) {
+    }
+
+
+    
+    
+    
+
+
+
+
+
+
+
+    
+    private ArrayList getObjects (FolderListListener f) {
+        ArrayList res;
+        if (primaryFiles == null) {
+            res = createBoth (f, false);
+        } else {
+            if (order != null) {
+                res = createObjects (order, primaryFiles, f);
+            } else {
+                res = createObjects (primaryFiles.keySet (), primaryFiles, f);
+                Collections.sort (res, folder.getComparator ());
+                order = createOrder (res);
+            }
+        }
+        return res;
+        
+    }
+
+    
+    private static ArrayList createOrder (ArrayList list) {
+        int size = list.size ();
+        ArrayList res = new ArrayList (size);
+
+        for (int i = 0; i < size; i++) {
+            res.add (((DataObject)list.get (i)).getPrimaryFile ());
+        }
+
+        return res;
+    }
+
+    
+    private static ArrayList createObjects (
+        Collection order, Map map, FolderListListener f
+    ) {
+        int size = order.size ();
+
+        Iterator it = order.iterator ();
+
+        ArrayList res = new ArrayList (size);
+        for (int i = 0; i < size; i++) {
+            FileObject fo = (FileObject)it.next ();
+
+            Reference ref = (Reference)map.get (fo);
+            DataObject obj = (DataObject)ref.get ();
+
+            if (obj == null) {
+                
+                try {
+                    obj = DataObject.find (fo);
+                    ref = new SoftReference (obj);
+                } catch (DataObjectNotFoundException ex) {
+                }
+            }
+            
+            if (obj != null) {
+                if (f == null) {
+                    
+                    res.add (obj);
+                } else {
+                    
+                    
+                    f.process (obj, res);
+                }
+            }
+        }
+
+        if (f != null) {
+            f.finished (res);
+        }
+
+        return res;
+    }
+
+    
+    private ArrayList createBoth (FolderListListener filter, boolean notify) {
+        
+        final HashMap file = new HashMap ();
+
+        
+        ArrayList all = new ArrayList ();
+
+        
+        final HashMap remove = primaryFiles == null ?
+                               new HashMap () : (HashMap)primaryFiles.clone ();
+
+        
+        final ArrayList add = new ArrayList ();
+
+        DataLoaderPool pool = TopManager.getDefault ().getLoaderPool ();
+
+        
+        
+        final HashSet marked = new HashSet ();
+        DataLoader.RecognizedFiles recog = new DataLoader.RecognizedFiles () {
+                                               
+                                               public void markRecognized (FileObject fo) {
+                                                   if (fo != null) {
+                                                       marked.add (fo);
+                                                   }
+                                               }
+                                           };
+        
+        Enumeration en = folder.getPrimaryFile ().getChildren (false);
+        while (en.hasMoreElements ()) {
+            FileObject fo = (FileObject)en.nextElement ();
+            if (!marked.contains (fo)) {
+                
+                
+                DataObject obj;
+                try {
+                    obj = pool.findDataObject (fo, recog);
+                } catch (DataObjectExistsException ex) {
+                    
+                    obj = ex.getDataObject ();
+                } catch (IOException ex) {
+                    
+                    obj = null;
+                }
+
+                if (obj != null) {
+                    
+
+                    
+                    FileObject primary = obj.getPrimaryFile ();
+
+                    boolean doNotRemovePrimaryFile = false;
+                    if (!file.containsKey (primary)) {
+                        
+
+                        
+                        boolean goIn = primaryFiles == null;
+                        if (!goIn) {
+                            Reference r = (Reference)primaryFiles.get (primary);
+                            
+                            
+                            goIn = r == null;
+                            if (!goIn) {
+                                
+                                
+                                DataObject obj2 = (DataObject)r.get ();
+                                goIn = obj2 == null || obj2 != obj;
+                                if (goIn) {
+                                    doNotRemovePrimaryFile = true;
+                                }
+                            }
+                        }
+
+                        if (goIn) {
+                            
+                            add.add (obj);
+                            
+                        }
+                        
+                        if (filter == null) {
+                            all.add (obj);
+                        } else {
+                            filter.process (obj, all);
+                        }
+                    }
+
+                    if (!doNotRemovePrimaryFile) {
+                        
+                        remove.remove (primary);
+                    }
+
+                    
+                    file.put (primary, new WeakReference (obj));
+                } else {
+                    
+                    
+                    
+                    
+                }
+            }
+        }
+
+        
+
+        
+        
+        
+        
+
+        primaryFiles = file;
+
+        Collections.sort (all, folder.getComparator ());
+        order = createOrder (all);
+
+        
+        if (notify) {
+            fireChildrenChange (add, createObjects (new ArrayList (remove.keySet ()), remove, null));
+        }
+
+        
+        if (filter != null) {
+            filter.finished (all);
+        }
+
+        return all;
+    }
+
+    
+    private void fireChildrenChange (ArrayList add, ArrayList removed) {
+            
+        folder.fireChildrenChange (add, removed);
+    }
+
+    
+    private final class ListTask implements Runnable {
+        private FolderListListener filter;
+
+        public ListTask (FolderListListener filter) {
+            this.filter = filter;
+        }
+
+        public ArrayList result;
+        public RequestProcessor.Task task;
+
+        public void run () {
+            
+            if (refreshTask != null) {
+                refreshTask.waitFinished ();
+            }
+
+            result = getObjects (filter);
+        }
+    }
+
+}
+
+

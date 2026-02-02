@@ -1,0 +1,32 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package uml.diagram;
+
+import diagram.DefaultLinkEditor;
+
+
+public class CompositionLinkEditor extends DefaultLinkEditor {
+
+  protected CompositionItem lastValue;
+
+  public CompositionLinkEditor() {
+    super(new SinkLabelRenderer());
+  }
+
+  
+  public Object getCellEditorValue() {
+
+    if(lastValue == null)
+      lastValue = new CompositionItem();
+
+    lastValue.setName((String)super.getCellEditorValue());
+    return lastValue;
+
+  }
+
+}

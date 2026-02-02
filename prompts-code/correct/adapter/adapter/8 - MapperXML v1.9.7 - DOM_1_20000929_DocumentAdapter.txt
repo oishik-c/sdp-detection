@@ -1,0 +1,175 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.dom;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Document;
+import org.w3c.dom.Text;
+import java.util.Hashtable;
+import org.w3c.dom.Node;
+import org.w3c.dom.NamedNodeMap;
+import java.io.OutputStream;
+import java.io.Writer;
+
+
+public class DOM_1_20000929_DocumentAdapter implements DocumentAdapter {
+  private Document doc;
+  private Hashtable identifierMap;
+  private String defaultIdentifier = "id";
+  private AbstractWriter xmlWriter;
+
+  
+  public DOM_1_20000929_DocumentAdapter(Document newDoc) {
+    setDocument(newDoc);
+    xmlWriter = createDefaultWriter();
+  }
+
+  
+  public void write(OutputStream stream) {
+    xmlWriter.write(doc, stream);
+  }
+
+  
+  public void write(Writer writer) {
+    xmlWriter.write(doc, writer);
+  }
+
+  
+  public Element getElementById(String elementId) {
+    if (elementId != null)
+      return (Element)identifierMap.get(elementId);
+    else
+      return null;
+  }
+
+  
+  public void setElementText(String elementId, String value) {
+    setElementText(getElementById(elementId), value);
+  }
+
+  
+  public void setAttributeText(String elementId, String attribute, String value) {
+    Element element = getElementById(elementId);
+    if (element != null) {
+      if (value == null)
+        value = "";
+      element.setAttribute(attribute, value);
+    }
+  }
+
+  
+  public Document getDocument() {
+    return doc;
+  }
+
+  
+  public void setDocument(Document newDoc) {
+    doc = newDoc;
+    identifierMap = new Hashtable();
+    mapIdentifiers(doc);
+  }
+
+  
+  protected void mapIdentifiers(Node parent) {
+    Node child = parent.getFirstChild();
+    while (child != null) {
+      if (child.getNodeType() == Node.ELEMENT_NODE) {
+        String id = ((Element)child).getAttribute(defaultIdentifier);
+        if (id != null && id.length() > 0) {
+          identifierMap.put(id, (Element)child);
+        }
+        mapIdentifiers(child);
+      }
+      child = child.getNextSibling();
+    }
+  }
+
+  
+  public static String getAttribute(String attributeName, Node node) {
+    
+    NamedNodeMap attribs = node.getAttributes();
+    
+    if (attribs != null) {
+      
+      Node idNode = attribs.getNamedItem(attributeName);
+      if (idNode != null)
+        return idNode.getNodeValue();
+    }
+    return null;
+  }
+
+  
+  public static void setElementText(Element element, String value) {
+    if (element != null) {
+      
+      if (value == null)
+        value = "";
+      
+      Text textNode = findFirstTextNode(element);
+      if (textNode != null) {
+        textNode.setData(value);
+      } else {
+        textNode = element.getOwnerDocument().createTextNode(value);
+        element.appendChild(textNode);
+      }
+    }
+  }
+
+  
+  public static String getElementText(Element element) {
+    if (element != null) {
+      Text textNode = findFirstTextNode(element);
+      if (textNode != null) {
+        return textNode.getData();
+      }
+    }
+    return null;
+  }
+
+  
+  public static org.w3c.dom.Text findFirstTextNode(Element ele) {
+    Node child = ele.getFirstChild();
+    while (child != null) {
+      
+      if (child.getNodeType() == Node.TEXT_NODE) {
+        return (org.w3c.dom.Text)child;
+      }
+      child = child.getNextSibling();
+    }
+    return null;
+  }
+
+  
+  public static boolean hasChildElements(Element parent) {
+    Node child = parent.getFirstChild();
+    while (child != null) {
+      if (child.getNodeType() == Node.ELEMENT_NODE)
+        return true;
+      child = child.getNextSibling();
+    }
+    return false;
+  }
+
+  
+  protected AbstractWriter createDefaultWriter() {
+    if (doc.getDocumentElement().getNodeName().toLowerCase().equals("html")) {
+      return new HTMLWriter();
+    } else {
+      return new XMLWriter();
+    }
+  }
+
+  
+  public void setXMLWriter(AbstractWriter newXMLWriter) {
+    xmlWriter = newXMLWriter;
+  }
+
+  
+  public AbstractWriter getXMLWriter() {
+    return xmlWriter;
+  }
+}

@@ -1,0 +1,63 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.editor.ext.JCTokenProcessor {
+- {static} int CONSTANT
+- {static} int VARIABLE
+- {static} int OPERATOR
+- {static} int UNARY_OPERATOR
+- {static} int DOT
+- {static} int DOT_OPEN
+- {static} int ARRAY_OPEN
+- {static} int ARRAY
+- {static} int PARENTHESIS_OPEN
+- {static} int PARENTHESIS
+- {static} int METHOD_OPEN
+- {static} int METHOD
+- {static} int CONSTRUCTOR
+- {static} int CONVERSION
+- {static} int TYPE
+- {static} int NEW
+- {static} int INSTANCEOF
+- {static} int NO_EXP
+- char[] buffer
+- int bufferStartPos
+- int bufferOffsetDelta
+- boolean stopped
+- ArrayList expStack
+- int curTokenID
+- int curHelperID
+- int curOffset
+- int curTokenLen
+- int lastPosition
+~ <<Create>> JCTokenProcessor()
+~ List getStack()
+~ int getLastTokenID()
+~ boolean isStopped()
+~ int getLastPosition()
+~ JCExpression getResultExp()
+- void clearStack()
+- void pushExp(JCExpression)
+- JCExpression popExp()
+- JCExpression peekExp()
+- JCExpression peekExp2()
+- JCExpression peekExp(int)
+- JCExpression createExp(int)
+- JCExpression createTokenExp(int)
+- void addTokenTo(JCExpression)
+- int getValidID(JCExpression)
+- boolean checkJoin(int,int)
++ boolean token(int,int,int,int)
++ int eot(int)
++ void nextBuffer(char[],int,int,int,int,boolean)
++ String toString()
+}
+
+
+
+
+org.netbeans.editor.TokenProcessor <|.. org.netbeans.editor.ext.JCTokenProcessor
+@enduml

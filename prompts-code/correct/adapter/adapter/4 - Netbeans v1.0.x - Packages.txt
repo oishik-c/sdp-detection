@@ -1,0 +1,388 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.core;
+
+import java.util.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeSupport;
+import java.lang.ref.*;
+
+import org.openide.TopManager;
+import org.openide.filesystems.FileSystem;
+import org.openide.filesystems.*;
+import org.openide.loaders.DataFilter;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.loaders.DataLoaderPool;
+import org.openide.nodes.FilterNode;
+import org.openide.nodes.AbstractNode;
+import org.openide.nodes.Node;
+import org.openide.nodes.Children;
+import org.openide.nodes.Children.SortedMap;
+import org.openide.nodes.NodeAdapter;
+import org.openide.util.WeakListener;
+import org.openide.util.RequestProcessor;
+import org.openide.util.enum.AlterEnumeration;
+import org.openide.util.enum.EmptyEnumeration;
+import org.openide.util.enum.SingletonEnumeration;
+import org.openide.util.enum.SequenceEnumeration;
+
+
+final class Packages extends Object
+            implements RepositoryListener, Comparator, FileChangeListener,
+    PropertyChangeListener {
+    
+    private static final int MIN_LIMIT = 8;
+    private static final int MUL_LIMIT = 2;
+
+    
+    private static final int PRIORITY_WRITE = 3;
+    
+    
+    private static final int PRIORITY_READ = 4;
+
+
+    
+    private static Reference ref = new WeakReference (null);
+
+
+    
+    public static final String PROP_LIST = "list"; 
+
+    
+    public static final String PROP_NAME = "name"; 
+
+
+    
+    private FileChangeListener weakFCL = WeakListener.fileChange (this, null);
+    
+    private PropertyChangeListener weakPCL = WeakListener.propertyChange (
+                this, null
+            );
+
+    
+    private TreeSet fileFolders;
+
+    
+    private Map indexOfFileSystem;
+
+    
+    private RequestProcessor PROCESSOR = new RequestProcessor (
+                                             "All packages processor" 
+                                         );
+
+    
+    private PropertyChangeSupport pcs = new PropertyChangeSupport (this);
+
+    private Packages () {
+    }
+
+    
+    protected void finalize () {
+        PROCESSOR.stop();
+    }
+
+
+    
+    private void initialize () {
+        if (fileFolders == null) {
+            synchronized (this) {
+                if (fileFolders == null) {
+                    fileFolders = new TreeSet (this);
+
+                    Repository rep = TopManager.getDefault ().getRepository ();
+                    rep.addRepositoryListener (WeakListener.repository (this, rep));
+                    
+                    putPackages (null);
+
+                    
+                    Enumeration en = rep.fileSystems ();
+                    while (en.hasMoreElements()) {
+                        FileSystem fs = (FileSystem)en.nextElement();
+                        fs.addPropertyChangeListener (weakPCL);
+                    }
+                }
+            }
+
+        }
+    }
+
+    
+    
+    
+
+    
+    public static Packages getDefault () {
+        Packages p = (Packages)ref.get ();
+        if (p == null) {
+            synchronized (Packages.class) {
+                if (p == null) {
+                    p = new Packages ();
+                    ref = new WeakReference (p);
+                }
+            }
+        }
+        return p;
+    }
+
+
+
+    public void addPropertyChangeListener (PropertyChangeListener pcl) {
+        pcs.addPropertyChangeListener (pcl);
+    }
+
+    public void removePropertyChangeListener (PropertyChangeListener pcl) {
+        pcs.removePropertyChangeListener (pcl);
+    }
+
+    
+    public void update (final PackageChildren ch) {
+        initialize ();
+
+        PROCESSOR.post(new Runnable () {
+                           public void run () {
+                               ch.updatePackages (fileFolders);
+                           }
+                       }, 0, PRIORITY_READ);
+    }
+
+    
+    
+    
+
+
+
+
+    
+    private void postTask (Runnable r) {
+        PROCESSOR.post (r, 0, PRIORITY_WRITE);
+    }
+
+    
+
+    
+    public void fileFolderCreated(FileEvent fe) {
+        putPackages (fe.getFile ());
+    }
+
+    
+    public void fileDataCreated(FileEvent fe) {
+    }
+
+    
+    public void fileChanged(FileEvent fe) {
+    }
+
+    
+    public void fileDeleted(final FileEvent fe) {
+        if (fe.getFile () != fe.getSource ()) return;
+
+        postTask (new Runnable () {
+                      public void run () {
+                          fileFolders.remove (fe.getFile ());
+                          pcs.firePropertyChange (PROP_LIST, null, null);
+                      }
+                  });
+    }
+
+    
+    public void fileRenamed (final FileRenameEvent fe) {
+        if (fe.getFile () != fe.getSource ()) return;
+
+        postTask (new Runnable () {
+                      public void run () {
+                          pcs.firePropertyChange (PROP_NAME, null, fe.getFile ());
+                      }
+                  });
+    }
+
+    
+    public void fileAttributeChanged(FileAttributeEvent fe) {
+    }
+
+    
+
+    
+    public void fileSystemAdded (final RepositoryEvent ev) {
+        FileSystem fs = ev.getFileSystem ();
+        if (fs.isHidden ()) return;
+
+
+        putPackages (fs.getRoot());
+        fs.addPropertyChangeListener(weakPCL);
+    }
+
+    
+    public void fileSystemRemoved (final RepositoryEvent ev) {
+        FileSystem fs = ev.getFileSystem ();
+        removeFileSystemPackages (fs);
+        fs.addPropertyChangeListener(weakPCL);
+    }
+
+    
+    public void fileSystemPoolReordered (RepositoryReorderedEvent ev) {
+        
+        postTask (new Runnable () {
+                      public void run () {
+                          LinkedList ll = new LinkedList (fileFolders);
+
+                          
+                          indexOfFileSystem = null;
+
+                          
+                          fileFolders.clear ();
+                          fileFolders.addAll (ll);
+                      }
+                  });
+
+    }
+
+    public void propertyChange(final java.beans.PropertyChangeEvent p1) {
+        if (FileSystem.PROP_HIDDEN.equals(p1.getPropertyName())) {
+            FileSystem fs = (FileSystem)p1.getSource();
+            if (fs.isHidden()) {
+                removeFileSystemPackages (fs);
+            } else {
+                putPackages (fs.getRoot());
+            }
+        }
+    }
+
+    
+
+    
+    private static Enumeration createSubFolders (FileObject fo) {
+        return new SequenceEnumeration (
+                   new SingletonEnumeration (fo),
+                   fo.getFolders (true)
+               );
+    }
+
+    
+    private static Enumeration createFolders () {
+        return new SequenceEnumeration (
+                   new AlterEnumeration (
+                       TopManager.getDefault ().getRepository ().getFileSystems ()
+                   ) {
+                       protected Object alter (Object o) {
+                           FileSystem fs = (FileSystem)o;
+                           if (fs.isHidden () || !fs.isValid ()) {
+                               return EmptyEnumeration.EMPTY;
+                           }
+                           return createSubFolders (fs.getRoot ());
+                       }
+                   }
+               );
+    }
+
+    
+    private void putPackages (
+        FileObject source
+    ) {
+        Enumeration en = source == null ?
+                         createFolders () : createSubFolders (source);
+
+        postTask (processPackages (en, MIN_LIMIT));
+    }
+
+    
+    private Runnable processPackages (
+        final Enumeration en,
+        final int cnt
+    ) {
+        return new Runnable () {
+                   private int limit = cnt;
+
+                   public void run () {
+                       if (!en.hasMoreElements ()) return;
+
+                       int i = 0;
+                       while (en.hasMoreElements () && i++ < limit) {
+                           FileObject fo = (FileObject) en.nextElement ();
+                           fo.addFileChangeListener (weakFCL);
+                           fileFolders.add (fo);
+                       }
+                       pcs.firePropertyChange (PROP_LIST, null, null);
+
+                       
+                       
+                       limit *= MUL_LIMIT;
+                       postTask (this);
+                   }
+               };
+    }
+
+    
+    private void removeFileSystemPackages (final FileSystem fs) {
+        postTask (new Runnable () {
+                      public void run () {
+                          Iterator it = fileFolders.iterator ();
+                          while (it.hasNext()) {
+                              FileObject fo = (FileObject)it.next ();
+                              try {
+                                  if (fo.getFileSystem ().equals (fs)) {
+                                      
+                                      it.remove ();
+                                  }
+                              } catch (FileStateInvalidException e) {
+                                  
+                                  it.remove ();
+                              }
+                          }
+                          pcs.firePropertyChange (PROP_LIST, null, null);
+                      }
+                  });
+    }
+
+    
+    private int indexOf (FileSystem fs) {
+        Map ifs = indexOfFileSystem;
+
+        if (ifs == null) {
+            synchronized (this) {
+                ifs = indexOfFileSystem;
+                if (ifs == null) {
+                    Repository rep = TopManager.getDefault ().getRepository ();
+                    FileSystem[] arr = rep.toArray ();
+
+                    ifs = indexOfFileSystem = new HashMap ((int) (arr.length * 1.3));
+                    for (int i = 0; i < arr.length; i++) {
+                        indexOfFileSystem.put (arr[i], new Integer (i));
+                    }
+                }
+            }
+        }
+
+        Integer i = (Integer)ifs.get (fs);
+        return i == null ? -1 : i.intValue ();
+    }
+
+    
+    public int compare (Object o1, Object o2) {
+        try {
+            FileObject fo1 = (FileObject)o1;
+            FileObject fo2 = (FileObject)o2;
+
+            FileSystem fs1 = fo1.getFileSystem ();
+            FileSystem fs2 = fo2.getFileSystem ();
+
+            if (fs1.equals (fs2)) {
+                return fo1.getPackageName ('.').compareTo (fo2.getPackageName ('.'));
+            } else {
+                return indexOf (fs1) - indexOf (fs2);
+            }
+        } catch (FileStateInvalidException ee) {
+            return 0;
+        }
+    }
+
+}
+
+

@@ -1,0 +1,176 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.swing;
+
+import javax.swing.*;
+import javax.swing.table.*;
+import java.text.Format;
+import java.text.MessageFormat;
+import java.text.ChoiceFormat;
+import com.taursys.util.DataTypes;
+import com.taursys.util.UnsupportedConversionException;
+import com.taursys.util.UnsupportedDataTypeException;
+import java.text.ParseException;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.IllegalAccessException;
+import java.beans.IntrospectionException;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.util.Vector;
+import java.awt.Component;
+import com.taursys.model.PropertyAccessor;
+
+
+public class MListCellRenderer extends DefaultListCellRenderer {
+  private java.text.Format format = null;
+  private String formatPattern = null;
+  private int javaDataType = DataTypes.TYPE_UNDEFINED;
+  private String displayPropertyName;
+  private PropertyAccessor pa = null;
+
+
+  
+  public MListCellRenderer() {
+    super();
+  }
+
+  
+  public Component getListCellRendererComponent(
+      JList list,
+      Object value,
+      int index,
+      boolean isSelected,
+      boolean cellHasFocus)
+      {
+    setComponentOrientation(list.getComponentOrientation());
+    if (isSelected) {
+      setBackground(list.getSelectionBackground());
+      setForeground(list.getSelectionForeground());
+    }
+    else {
+      setBackground(list.getBackground());
+      setForeground(list.getForeground());
+    }
+
+    if (value instanceof Icon) {
+      setIcon((Icon)value);
+    }
+    setValue(value);
+
+    setEnabled(list.isEnabled());
+    setFont(list.getFont());
+    setBorder((cellHasFocus) ?
+        UIManager.getBorder("List.focusCellHighlightBorder") :
+        noFocusBorder);
+
+    return this;
+  }
+
+  
+  
+  
+
+  
+  protected void setValue(Object value) {
+    if (value instanceof NullObject) {
+      setIcon(((NullObject)value).getIcon());
+      setText(((NullObject)value).getText());
+      return;
+    }
+    
+    if (value != null && displayPropertyName != null
+        && displayPropertyName.length() > 0) {
+      value = getPropertyValue(value, displayPropertyName);
+    }
+    
+    if (value == null) {
+      setText("");
+    } else if (format == null) {
+      if (javaDataType == DataTypes.TYPE_UNDEFINED) {
+        javaDataType = DataTypes.getDataType(value.getClass().getName());
+      }
+      setText(DataTypes.format(javaDataType, value));
+    } else if (format instanceof MessageFormat) {
+      setText(((MessageFormat)format).format(new Object[] {value}));
+    } else {
+      setText(format.format(value));
+    }
+  }
+
+  
+  private Object getPropertyValue(Object obj, String propertyName) {
+    if (pa == null) {
+      try {
+        pa = new PropertyAccessor(obj.getClass(), propertyName);
+      } catch (Exception ex) {
+        com.taursys.debug.Debug.error("Cannot access property for retrieval", ex);
+        return null;
+      }
+    }
+    
+    try {
+      return pa.getPropertyValue(obj);
+    } catch (Exception ex) {
+      com.taursys.debug.Debug.error("Cannot retrieve value for property", ex);
+      return null;
+    }
+  }
+
+  
+  protected void setupFormat() {
+    
+    if (format != null && formatPattern != null) {
+      if (format instanceof MessageFormat)
+        ((MessageFormat)format).applyPattern(formatPattern);
+      if (format instanceof SimpleDateFormat)
+        ((SimpleDateFormat)format).applyPattern(formatPattern);
+      if (format instanceof DecimalFormat)
+        ((DecimalFormat)format).applyPattern(formatPattern);
+      if (format instanceof ChoiceFormat)
+        ((ChoiceFormat)format).applyPattern(formatPattern);
+    }
+  }
+
+  
+  
+  
+
+  
+  public void setFormat(java.text.Format newFormat) {
+    format = newFormat;
+    setupFormat();
+  }
+
+  
+  public java.text.Format getFormat() {
+    return format;
+  }
+
+  
+  public void setFormatPattern(String newPattern) {
+    formatPattern = newPattern;
+    setupFormat();
+  }
+
+  
+  public String getFormatPattern() {
+    return formatPattern;
+  }
+
+  
+  public void setDisplayPropertyName(String newDisplayPropertyName) {
+    displayPropertyName = newDisplayPropertyName;
+  }
+
+  
+  public String getDisplayPropertyName() {
+    return displayPropertyName;
+  }
+
+}

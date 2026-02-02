@@ -1,0 +1,18 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.figures.ConnectedTextTool {
+~ boolean fConnected
++ <<Create>> ConnectedTextTool(DrawingView,Figure)
++ void mouseDown(MouseEvent,int,int)
++ void activate()
+}
+
+
+
+
+CH.ifa.draw.figures.TextTool <|-- CH.ifa.draw.figures.ConnectedTextTool
+@enduml

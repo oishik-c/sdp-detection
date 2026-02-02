@@ -1,0 +1,16 @@
+Given the following uml code, determine whether it contains an instance of the proxy design pattern playing the role of subject.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.sourceforge.pmd.ast.ASTForInit {
++ <<Create>> ASTForInit(int)
++ <<Create>> ASTForInit(JavaParser,int)
++ Object jjtAccept(JavaParserVisitor,Object)
+}
+
+
+
+net.sourceforge.pmd.ast.SimpleNode <|-- net.sourceforge.pmd.ast.ASTForInit
+@enduml

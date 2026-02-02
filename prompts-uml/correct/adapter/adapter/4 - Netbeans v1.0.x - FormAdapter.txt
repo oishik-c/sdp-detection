@@ -1,0 +1,26 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.form.FormAdapter {
++ void formLoaded()
++ void formChanged()
++ void codeChanged()
++ void formToBeSaved()
++ void componentsReordered(ComponentContainer)
++ void componentsAdded(RADComponent[])
++ void componentsRemoved(RADComponent[])
++ void componentChanged(FormPropertyEvent)
++ void propertyChanged(FormPropertyEvent)
++ void layoutChanged(RADVisualContainer,RADVisualComponent,String,Object,Object)
++ void eventAdded(FormEventEvent)
++ void eventRemoved(FormEventEvent)
++ void eventRenamed(FormEventEvent)
+}
+
+
+
+org.netbeans.modules.form.FormListener <|.. org.netbeans.modules.form.FormAdapter
+@enduml

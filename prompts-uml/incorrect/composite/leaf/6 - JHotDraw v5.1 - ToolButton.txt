@@ -1,0 +1,27 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.standard.ToolButton {
+- String fName
+- Tool fTool
+- PaletteIcon fIcon
++ <<Create>> ToolButton(PaletteListener,String,String,Tool)
++ Tool tool()
++ String name()
++ Object attributeValue()
++ Dimension getMinimumSize()
++ Dimension getPreferredSize()
++ void paintBackground(Graphics)
++ void paintNormal(Graphics)
++ void paintPressed(Graphics)
++ void paintSelected(Graphics)
+}
+
+
+
+
+CH.ifa.draw.util.PaletteButton <|-- CH.ifa.draw.standard.ToolButton
+@enduml

@@ -1,0 +1,34 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.form.FormEditorModule {
+~ {static} long serialVersionUID
+- {static} String[] defaultAWTComponents
+- {static} String[] defaultSwingComponents
+- {static} String[] defaultSwing2Components
+- {static} String[] defaultBeansComponents
+- {static} String[] defaultLayoutsComponents
+- {static} String[] defaultLayoutsIcons
+- {static} String[] defaultBorders
+- {static} String[] defaultBordersIcons
++ void installed()
+- {static} void timerBeanHack()
++ void restored()
++ void uninstalled()
+- void installActions()
+- void uninstallActions()
+- void copyTemplates()
+- void createComponentPalette()
+- void createInstances(FileObject,String[],String[],java.util.Collection)
+- {static} void localizeFile(FileObject)
+- String formatName(String)
+}
+
+
+
+
+org.openide.modules.ModuleInstall <|-- org.netbeans.modules.form.FormEditorModule
+@enduml

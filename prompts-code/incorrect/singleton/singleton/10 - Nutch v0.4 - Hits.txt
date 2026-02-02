@@ -1,0 +1,71 @@
+Given the following java code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+
+package net.nutch.searcher;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import net.nutch.io.Writable;
+
+import java.util.logging.Logger;
+import net.nutch.util.LogFormatter;
+
+
+public final class Hits implements Writable {
+  private static final Logger LOG =
+    LogFormatter.getLogger("net.nutch.searcher.Hits");
+
+  private long total;
+  private Hit[] top;
+
+  public Hits() {}
+
+  public Hits(long total, Hit[] top) {
+    this.total = total;
+    this.top = top;
+  }
+
+  
+  public long getTotal() { return total; }
+
+  
+  public int getLength() { return top.length; }
+
+  
+  public Hit getHit(int i) { return top[i]; }
+
+  
+  public Hit[] getHits(int start, int length) {
+    Hit[] results = new Hit[length];
+    for (int i = 0; i < length; i++) {
+      results[i] = top[start+i];
+    }
+    return results;
+  }
+
+
+  public void write(DataOutput out) throws IOException {
+    out.writeLong(total);
+    out.writeInt(top.length);
+    for (int i = 0; i < top.length; i++) {
+      top[i].write(out);
+    }
+  }
+
+  public void readFields(DataInput in) throws IOException {
+    total = in.readLong();
+    top = new Hit[in.readInt()];
+    for (int i = 0; i < top.length; i++) {
+      top[i] = new Hit();
+      top[i].readFields(in);
+    }
+  }
+
+}

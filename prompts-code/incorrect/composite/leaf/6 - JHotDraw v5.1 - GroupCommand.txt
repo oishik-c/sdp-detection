@@ -1,0 +1,47 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.figures;
+
+import java.util.Vector;
+
+import CH.ifa.draw.framework.Drawing;
+import CH.ifa.draw.framework.DrawingView;
+import CH.ifa.draw.util.Command;
+
+
+public  class GroupCommand extends Command {
+
+	private DrawingView fView;
+
+   
+	public GroupCommand(String name, DrawingView view) {
+		super(name);
+		fView = view;
+	}
+
+	public void execute() {
+		Vector selected = fView.selectionZOrdered();
+		Drawing drawing = fView.drawing();
+		if (selected.size() > 0) {
+			fView.clearSelection();
+			drawing.orphanAll(selected);
+
+			GroupFigure group = new GroupFigure();
+			group.addAll(selected);
+			fView.addToSelection(drawing.add(group));
+		}
+		fView.checkDamage();
+	}
+
+	public boolean isExecutable() {
+		return fView.selectionCount() > 0;
+	}
+
+}
+
+

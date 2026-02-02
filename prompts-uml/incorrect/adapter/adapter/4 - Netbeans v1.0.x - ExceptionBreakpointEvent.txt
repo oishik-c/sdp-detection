@@ -1,0 +1,21 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class org.netbeans.modules.debugger.debug.ExceptionBreakpointEvent {
+~ {static} long serialVersionUID
++ Node.Property[] getProperties()
++ String getTypeName()
++ JComponent getCustomizer()
++ String getTypeDisplayName()
++ String getDisplayName()
++ String getIconBase()
+}
+
+
+
+
+org.netbeans.modules.debugger.support.ClassBreakpointEvent <|-- org.netbeans.modules.debugger.debug.ExceptionBreakpointEvent
+@enduml

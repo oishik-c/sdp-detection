@@ -1,0 +1,50 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.explorer.propertysheet.editors.ModifierPanel {
+~ {static} ResourceBundle bundle
++ {static} String PROP_MASK
++ {static} String PROP_MODIFIER
+- {static} String[] MODIFIER_NAMES
+- {static} int[] MODIFIER_VALUES
+- {static} int MODIFIER_COUNT
+- {static} String[] ACCESS_NAMES
+- {static} int[] ACCESS_VALUES
+- {static} int ACCESS_MASK
+~ {static} int EDITABLE_MASK
+- int mask
+- int modifier
+- int[] currentAccessValues
+- String[] currentAccessNames
+- JCheckBox[] checks
+- ActionListener listener
+- boolean ignored
+- PropertyChangeSupport propertyChangeSupport
+~ {static} long serialVersionUID
+- javax.swing.JPanel modifPanel
+- javax.swing.JPanel jPanel2
+- javax.swing.JLabel jLabel1
+- javax.swing.JComboBox accessCombo
++ <<Create>> ModifierPanel()
+- void initComponents()
++ void addPropertyChangeListener(java.beans.PropertyChangeListener)
++ void removePropertyChangeListener(java.beans.PropertyChangeListener)
++ int getMask()
++ void setMask(int)
+- void updateAccess()
+- void updateModifiers()
++ int getModifier()
++ void setModifier(int)
+- void updateComponents()
+- void updateValue()
++ void setText(String)
+}
+
+
+
+
+org.openide.explorer.propertysheet.editors.JPanel <|-- org.openide.explorer.propertysheet.editors.ModifierPanel
+@enduml

@@ -1,0 +1,52 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.contrib.PolygonFigure {
+~ {static} int TOO_CLOSE
+- {static} long serialVersionUID
+- int polygonFigureSerializedDataVersion
+# Polygon fPoly
++ <<Create>> PolygonFigure()
++ <<Create>> PolygonFigure(int,int)
++ <<Create>> PolygonFigure(Polygon)
++ Rectangle displayBox()
++ boolean isEmpty()
++ Vector handles()
++ void basicDisplayBox(Point,Point)
++ Polygon getPolygon()
++ Point center()
++ Enumeration points()
++ int pointCount()
++ void basicMoveBy(int,int)
++ void drawBackground(Graphics)
++ void drawFrame(Graphics)
++ boolean containsPoint(int,int)
++ Connector connectorAt(int,int)
++ void addPoint(int,int)
++ void setPointAt(Point,int)
++ void insertPointAt(Point,int)
++ void removePointAt(int)
++ void scaleRotate(Point,Polygon,Point)
++ void smoothPoints()
++ int splitSegment(int,int)
++ Point pointAt(int)
++ Point outermostPoint()
++ int findSegment(int,int)
++ Point chop(Point)
++ void write(StorableOutput)
++ void read(StorableInput)
++ {static} Locator locator(int)
++ {static} double distanceFromLine(int,int,int,int,int,int)
++ {static} Rectangle bounds(Polygon)
++ {static} Point center(Polygon)
++ {static} Point chop(Polygon,Point)
+}
+
+
+
+
+CH.ifa.draw.figures.AttributeFigure <|-- CH.ifa.draw.contrib.PolygonFigure
+@enduml

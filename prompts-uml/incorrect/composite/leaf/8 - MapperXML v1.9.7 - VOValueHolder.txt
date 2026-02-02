@@ -1,0 +1,36 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.model.VOValueHolder {
+- HashMap properties
+- Class valueObjectClass
+- boolean changingPropertyValue
++ <<Create>> VOValueHolder()
++ Object getPropertyValue(String)
++ void setPropertyValue(String,Object)
++ int getJavaDataType(String)
++ void setObject(Object)
++ void setObject(Object,ChangeEvent)
++ void setValueObject(Object)
++ void setValueObject(Object,ChangeEvent)
++ Object getValueObject()
++ void setValueObjectClass(Class)
++ Class getValueObjectClass()
+# Object getPropertyValue(String,Object)
+# Object[] getPropertyValues(String[],Object)
+# void setPropertyValues(String,Object,Object)
+# void setPropertyValues(String[],Object[],Object)
+# PropertyAccessor getPropertyAccessor(String)
+# Map getPropertyAccessors()
++ void propertyChange(PropertyChangeEvent)
+}
+
+
+
+
+com.taursys.model.PropertyChangeListener <|.. com.taursys.model.VOValueHolder
+com.taursys.model.ObjectValueHolder <|-- com.taursys.model.VOValueHolder
+@enduml

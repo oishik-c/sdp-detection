@@ -1,0 +1,35 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package com.taursys.servlet;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import java.io.PrintWriter;
+
+
+
+public class DefaultMessageForm extends ServletForm {
+
+  public DefaultMessageForm() {
+  }
+  public void doGet(HttpServletRequest req, HttpServletResponse resp) throws java.lang.Exception {
+    resp.setContentType("text/html");
+    PrintWriter pw = resp.getWriter();
+    pw.println("<html><head></head><body><h1>Mapper Message</h1><p>"
+        + message + "</p></body></html>");
+    pw.flush();
+  }
+  public void setMessage(String newMessage) {
+    message = newMessage;
+  }
+  public String getMessage() {
+    return message;
+  }
+  private String message = "Your message goes here";
+  public boolean recycle() {
+    return true;
+  }
+}

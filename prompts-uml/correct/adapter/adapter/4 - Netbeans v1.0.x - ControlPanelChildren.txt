@@ -1,0 +1,65 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.core.ControlPanelNode {
+~ {static} long serialVersionUID
+- {static} Node controlPanel
+- {static} Node projectSettings
+- {static} String CP_ICON_BASE
+~ <<Create>> ControlPanelNode()
+- <<Create>> ControlPanelNode(NbControlPanel)
++ {static} Node getDefault()
++ {static} Node getProjectSettings()
+- void initialize()
++ HelpCtx getHelpCtx()
++ SystemAction[] createActions()
++ Node.Handle getHandle()
+}
+
+
+class org.netbeans.core.ControlPanelNode$Han {
+- boolean def
+~ {static} long serialVersionUID
++ <<Create>> Han(boolean)
++ Node getNode()
+}
+
+
+class org.netbeans.core.ControlPanelNode$ControlPanelItemNode {
++ <<Create>> ControlPanelItemNode(SystemOption)
++ boolean canDestroy()
++ boolean canCut()
++ Node cloneNode()
+}
+
+class org.netbeans.core.ControlPanelNode$ControlPanelChildren {
+- NbControlPanel options
+~ <<Create>> ControlPanelChildren(NbControlPanel)
+- void update()
+# void addNotify()
+# Node[] createNodes(Object)
++ void propertyChange(java.beans.PropertyChangeEvent)
++ void childrenAdded(NodeMemberEvent)
++ void childrenRemoved(NodeMemberEvent)
++ void childrenReordered(NodeReorderEvent)
++ void nodeDestroyed(NodeEvent)
++ int compare(Object,Object)
+}
+
+
+
+
+org.netbeans.core.AbstractNode <|-- org.netbeans.core.ControlPanelNode
+org.netbeans.core.ControlPanelNode +.. org.netbeans.core.ControlPanelNode$Han
+org.netbeans.core.Handle <|.. org.netbeans.core.ControlPanelNode$Han
+org.netbeans.core.ControlPanelNode +.. org.netbeans.core.ControlPanelNode$ControlPanelItemNode
+org.netbeans.core.BeanNode <|-- org.netbeans.core.ControlPanelNode$ControlPanelItemNode
+org.netbeans.core.ControlPanelNode +.. org.netbeans.core.ControlPanelNode$ControlPanelChildren
+org.netbeans.core.PropertyChangeListener <|.. org.netbeans.core.ControlPanelNode$ControlPanelChildren
+org.netbeans.core.NodeListener <|.. org.netbeans.core.ControlPanelNode$ControlPanelChildren
+org.netbeans.core.Comparator <|.. org.netbeans.core.ControlPanelNode$ControlPanelChildren
+org.netbeans.core.Keys <|-- org.netbeans.core.ControlPanelNode$ControlPanelChildren
+@enduml

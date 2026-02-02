@@ -1,0 +1,64 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.xml.Form {
++ {static} String PARAMETER_MAP
+- ArrayList initContextListeners
+- ArrayList initFormListeners
+- ArrayList openFormListeners
+- ArrayList closeFormListeners
+- InitContextDispatcher initContextDispatcher
+- InitFormDispatcher initFormDispatcher
+- OpenFormDispatcher openFormDispatcher
+- CloseFormDispatcher closeFormDispatcher
+- String sourceId
+- boolean initialized
+- DocumentAdapter documentAdapter
+- Map formContext
++ <<Create>> Form()
+# DocumentElementRenderer createDefaultRenderer()
+# void dispatchInitContext()
+# void dispatchInitForm()
+# void dispatchOpenForm()
+# void dispatchCloseForm()
+# void processEvent(EventObject)
+# void processInitContextEvent(InitContextEvent)
++ void removeInitContextListener(InitContextListener)
++ void addInitContextListener(InitContextListener)
+# void fireInitContextReceived(InitContextEvent)
+# void initForm()
+# void processInitFormEvent(InitFormEvent)
++ void removeInitFormListener(InitFormListener)
++ void addInitFormListener(InitFormListener)
+# void fireInitFormReceived(InitFormEvent)
+# void openForm()
+# void processOpenFormEvent(OpenFormEvent)
++ void removeOpenFormListener(OpenFormListener)
++ void addOpenFormListener(OpenFormListener)
+# void fireOpenFormReceived(OpenFormEvent)
+# void closeForm()
+# void processCloseFormEvent(CloseFormEvent)
++ void removeCloseFormListener(CloseFormListener)
++ void addCloseFormListener(CloseFormListener)
+# void fireCloseFormReceived(CloseFormEvent)
++ String getSourceId()
++ void setSourceId(String)
++ void setDocument(org.w3c.dom.Document)
++ org.w3c.dom.Document getDocument()
++ void setDocumentAdapter(DocumentAdapter)
++ DocumentAdapter getDocumentAdapter()
++ void setInitialized(boolean)
++ boolean isInitialized()
++ Map getFormContext()
++ void setFormContext(Map)
++ Object lookup(Object)
+}
+
+
+
+
+com.taursys.xml.DocumentElement <|-- com.taursys.xml.Form
+@enduml

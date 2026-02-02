@@ -1,0 +1,28 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.samples.javadraw.AnimationDecorator {
+- int fXVelocity
+- int fYVelocity
+- {static} long serialVersionUID
+- int animationDecoratorSerializedDataVersion
++ <<Create>> AnimationDecorator()
++ <<Create>> AnimationDecorator(Figure)
++ void velocity(int,int)
++ Point velocity()
++ void animationStep()
++ void basicMoveBy(int,int)
++ void basicDisplayBox(Point,Point)
++ Rectangle displayBox()
++ void write(StorableOutput)
++ void read(StorableInput)
+}
+
+
+
+
+CH.ifa.draw.standard.DecoratorFigure <|-- CH.ifa.draw.samples.javadraw.AnimationDecorator
+@enduml

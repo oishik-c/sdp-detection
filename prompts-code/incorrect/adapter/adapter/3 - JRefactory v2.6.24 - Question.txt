@@ -1,0 +1,32 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package org.acm.seguin.awt;
+
+import javax.swing.JOptionPane;
+
+
+public class Question {
+	private static boolean autoYes = false;
+
+
+	
+	public static void setAlwaysYes(boolean way) {
+		autoYes = way;
+	}
+
+
+	
+	public static boolean isYes(String title, String question) {
+		if (autoYes) {
+			return true;
+		}
+
+		int result = JOptionPane.showConfirmDialog(null, question, title,
+				JOptionPane.YES_NO_OPTION);
+
+		return result == JOptionPane.YES_OPTION;
+	}
+}

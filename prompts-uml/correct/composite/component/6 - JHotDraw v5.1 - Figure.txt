@@ -1,0 +1,47 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+interface CH.ifa.draw.framework.Figure {
++ void moveBy(int,int)
++ void basicDisplayBox(Point,Point)
++ void displayBox(Point,Point)
++ Rectangle displayBox()
++ void draw(Graphics)
++ Vector handles()
++ Dimension size()
++ Point center()
++ boolean isEmpty()
++ FigureEnumeration figures()
++ Figure findFigureInside(int,int)
++ boolean containsPoint(int,int)
++ Object clone()
++ void displayBox(Rectangle)
++ boolean includes(Figure)
++ FigureEnumeration decompose()
++ void addToContainer(FigureChangeListener)
++ void removeFromContainer(FigureChangeListener)
++ FigureChangeListener listener()
++ void addFigureChangeListener(FigureChangeListener)
++ void removeFigureChangeListener(FigureChangeListener)
++ void release()
++ void invalidate()
++ void willChange()
++ void changed()
++ boolean canConnect()
++ Connector connectorAt(int,int)
++ void connectorVisibility(boolean)
++ Insets connectionInsets()
++ Locator connectedTextLocator(Figure)
++ Object getAttribute(String)
++ void setAttribute(String,Object)
+}
+
+
+
+CH.ifa.draw.framework.Storable <|-- CH.ifa.draw.framework.Figure
+CH.ifa.draw.framework.Cloneable <|-- CH.ifa.draw.framework.Figure
+java.io.Serializable <|-- CH.ifa.draw.framework.Figure
+@enduml

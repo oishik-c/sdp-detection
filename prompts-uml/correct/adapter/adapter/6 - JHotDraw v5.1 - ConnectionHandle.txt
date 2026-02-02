@@ -1,0 +1,27 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.standard.ConnectionHandle {
+- ConnectionFigure fConnection
+- ConnectionFigure fPrototype
+- Figure fTarget
++ <<Create>> ConnectionHandle(Figure,Locator,ConnectionFigure)
++ void invokeStart(int,int,DrawingView)
++ void invokeStep(int,int,int,int,DrawingView)
++ void invokeEnd(int,int,int,int,DrawingView)
+- Connector startConnector()
+# ConnectionFigure createConnection()
+# Connector findConnectionTarget(int,int,Drawing)
+- Figure findConnectableFigure(int,int,Drawing)
+# Connector findConnector(int,int,Figure)
++ void draw(Graphics)
+}
+
+
+
+
+CH.ifa.draw.standard.LocatorHandle <|-- CH.ifa.draw.standard.ConnectionHandle
+@enduml

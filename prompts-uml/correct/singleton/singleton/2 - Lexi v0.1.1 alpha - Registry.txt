@@ -1,0 +1,192 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.jmonkey.export.Registry {
++ {static} int[] VERSION
++ {static} int TYPE_NULL
++ {static} int TYPE_STRING_SINGLE
++ {static} int TYPE_STRING_ARRAY
++ {static} int TYPE_OBJECT_SINGLE
++ {static} int TYPE_OBJECT_ARRAY
++ {static} int TYPE_BOOLEAN_SINGLE
++ {static} int TYPE_BYTE_SINGLE
++ {static} int TYPE_BYTE_ARRAY
++ {static} int TYPE_CHAR_SINGLE
++ {static} int TYPE_CHAR_ARRAY
++ {static} int TYPE_SHORT_SINGLE
++ {static} int TYPE_INT_SINGLE
++ {static} int TYPE_INT_ARRAY
++ {static} int TYPE_LONG_SINGLE
++ {static} int TYPE_DOUBLE_SINGLE
++ {static} int TYPE_FLOAT_SINGLE
++ {static} int TYPE_CORRUPT
++ {static} File RESOURCE_DIRECTORY
++ {static} File REGISTRY_DIRECTORY
+- {static} Registry _INSTANCE
+# <<Create>> Registry()
++ {static} Registry blankRegistery()
++ void commit()
++ void deleteAll()
++ void deleteGroup(String)
++ void deleteProperty(String,String)
++ void dump()
++ {static} String encryptMD5(String)
++ {static} String ensureDirectory(String)
++ Properties exportGroup(String)
++ boolean getBoolean(String,String,boolean)
++ byte getByte(String,String,byte)
++ byte[] getByteArray(String,String,byte[])
++ char getChar(String,String,char)
++ char[] getCharArray(String,String,char[])
++ double getDouble(String,String,double)
++ File getFile()
++ float getFloat(String,String,float)
++ Enumeration getGroups()
++ int getInteger(String,String,int)
++ int[] getIntegerArray(String,String,int[])
++ Enumeration getKeys(String)
++ long getLong(String,String,long)
++ Object[] getObject(String,String,Object[])
++ Object getObject(String,String,Object)
++ short getShort(String,String,short)
++ String getString(String,String,String)
++ String[] getStringArray(String,String,String[])
++ int getType(String,String)
+- {static} String hashToHex(byte[])
++ void importGroup(String,Properties)
+- {static} Registry instance()
++ boolean isAltered()
++ boolean isArrayType(String,String)
++ boolean isGroup(String)
++ boolean isProperty(String,String)
++ {static} boolean isRegistry(Class)
++ {static} boolean isRegistry(String)
++ {static} boolean isRegistry(String,boolean)
++ {static} Registry loadForClass(Class)
++ {static} Registry loadForName(String)
++ {static} Registry loadForName(String,boolean)
++ {static} Registry loadForReader(Reader)
++ void mergRegistry(Registry)
++ void read(Reader)
++ Properties referenceGroup(String)
++ void replaceGroup(String,Properties)
++ void revert()
++ void setFile(File)
++ void setProperty(String,String,byte[])
++ void setProperty(String,String,char[])
++ void setProperty(String,String,int[])
++ void setProperty(String,String,Object[])
++ void setProperty(String,String,String[])
++ void setProperty(String,String,byte)
++ void setProperty(String,String,char)
++ void setProperty(String,String,double)
++ void setProperty(String,String,float)
++ void setProperty(String,String,int)
++ void setProperty(String,String,long)
++ void setProperty(String,String,Object)
++ void setProperty(String,String,String)
++ void setProperty(String,String,short)
++ void setProperty(String,String,boolean)
++ int size()
++ int sizeOf(String)
++ void write(Writer)
+}
+
+
+class com.jmonkey.export.Registry$Impl {
+- {static} String _PROPERTY_CHAR_ENCODING
+- {static} String _ID_STR
+- {static} String _ID_STA
+- {static} String _ID_OBJ
+- {static} String _ID_OBA
+- {static} String _ID_BOO
+- {static} String _ID_BYT
+- {static} String _ID_BYA
+- {static} String _ID_CHR
+- {static} String _ID_CHA
+- {static} String _ID_SHO
+- {static} String _ID_INT
+- {static} String _ID_INA
+- {static} String _ID_LON
+- {static} String _ID_DBL
+- {static} String _ID_FLT
+- boolean _ALTERED
+- Hashtable _GROUPS
+- File _DATA_FILE
+# <<Create>> Impl()
+# <<Create>> Impl(Reader)
+# <<Create>> Impl(File)
++ void setFile(File)
++ File getFile()
++ boolean isAltered()
++ void dump()
++ void read(Reader)
++ void write(Writer)
+- void loadData()
+- void storeData()
+- void ensureGroup(String)
+- void setBasicProperty(String,String,String)
+- String getBasicProperty(String,String,String)
++ boolean isArrayType(String,String)
++ int getType(String,String)
+- String encode(Object)
+- Object decode(String)
+- String trimCode(String)
++ String getString(String,String,String)
++ String[] getStringArray(String,String,String[])
++ boolean getBoolean(String,String,boolean)
++ int getInteger(String,String,int)
++ int[] getIntegerArray(String,String,int[])
++ long getLong(String,String,long)
++ byte getByte(String,String,byte)
++ byte[] getByteArray(String,String,byte[])
++ char getChar(String,String,char)
++ char[] getCharArray(String,String,char[])
++ double getDouble(String,String,double)
++ float getFloat(String,String,float)
++ Object getObject(String,String,Serializable)
++ Object[] getObject(String,String,Serializable[])
++ short getShort(String,String,short)
++ void setProperty(String,String,String)
++ void setProperty(String,String,String[])
++ void setProperty(String,String,boolean)
++ void setProperty(String,String,int)
++ void setProperty(String,String,int[])
++ void setProperty(String,String,long)
++ void setProperty(String,String,byte)
++ void setProperty(String,String,byte[])
++ void setProperty(String,String,char)
++ void setProperty(String,String,char[])
++ void setProperty(String,String,double)
++ void setProperty(String,String,float)
++ void setProperty(String,String,Serializable)
++ void setProperty(String,String,Serializable[])
++ void setProperty(String,String,short)
++ boolean isProperty(String,String)
++ boolean isGroup(String)
++ Enumeration getGroups()
++ Enumeration getKeys(String)
++ int sizeOf(String)
++ int size()
++ void deleteGroup(String)
++ void deleteProperty(String,String)
++ void deleteAll()
++ Properties referenceGroup(String)
++ Properties exportGroup(String)
++ void importGroup(String,Properties)
++ void replaceGroup(String,Properties)
++ void mergRegistry(Registry)
++ void commit()
++ void revert()
+}
+
+
+
+
+com.jmonkey.export.Registry +.. com.jmonkey.export.Registry$Impl
+com.jmonkey.export.Serializable <|.. com.jmonkey.export.Registry$Impl
+com.jmonkey.export.Registry <|-- com.jmonkey.export.Registry$Impl
+@enduml

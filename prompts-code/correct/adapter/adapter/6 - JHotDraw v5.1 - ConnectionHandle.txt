@@ -1,0 +1,132 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.standard;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+
+import CH.ifa.draw.framework.ConnectionFigure;
+import CH.ifa.draw.framework.Connector;
+import CH.ifa.draw.framework.Drawing;
+import CH.ifa.draw.framework.DrawingView;
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.FigureEnumeration;
+import CH.ifa.draw.framework.Locator;
+import CH.ifa.draw.util.Geom;
+
+
+
+public  class ConnectionHandle extends LocatorHandle {
+
+	
+	private ConnectionFigure fConnection;
+
+	
+	private ConnectionFigure fPrototype;
+
+	
+	private Figure fTarget = null;
+
+	
+	public ConnectionHandle(Figure owner, Locator l, ConnectionFigure prototype) {
+		super(owner, l);
+		fPrototype = prototype;
+	}
+
+	
+	public void invokeStart(int  x, int  y, DrawingView view) {
+		fConnection = createConnection();
+		Point p = locate();
+		fConnection.startPoint(p.x, p.y);
+		fConnection.endPoint(p.x, p.y);
+		view.drawing().add(fConnection);
+	}
+
+	
+	public void invokeStep (int x, int y, int anchorX, int anchorY, DrawingView view) {
+		Point p = new Point(x,y);
+		Figure f = findConnectableFigure(x, y, view.drawing());
+		
+		if (f != fTarget) {
+			if (fTarget != null)
+				fTarget.connectorVisibility(false);
+			fTarget = f;
+			if (fTarget != null)
+				fTarget.connectorVisibility(true);
+		}
+
+		Connector target = findConnectionTarget(p.x, p.y, view.drawing());
+		if (target != null)
+			p = Geom.center(target.displayBox());
+		fConnection.endPoint(p.x, p.y);
+	}
+
+	
+	public void invokeEnd(int x, int y, int anchorX, int anchorY, DrawingView view) {
+		Connector target = findConnectionTarget(x, y, view.drawing());
+		if (target != null) {
+			fConnection.connectStart(startConnector());
+			fConnection.connectEnd(target);
+			fConnection.updateConnection();
+		} else
+			view.drawing().remove(fConnection);
+		fConnection = null;
+		if (fTarget != null) {
+			fTarget.connectorVisibility(false);
+			fTarget = null;
+		}
+	}
+
+	private Connector startConnector() {
+		Point p = locate();
+		return owner().connectorAt(p.x, p.y);
+	}
+
+	
+	protected ConnectionFigure createConnection() {
+		return (ConnectionFigure)fPrototype.clone();
+	}
+
+	
+	protected Connector findConnectionTarget(int x, int y, Drawing drawing) {
+		Figure target = findConnectableFigure(x, y, drawing);
+		if ((target != null) && target.canConnect()
+			 && !target.includes(owner())
+			 && fConnection.canConnect(owner(), target)) {
+				return findConnector(x, y, target);
+		}
+		return null;
+	}
+
+	private Figure findConnectableFigure(int x, int y, Drawing drawing) {
+		FigureEnumeration k = drawing.figuresReverse();
+		while (k.hasMoreElements()) {
+			Figure figure = k.nextFigure();
+			if (!figure.includes(fConnection) && figure.canConnect()) {
+				if (figure.containsPoint(x, y))
+					return figure;
+			}
+		}
+		return null;
+	}
+
+	protected Connector findConnector(int x, int y, Figure f) {
+		return f.connectorAt(x, y);
+	}
+
+
+	
+	public void draw(Graphics g) {
+		Rectangle r = displayBox();
+		g.setColor(Color.blue);
+		g.drawOval(r.x, r.y, r.width, r.height);
+	}
+
+}

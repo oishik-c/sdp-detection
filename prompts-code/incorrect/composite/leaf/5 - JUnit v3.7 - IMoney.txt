@@ -1,0 +1,24 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package junit.samples.money;
+
+
+interface IMoney {
+	
+	public abstract IMoney add(IMoney m);
+	
+	IMoney addMoney(Money m);
+	
+	IMoney addMoneyBag(MoneyBag s);
+	
+	public abstract boolean isZero();
+	
+	public abstract IMoney multiply(int factor);
+	
+	public abstract IMoney negate();
+	
+	public abstract IMoney subtract(IMoney m);
+}

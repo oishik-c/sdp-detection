@@ -1,0 +1,127 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.debug;
+
+import java.util.Date;
+
+
+public class SimpleLogger implements LoggerAdapter {
+  private int level = Debug.DEBUG;
+
+  
+  public SimpleLogger() {
+  }
+
+  
+  public SimpleLogger(int level) {
+    if (level < 0 || level > Debug.DEBUG)
+      throw new IllegalArgumentException("Invalid logging level - " + level);
+    this.level = level;
+  }
+
+  
+  public void debug(Object message) {
+    log(Debug.DEBUG, message);
+  }
+
+  
+  public void debug(Object message, Throwable t) {
+    log(Debug.DEBUG, message, t);
+  }
+
+  
+  public void info(Object message) {
+    log(Debug.INFO, message);
+  }
+
+  
+  public void info(Object message, Throwable t) {
+    log(Debug.INFO, message, t);
+  }
+
+  
+  public void warn(Object message) {
+    log(Debug.WARN, message);
+  }
+
+  
+  public void warn(Object message, Throwable t) {
+    log(Debug.WARN, message, t);
+  }
+
+  
+  public void error(Object message) {
+    log(Debug.ERROR, message);
+  }
+
+  
+  public void error(Object message, Throwable t) {
+    log(Debug.ERROR, message, t);
+  }
+
+  
+  public void fatal(Object message) {
+    log(Debug.FATAL, message);
+  }
+
+  
+  public void fatal(Object message, Throwable t) {
+    log(Debug.FATAL, message, t);
+  }
+
+  
+  public boolean isDebugEnabled() {
+    return level == Debug.DEBUG;
+  }
+
+  
+  public boolean isInfoEnabled() {
+    return level >= Debug.WARN;
+  }
+
+  
+  public boolean isEnabledFor(int level) {
+    return this.level >= level;
+  }
+
+  
+  public void log(int level, Object message) {
+    if (this.level >= level) {
+      printMessage(level, message);
+    }
+  }
+
+  
+  public void log(int level, Object message, Throwable t) {
+    if (this.level >= level) {
+      printMessage(level, message);
+      t.printStackTrace();
+    }
+  }
+
+  
+  public void setLevel(int level) {
+    if (level < 0 || level > Debug.DEBUG)
+      throw new IllegalArgumentException("Invalid logging level - " + level);
+    this.level = level;
+  }
+
+  
+  public int getLevel() {
+    return level;
+  }
+
+  
+  private void printMessage(int level, Object message) {
+    
+    if (level < 0)
+      level = Debug.DEBUG + 1;
+    
+    System.err.println("[" + Debug.LEVEL_NAMES[level] + "] " + new Date()
+        + " - " + message);
+  }
+}

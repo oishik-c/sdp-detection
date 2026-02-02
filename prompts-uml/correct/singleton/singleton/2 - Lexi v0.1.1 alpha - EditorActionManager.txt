@@ -1,0 +1,338 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.jmonkey.office.lexi.support.EditorActionManager {
++ {static} int COLOUR_BLACK
++ {static} int COLOUR_BLUE
++ {static} int COLOUR_CYAN
++ {static} int COLOUR_DARKGRAY
++ {static} int COLOUR_GRAY
++ {static} int COLOUR_GREEN
++ {static} int COLOUR_LIGHTGRAY
++ {static} int COLOUR_MAGENTA
++ {static} int COLOUR_ORANGE
++ {static} int COLOUR_PINK
++ {static} int COLOUR_RED
++ {static} int COLOUR_WHITE
++ {static} int COLOUR_YELLOW
++ {static} String BEEP_ACTION_PREFIX
++ {static} String ALIGN_LEFT_ACTION_PREFIX
++ {static} String ALIGN_RIGHT_ACTION_PREFIX
++ {static} String ALIGN_CENTER_ACTION_PREFIX
++ {static} String ALIGN_JUSTIFIED_ACTION_PREFIX
++ {static} String BOLD_ACTION_PREFIX
++ {static} String ITALIC_ACTION_PREFIX
++ {static} String UNDERLINE_ACTION_PREFIX
++ {static} String STRIKETHROUGH_ACTION_PREFIX
++ {static} String CUT_ACTION_PREFIX
++ {static} String COPY_ACTION_PREFIX
++ {static} String PASTE_ACTION_PREFIX
++ {static} String SELECTALL_ACTION_PREFIX
++ {static} String SELECTNONE_ACTION_PREFIX
++ {static} String UNDO_ACTION_PREFIX
++ {static} String REDO_ACTION_PREFIX
++ {static} String COLOUR_CHOOSER_ACTION_PREFIX
++ {static} String FONT_CHOOSER_ACTION_PREFIX
++ {static} String SEARCH_ACTION_PREFIX
++ {static} String REPLACE_ACTION_PREFIX
++ {static} String FILE_NEW_ACTION_PREFIX
++ {static} String FILE_OPEN_ACTION_PREFIX
++ {static} String FILE_OPENAS_ACTION_PREFIX
++ {static} String FILE_REVERT_ACTION_PREFIX
++ {static} String FILE_SAVE_ACTION_PREFIX
++ {static} String FILE_SAVEAS_ACTION_PREFIX
++ {static} String FILE_SAVECOPY_ACTION_PREFIX
+- {static} EditorActionManager _INSTANCE
+- CaretListener _ATTRIBUTE_TRACKER
+- {static} Editor _EDITOR
+- {static} Map _ACTIONS
+- <<Create>> EditorActionManager()
++ {static} void activate(Editor)
+- Image create16x16ColourRec(Component,Color)
++ Action[] createDefaultColourActions()
++ Action[] createDefaultFontFaceActions()
++ Action[] createFontSizeActionRange(int,int,int)
+# void createInputAttributes(Element,MutableAttributeSet)
++ {static} void deactivate(Editor)
++ {static} void enableAction(String,boolean)
++ {static} void enableColourActions(boolean)
++ {static} void enableDocumentActions(boolean)
++ {static} void enableFontActions(boolean)
++ {static} void enableFormatActions(boolean)
++ {static} void enableGenericActions(boolean)
++ {static} Editor getActiveEditor()
++ Action getAlignCenterAction()
++ Action getAlignJustifyAction()
++ Action getAlignLeftAction()
++ Action getAlignRightAction()
++ Action getBeepAction()
++ Action getBoldAction()
++ Action getColourAction(String,Color)
++ Color getColourAtCaret()
++ Action getColourChooserAction(JFrame)
++ Action getCopyAction()
++ Action getCutAction()
++ Action getFontChooserAction(JFrame)
++ Action getFontFaceAction(Font)
++ Action getFontFaceAction(String)
++ Action getFontSizeAction(int)
++ Action getItalicAction()
++ Action getNewAction(JFrame,FileActionListener)
++ Action getOpenAction(JFrame,FileActionListener)
++ Action getOpenAsAction(JFrame,FileActionListener)
++ Action getPasteAction()
++ Action getRedoAction()
++ Action getReplaceAction(JFrame)
++ Action getRevertAction(JFrame,FileActionListener)
++ Action getSaveAction(JFrame,FileActionListener)
++ Action getSaveAsAction(JFrame,FileActionListener)
++ Action getSaveCopyAction(JFrame,FileActionListener)
++ Action getSearchAction(JFrame)
++ Action getSelectAllAction()
++ Action getSelectNoneAction()
++ Action getStrikeThroughAction()
++ Action getUnderlineAction()
++ Action getUndoAction()
++ {static} EditorActionManager instance()
++ {static} boolean isActiveEditor()
+# void setCharacterAttributes(JEditorPane,AttributeSet,boolean)
+# void setParagraphAttributes(JEditorPane,AttributeSet,boolean)
++ {static} Runnable threads(Runnable)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$AttributeTracker {
+# <<Create>> AttributeTracker()
++ void caretUpdate(CaretEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$FontChooserAction {
+- JFrame _PARENT
++ <<Create>> FontChooserAction(String,JFrame)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$FontFamilyAction {
+- String family
++ <<Create>> FontFamilyAction(String,String)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$FontSizeAction {
+- int size
++ <<Create>> FontSizeAction(String,int)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$ColourChooserAction {
+- JFrame _PARENT
++ <<Create>> ColourChooserAction(String,JFrame)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$ForegroundAction {
+# Color fg
+# String name
++ <<Create>> ForegroundAction(String,Color)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$AlignmentAction {
+- int a
++ <<Create>> AlignmentAction(String,int)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$BoldAction {
++ <<Create>> BoldAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$ItalicAction {
++ <<Create>> ItalicAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$UnderlineAction {
++ <<Create>> UnderlineAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$StrikeThroughAction {
++ <<Create>> StrikeThroughAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$CutAction {
++ <<Create>> CutAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$CopyAction {
++ <<Create>> CopyAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$PasteAction {
++ <<Create>> PasteAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$BeepAction {
++ <<Create>> BeepAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$SelectAllAction {
+# <<Create>> SelectAllAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$SelectNoneAction {
+# <<Create>> SelectNoneAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$UndoAction {
+# <<Create>> UndoAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$RedoAction {
+# <<Create>> RedoAction()
++ void actionPerformed(ActionEvent)
+}
+
+class com.jmonkey.office.lexi.support.EditorActionManager$SearchAction {
+- JFrame _PARENT
++ <<Create>> SearchAction(String,JFrame)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$ReplaceAction {
+- JFrame _PARENT
++ <<Create>> ReplaceAction(String,JFrame)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$NewAction {
+- FileActionListener _LISTENER
++ <<Create>> NewAction(String,JFrame,FileActionListener)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$OpenAction {
+- FileActionListener _LISTENER
++ <<Create>> OpenAction(String,JFrame,FileActionListener)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$OpenAsAction {
+- FileActionListener _LISTENER
++ <<Create>> OpenAsAction(String,JFrame,FileActionListener)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$RevertAction {
+- FileActionListener _LISTENER
++ <<Create>> RevertAction(String,JFrame,FileActionListener)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$SaveAction {
+- FileActionListener _LISTENER
++ <<Create>> SaveAction(String,JFrame,FileActionListener)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$SaveAsAction {
+- FileActionListener _LISTENER
++ <<Create>> SaveAsAction(String,JFrame,FileActionListener)
++ void actionPerformed(ActionEvent)
+}
+
+
+class com.jmonkey.office.lexi.support.EditorActionManager$SaveCopyAction {
+- FileActionListener _LISTENER
++ <<Create>> SaveCopyAction(String,JFrame,FileActionListener)
++ void actionPerformed(ActionEvent)
+}
+
+
+
+
+com.jmonkey.office.lexi.support.ActionManager <|-- com.jmonkey.office.lexi.support.EditorActionManager
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$AttributeTracker
+com.jmonkey.office.lexi.support.CaretListener <|.. com.jmonkey.office.lexi.support.EditorActionManager$AttributeTracker
+com.jmonkey.office.lexi.support.Serializable <|.. com.jmonkey.office.lexi.support.EditorActionManager$AttributeTracker
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$FontChooserAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$FontChooserAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$FontFamilyAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$FontFamilyAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$FontSizeAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$FontSizeAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$ColourChooserAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$ColourChooserAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$ForegroundAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$ForegroundAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$AlignmentAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$AlignmentAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$BoldAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$BoldAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$ItalicAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$ItalicAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$UnderlineAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$UnderlineAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$StrikeThroughAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$StrikeThroughAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$CutAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$CutAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$CopyAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$CopyAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$PasteAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$PasteAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$BeepAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$BeepAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$SelectAllAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$SelectAllAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$SelectNoneAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$SelectNoneAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$UndoAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$UndoAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$RedoAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$RedoAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$SearchAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$SearchAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$ReplaceAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$ReplaceAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$NewAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$NewAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$OpenAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$OpenAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$OpenAsAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$OpenAsAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$RevertAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$RevertAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$SaveAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$SaveAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$SaveAsAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$SaveAsAction
+com.jmonkey.office.lexi.support.EditorActionManager +.. com.jmonkey.office.lexi.support.EditorActionManager$SaveCopyAction
+com.jmonkey.office.lexi.support.AbstractAction <|-- com.jmonkey.office.lexi.support.EditorActionManager$SaveCopyAction
+@enduml

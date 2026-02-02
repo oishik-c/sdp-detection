@@ -1,0 +1,33 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.xml.CheckboxField {
+- CheckboxFieldRenderer renderer
++ <<Create>> CheckboxField()
++ <<Create>> CheckboxField(int)
+# TextModel createDefaultModel()
+# TextModel createDefaultModel(int)
++ void setModel(TextModel)
+# CheckboxModel getCheckboxModel()
+# CheckboxFieldRenderer createDefaultRenderer()
++ void setRenderer(CheckboxFieldRenderer)
++ CheckboxFieldRenderer getRenderer()
++ String getText()
++ void setText(String)
++ boolean isSelected()
++ void setSelected(boolean)
++ void processRenderEvent(RenderEvent)
++ void setSelectedValue(String)
++ String getSelectedValue()
++ void setUnselectedValue(String)
++ String getUnselectedValue()
+}
+
+
+
+
+com.taursys.xml.AbstractField <|-- com.taursys.xml.CheckboxField
+@enduml

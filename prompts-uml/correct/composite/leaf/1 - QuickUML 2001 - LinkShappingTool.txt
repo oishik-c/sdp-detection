@@ -1,0 +1,38 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class diagram.tool.LinkShappingTool {
++ {static} double CLICK_TOLERANCE
++ {static} double DRAG_TOLERANCE
+- {static} Cursor HD_CURSOR
+- Cursor originalCursor
+- Diagram diagram
+- Point2D dragPoint
+- PolyLink polyLink
+- Point2D pressPoint
+- MouseHandler mouseHandler
++ void install(Diagram)
++ void uninstall(Diagram)
+# void linkPressed(PolyLink,MouseEvent)
+# void linkClicked(PolyLink,MouseEvent)
+# void linkReleased(PolyLink,MouseEvent)
+# void reset()
+}
+
+
+class diagram.tool.LinkShappingTool$MouseHandler {
++ void mousePressed(MouseEvent)
++ void mouseClicked(MouseEvent)
++ void mouseDragged(MouseEvent)
++ void mouseReleased(MouseEvent)
+}
+
+
+
+diagram.tool.AbstractTool <|-- diagram.tool.LinkShappingTool
+diagram.tool.LinkShappingTool +.. diagram.tool.LinkShappingTool$MouseHandler
+diagram.tool.MouseInputAdapter <|-- diagram.tool.LinkShappingTool$MouseHandler
+@enduml

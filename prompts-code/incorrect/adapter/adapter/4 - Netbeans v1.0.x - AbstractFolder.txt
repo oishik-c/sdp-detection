@@ -1,0 +1,597 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.filesystems;
+
+import java.io.*;
+import java.util.*;
+import java.lang.ref.*;
+
+import javax.swing.event.EventListenerList;
+
+import org.openide.TopManager;
+import org.openide.util.Utilities;
+import org.openide.util.enum.*;
+
+
+abstract class AbstractFolder extends FileObject {
+    
+    private static final AbstractFileObject[] EMPTY_ARRAY = new AbstractFileObject[0];
+
+
+    
+    private static final char EXT_SEP = '.';
+
+    
+    private static final HashMap EMPTY = new HashMap (0);
+
+    
+    private FileSystem system;
+
+    
+    protected String name;
+
+    
+    protected final AbstractFolder parent;
+
+    
+    protected String systemName;
+
+    
+    private String[] children;
+
+    
+    private HashMap map;
+
+    
+    private EventListenerList listeners;
+
+    
+    protected Reference fullName;
+
+    
+    public AbstractFolder(
+        FileSystem fs, AbstractFolder parent, String name
+    ) {
+        this.system = fs;
+        this.parent = parent;
+        this.name = name;
+        this.systemName = fs.getSystemName ();
+    }
+
+    
+    final String getNameExt () {
+        
+        return name;
+    }
+
+    
+    public final String getName () {
+        int i = name.lastIndexOf ('.');
+        return i == -1 || isFolder () ? name : name.substring (0, i);
+    }
+
+    
+    public final String getExt () {
+        int i = name.lastIndexOf ('.') + 1;
+        return i == 0 || i == name.length () ? "" : name.substring (i); 
+    }
+
+    
+    public final String getPackageNameExt (char separatorChar, char extSepChar) {
+        StringBuffer sb = new StringBuffer (50);
+
+        constructName (sb, separatorChar, extSepChar);
+
+        return sb.toString ();
+    }
+
+    
+    private boolean constructName (StringBuffer sb, char sepChar, char extChar) {
+        if (parent == null) {
+            return false;
+        }
+        if (parent.constructName (sb, sepChar, extChar)) {
+            sb.append (sepChar);
+        }
+        sb.append (name.replace (EXT_SEP, extChar));
+        return true;
+    }
+
+    
+    public final FileSystem getFileSystem () {
+        return system;
+    }
+
+    
+    
+    
+
+    
+    public final boolean isRoot () {
+        return parent == null;
+    }
+
+
+    
+    public final boolean isValid () {
+        
+        if (parent == null) {
+            return true;
+        }
+
+        
+        return getFileSystem ().getSystemName () == systemName;
+    }
+
+    
+    
+    
+
+    
+    public final FileObject getParent () {
+        return parent;
+    }
+
+
+    
+    public final synchronized FileObject[] getChildren () {
+        check ();
+
+        if (children == null) {
+            return new FileObject[0];
+        }
+
+        int size = children.length;
+        FileObject[] arr = new FileObject[size];
+
+        for (int i = 0; i < size; i++) {
+            arr[i] = getChild (children[i]);
+        }
+
+        return arr;
+    }
+
+    
+    final FileObject find (Enumeration en) {
+        AbstractFolder fo = this;
+        while (fo != null && en.hasMoreElements ()) {
+            
+            
+            synchronized (fo) {
+                
+                
+                
+                fo.check ();
+
+                fo = fo.getChild ((String)en.nextElement ());
+            }
+        }
+        
+        return fo;
+    }
+
+    
+    final FileObject findIfExists (Enumeration en) {
+        AbstractFolder fo = this;
+        while (fo != null && en.hasMoreElements ()) {
+            if (fo.map == null) {
+                
+                return null;
+            }
+
+            
+            
+            synchronized (fo) {
+                
+                
+                
+                fo.check ();
+
+                fo = fo.getChild ((String)en.nextElement ());
+            }
+        }
+        
+        return fo;
+    }
+
+    
+    protected final AbstractFolder getChild (String name) {
+        Reference r = (Reference)map.get (name);
+        if (r == null) {
+            return null;
+        }
+
+        AbstractFolder fo = (AbstractFolder)(r.get ());
+
+        if (fo == null) {
+            
+            fo = createFile (name);
+            map.put (name, new WeakReference (fo));
+        }
+
+        return fo;
+    }
+
+    
+    final synchronized AbstractFileObject[] subfiles () {
+        if (map == null) {
+            return EMPTY_ARRAY;
+        }
+        Iterator it = map.values ().iterator ();
+        LinkedList ll = new LinkedList ();
+        while (it.hasNext ()) {
+            Reference r = (Reference)it.next ();
+            if (r == null) {
+                continue;
+            }
+            AbstractFolder fo = (AbstractFolder)r.get ();
+            if (fo != null && (!fo.isFolder () || fo.map != null)) {
+                
+                
+                
+                
+                ll.add (fo);
+            }
+        }
+
+        return (AbstractFileObject[])ll.toArray (EMPTY_ARRAY);
+    }
+
+    
+    public final synchronized FileObject getFileObject (String name, String ext) {
+        check ();
+
+        if (ext == null || ext.equals ("")) { 
+            return getChild (name);
+        } else {
+            return getChild (name + EXT_SEP + ext);
+        }
+    }
+
+    
+    public final void refresh(boolean expected) {
+        refresh (null, null, true, expected);
+    }
+
+
+    
+    
+    
+
+    
+    public final void addFileChangeListener (FileChangeListener fcl) {
+        if (listeners == null) {
+            synchronized (EMPTY_ARRAY) {
+                if (listeners == null) {
+                    listeners = new EventListenerList ();
+                }
+            }
+        }
+        listeners.add (FileChangeListener.class, fcl);
+    }
+
+
+    
+    public final void removeFileChangeListener (FileChangeListener fcl) {
+        if (listeners != null) {
+            listeners.remove (FileChangeListener.class, fcl);
+        }
+    }
+
+    
+    protected final void fileDeleted0(FileEvent fileevent) {
+        super.fireFileDeletedEvent(listeners (), fileevent);
+        if(fileevent.getFile().equals(this) && parent != null) {
+            FileEvent ev = new FileEvent(parent, fileevent.getFile());
+            ev.setExpected (fileevent.isExpected ());
+            parent.fileDeleted0(ev);
+        }
+    }
+
+    
+    protected final void fileCreated0(FileEvent fileevent, boolean flag) {
+        if(flag)
+            super.fireFileDataCreatedEvent(listeners (), fileevent);
+        else
+            super.fireFileFolderCreatedEvent(listeners (), fileevent);
+
+        if(fileevent.getFile().equals(this) && parent != null) {
+            FileEvent ev = new FileEvent(parent, fileevent.getFile());
+            ev.setExpected (fileevent.isExpected ());
+            parent.fileCreated0 (ev, flag);
+        }
+    }
+
+    
+    protected final void fileChanged0 (FileEvent fileevent) {
+        super.fireFileChangedEvent(listeners (), fileevent);
+        if(fileevent.getFile().equals(this) && parent != null) {
+            FileEvent ev = new FileEvent(parent, fileevent.getFile());
+            ev.setExpected (fileevent.isExpected ());
+            parent.fileChanged0 (ev);
+        }
+    }
+
+    
+    protected final void fileRenamed0 (FileRenameEvent filerenameevent) {
+        super.fireFileRenamedEvent(listeners (), filerenameevent);
+        if(filerenameevent.getFile().equals(this) && parent != null) {
+            FileRenameEvent ev = new FileRenameEvent(
+                                     parent,
+                                     filerenameevent.getFile(),
+                                     filerenameevent.getName(),
+                                     filerenameevent.getExt()
+                                 );
+            ev.setExpected (filerenameevent.isExpected ());
+            parent.fileRenamed0 (ev);
+        }
+    }
+
+    
+    protected final void fileAttributeChanged0 (FileAttributeEvent fileattributeevent) {
+        super.fireFileAttributeChangedEvent(listeners (), fileattributeevent);
+        if(fileattributeevent.getFile().equals(this) && parent != null) {
+            FileAttributeEvent ev = new FileAttributeEvent(
+                                        parent,
+                                        fileattributeevent.getFile(),
+                                        fileattributeevent.getName(),
+                                        fileattributeevent.getOldValue(),
+                                        fileattributeevent.getNewValue()
+                                    );
+            ev.setExpected (fileattributeevent.isExpected ());
+            parent.fileAttributeChanged0 (ev);
+        }
+    }
+
+    
+    protected final boolean hasListeners () {
+        return listeners != null && listeners.getListenerList ().length != 0;
+    }
+
+    
+    protected final boolean hasAtLeastOneListeners () {
+        return hasListeners () || (parent != null && parent.hasListeners ());
+    }
+
+    
+    private final Enumeration listeners () {
+        if (listeners == null) {
+            return EmptyEnumeration.EMPTY;
+        } else {
+            return new FilterEnumeration (new ArrayEnumeration (listeners.getListenerList ())) {
+                       public boolean accept (Object o) {
+                           return o != FileChangeListener.class;
+                       }
+                   };
+        }
+    }
+
+    
+    
+    
+
+    
+    private final void check () {
+        if (map == null) {
+            refresh (null, null, false, false);
+            if (map == null) {
+                
+                map = EMPTY;
+            }
+        }
+    }
+
+    
+    protected final void refresh (String added, String removed) {
+        refresh (added, removed, true, false);
+    }
+
+    
+    protected abstract String[] list ();
+
+    
+    protected abstract AbstractFolder createFile (String name);
+
+    
+    protected synchronized void refresh (
+        String added, String removed, boolean fire, boolean expected
+    ) {
+        if (isFolder ()) {
+            
+            String[] newChildren = list ();
+
+            if (newChildren == null && parent == null) {
+                
+                newChildren = new String[0];
+            }
+
+            if (children == null && newChildren == null) {
+                
+                return;
+            }
+
+            
+            
+
+            
+            HashMap m;
+            
+            Set add;
+            
+            int newChildrenContainNull = 0;
+
+            if (newChildren != null) {
+                int size = newChildren.length;
+
+                m = new HashMap (size);
+                add = new HashSet (size);
+
+  
+                Object replaceInSteadOfRemoved = map != null ? map.get (removed) : null;
+
+
+                for (int i = 0; i < size; i++) {
+                    String ch = newChildren[i];
+
+                    if (ch == null) {
+                        
+                        newChildrenContainNull++;
+                        continue;
+                    }
+
+                    Reference old = map == null ? null : (Reference)map.remove (ch);
+                    if (old == null) {
+                        
+                        old = new WeakReference (null);
+                        add.add (ch);
+                    }
+                    m.put (ch, old);
+                }
+
+                if (added != null && replaceInSteadOfRemoved != null) {
+                  m.put (added, replaceInSteadOfRemoved);
+                }
+
+            } else {
+                m = new HashMap (0);
+                add = Collections.EMPTY_SET;
+            }
+
+            
+            HashMap disappeared = null;
+
+            if (fire) {
+                
+                if (added != null) {
+                    add.remove (added);
+                }
+
+                if (map != null) {
+                    
+                    
+                    
+                    
+                    
+
+                    disappeared = map;
+                    Iterator it = map.entrySet ().iterator ();
+                    while (it.hasNext ()) {
+                        Map.Entry entry = (Map.Entry)it.next ();
+                        
+                        entry.setValue (getChild ((String)entry.getKey ()));
+                    }
+
+                    
+                    if (removed != null) {
+                        disappeared.remove (removed);
+                    }
+
+                    if (disappeared.isEmpty ()) {
+                        disappeared = null;
+                    }
+                }
+            }
+
+            
+            
+            map = m;
+
+            if (newChildrenContainNull != 0) {
+                
+                String[] arr = new String[newChildren.length - newChildrenContainNull];
+
+                int j = 0;
+                for (int i = 0; i < newChildren.length; i++) {
+                    if (newChildren[i] != null) {
+                        arr[j++] = newChildren[i];
+                    }
+                }
+                children = arr;
+            } else {
+                
+                children = newChildren;
+            }
+
+
+            if (fire && !add.isEmpty () && hasAtLeastOneListeners ()) {
+                
+                for (Iterator it = add.iterator (); it.hasNext (); ) {
+                    String name = (String)it.next ();
+
+                    AbstractFolder fo = getChild (name);
+                    FileEvent ev = new FileEvent (this, fo);
+                    ev.setExpected (expected);
+                    if (fo.isFolder ()) {
+                        fileCreated0 (ev, false);
+                    } else {
+                        fileCreated0 (ev, true);
+                    }
+                    
+                    
+                }
+            }
+
+            if (fire && disappeared != null && hasAtLeastOneListeners ()) {
+                
+                for (Iterator it = disappeared.values ().iterator (); it.hasNext (); ) {
+                    AbstractFolder fo = (AbstractFolder)it.next ();
+
+                    FileEvent ev = new FileEvent (this, fo);
+                    ev.setExpected (expected);
+                    fo.fileDeleted0 (ev);
+                    
+                    
+                }
+            }
+        }
+
+        
+        return;
+    }
+
+    
+    public final String toString () {
+        return getPackageNameExt ('/', '.');
+    }
+
+    
+    
+    
+
+    public final Object writeReplace () {
+        return new AbstractFileObject.Replace (getFileSystem ().getSystemName (), toString ());
+    }
+
+
+    
+    final class NotifyOutputStream extends FilterOutputStream {
+        private boolean closed;
+
+        public NotifyOutputStream (OutputStream os) {
+            super (os);
+        }
+
+        
+        public void write (byte[] b, int off, int len) throws IOException {
+            out.write(b, off, len);
+        }
+
+        public void close () throws IOException {
+            if (!closed) {
+                closed = true;
+                try {
+                    super.close ();
+                } finally {
+                    fileChanged0 (new FileEvent (AbstractFolder.this));
+                }
+            }
+        }
+    } 
+}
+
+

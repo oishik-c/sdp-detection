@@ -1,0 +1,21 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+interface org.netbeans.core.windows.ContainerListener {
++ void containerDeactivated(EventObject)
++ void containerClosed(EventObject)
++ void containerDeiconified(EventObject)
++ void containerOpened(EventObject)
++ void containerIconified(EventObject)
++ void containerClosing(EventObject)
++ void containerActivated(EventObject)
++ void containerResized(ComponentEvent)
++ void containerMoved(ComponentEvent)
++ void containerShown(ComponentEvent)
++ void containerHidden(ComponentEvent)
+}
+
+@enduml

@@ -1,0 +1,93 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.pretty;
+
+import org.acm.seguin.parser.ast.ASTBlockStatement;
+import org.acm.seguin.parser.ast.ASTLocalVariableDeclaration;
+import org.acm.seguin.parser.ast.ASTName;
+import org.acm.seguin.parser.ast.ASTPrimitiveType;
+import org.acm.seguin.parser.ast.ASTType;
+import org.acm.seguin.parser.ast.ASTVariableDeclaratorId;
+import org.acm.seguin.parser.ast.SimpleNode;
+
+
+class LocalVariableLookAhead {
+	private FieldSize size;
+
+
+	
+	public LocalVariableLookAhead()
+	{
+		size = new FieldSize();
+	}
+
+
+	
+	public FieldSize run(SimpleNode body)
+	{
+		int last = body.jjtGetNumChildren();
+		for (int ndx = 0; ndx < last; ndx++) {
+			SimpleNode child = (SimpleNode) body.jjtGetChild(ndx);
+			if ((child instanceof ASTBlockStatement) &&
+					(child.jjtGetChild(0) instanceof ASTLocalVariableDeclaration)) {
+				ASTLocalVariableDeclaration localVariable = (ASTLocalVariableDeclaration) child.jjtGetChild(0);
+				int equalsLength = computeEqualsLength(localVariable);
+				size.setMinimumEquals(equalsLength);
+			}
+		}
+
+		return size;
+	}
+
+
+	
+	public int computeEqualsLength(ASTLocalVariableDeclaration localVariable)
+	{
+		int modifierLength = computeModifierLength(localVariable);
+		int typeLength = computeTypeLength(localVariable);
+		int nameLength = computeNameLength(localVariable);
+		int equalsLength = modifierLength + typeLength + nameLength;
+		return equalsLength;
+	}
+
+
+	
+	public int computeTypeLength(SimpleNode localVariable)
+	{
+		ASTType typeNode = (ASTType) localVariable.jjtGetChild(0);
+		int typeLength = 2 * typeNode.getArrayCount();
+		if (typeNode.jjtGetChild(0) instanceof ASTPrimitiveType) {
+			ASTPrimitiveType primitive = (ASTPrimitiveType) typeNode.jjtGetChild(0);
+			typeLength += primitive.getName().length();
+		}
+		else {
+			ASTName name = (ASTName) typeNode.jjtGetChild(0);
+			typeLength += name.getName().length();
+		}
+		size.setTypeLength(typeLength);
+		return typeLength;
+	}
+
+
+	
+	private int computeModifierLength(ASTLocalVariableDeclaration localVariable)
+	{
+		int modifierLength = localVariable.isUsingFinal() ? 6 : 0;
+		size.setModifierLength(modifierLength);
+		return modifierLength;
+	}
+
+
+	
+	private int computeNameLength(ASTLocalVariableDeclaration localVariable)
+	{
+		ASTVariableDeclaratorId id = (ASTVariableDeclaratorId) localVariable.jjtGetChild(1).jjtGetChild(0);
+		int nameLength = id.getName().length();
+		size.setNameLength(nameLength);
+		return nameLength;
+	}
+}

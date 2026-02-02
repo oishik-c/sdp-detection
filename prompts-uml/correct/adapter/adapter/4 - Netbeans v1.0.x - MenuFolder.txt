@@ -1,0 +1,58 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.awt.MenuBar {
+- MenuBarFolder menuBarFolder
+~ {static} long serialVersionUID
++ <<Create>> MenuBar()
++ <<Create>> MenuBar(DataFolder)
++ void waitFinished()
++ void writeExternal(ObjectOutput)
++ void readExternal(ObjectInput)
+~ void startLoading(DataFolder)
+}
+
+
+class org.openide.awt.MenuBar$MenuBarFolder {
+~ MenuBar menuBar
++ <<Create>> MenuBarFolder(DataFolder,MenuBar)
++ String instanceName()
++ Class instanceClass()
+# InstanceCookie acceptCookie(InstanceCookie)
+# InstanceCookie acceptFolder(DataFolder)
+# Object createInstance(InstanceCookie[])
+~ DataFolder getFolder()
+}
+
+
+class org.openide.awt.MenuBar$MenuFolder {
+- JMenu menu
++ <<Create>> MenuFolder(DataFolder)
++ JMenu getMenu()
++ void propertyChange(java.beans.PropertyChangeEvent)
++ void childrenAdded(NodeMemberEvent)
++ void childrenRemoved(NodeMemberEvent)
++ void childrenReordered(NodeReorderEvent)
++ void nodeDestroyed(NodeEvent)
++ String instanceName()
++ Class instanceClass()
+# InstanceCookie acceptDataObject(DataObject)
+# InstanceCookie acceptCookie(InstanceCookie)
+# InstanceCookie acceptFolder(DataFolder)
+# Object createInstance(InstanceCookie[])
+}
+
+
+
+
+org.openide.awt.Externalizable <|.. org.openide.awt.MenuBar
+org.openide.awt.JMenuBar <|-- org.openide.awt.MenuBar
+org.openide.awt.MenuBar +.. org.openide.awt.MenuBar$MenuBarFolder
+org.openide.awt.FolderInstance <|-- org.openide.awt.MenuBar$MenuBarFolder
+org.openide.awt.MenuBar +.. org.openide.awt.MenuBar$MenuFolder
+org.openide.awt.NodeListener <|.. org.openide.awt.MenuBar$MenuFolder
+org.openide.awt.FolderInstance <|-- org.openide.awt.MenuBar$MenuFolder
+@enduml

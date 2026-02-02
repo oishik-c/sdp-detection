@@ -1,0 +1,197 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.tool;
+
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
+
+import javax.swing.event.MouseInputAdapter;
+
+import diagram.Diagram;
+import diagram.DiagramUI;
+import diagram.Figure;
+import diagram.Link;
+import diagram.figures.PointFigure;
+import diagram.figures.PolyLink;
+
+
+public class LinkTool extends AbstractTool {
+
+  private final static double POINT_SIZE = 5;
+
+  private Diagram diagram;
+
+  private Figure figSource;
+  private Figure figSink;
+
+  private PointFigure ptSink = new PointFigure(POINT_SIZE);
+  private Point2D ptCenter;
+
+  private Link link;
+
+  private MouseHandler mouseHandler = new MouseHandler();
+
+  
+  public void install(Diagram diagram) {
+
+
+    diagram.addMouseListener(mouseHandler);
+    diagram.addMouseMotionListener(mouseHandler);
+
+  }
+
+  
+  public void uninstall(Diagram diagram) {
+
+    diagram.removeMouseListener(mouseHandler);
+    diagram.removeMouseMotionListener(mouseHandler);
+
+    reset();
+
+  }
+  
+
+  protected class MouseHandler extends MouseInputAdapter {
+
+
+    
+    public void mousePressed(MouseEvent e) {
+      
+      
+      Object o = e.getSource();
+      
+      if(!e.isConsumed() && e.getClickCount() == 1 && (o instanceof Diagram)) {
+        
+        diagram = (Diagram)o;
+        
+        
+        Point2D pt = e.getPoint();
+        if(((figSource = (Figure)diagram.findFigure(pt)) == null) || (figSource instanceof Link)) {
+          reset();
+          return;
+        }
+        
+        e.consume();
+        fireToolStarted();
+
+        
+        
+        ptSink.setLocation(pt.getX(), pt.getY());
+        link = createLink(figSource, ptSink);
+        
+        
+        diagram.getModel().add(link);
+        
+        
+        DiagramUI ui = (DiagramUI)diagram.getUI();
+        ui.removeConnection(ptSink, link);    
+        
+      }
+      
+    }
+    
+    
+    
+    public void mouseDragged(MouseEvent e) {
+      
+      if(diagram == null)
+        return;
+      
+      Point2D pt = e.getPoint();   
+      DiagramUI ui = (DiagramUI)diagram.getUI();
+      
+      
+      ui.damageFigure(link);
+      
+      
+      
+      
+      Figure sink = (Figure)diagram.findFigure(pt);
+      
+      if(sink != null && !(sink instanceof Link) && sink != figSource && sink != figSink) {
+        
+        ui.addConnection(sink, link);
+        link.setSink(sink);
+        
+        figSink = sink;
+        
+        
+      } else if(sink != figSink) { 
+        
+        ptSink.setLocation(pt.getX(), pt.getY());
+        
+        
+        if(figSink != ptSink) {
+          ui.removeConnection(link.setSink(ptSink), link);    
+          figSink = ptSink;
+          
+        }
+        
+      }
+      
+      ui.refreshFigure(link);
+      
+    }
+    
+    
+    public void mouseReleased(MouseEvent e) {
+      
+      if(diagram == null)
+        return;
+      
+      e.consume();
+
+      DiagramUI ui = (DiagramUI)diagram.getUI();
+      ui.damageFigure(link);
+      
+      
+      if(figSink == null || figSink == ptSink)
+        diagram.getModel().remove(link);
+      
+      else {
+        
+        
+        Link finalLink = finalizeLink(link);
+        if(finalLink != link) {
+          diagram.getModel().remove(link);
+          diagram.getModel().add(finalLink);
+        }
+        
+        ui.refreshFigure(finalLink);
+        
+      }
+      
+      fireToolFinished();
+      reset();
+      
+    }
+    
+  } 
+
+
+  
+  protected void reset() {
+
+    diagram = null;
+    figSink = null;
+    figSource = null;
+    link = null;
+
+  }
+
+  
+  protected Link createLink(Figure source, Figure sink) {
+    return new PolyLink(source, sink);
+  }
+
+  
+  protected Link finalizeLink(Link link) {
+    return link;
+  }
+
+}

@@ -1,0 +1,507 @@
+Given the following java code, determine whether it contains an instance of the bridge design pattern playing the role of implementor.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+
+package net.nutch.tools;
+
+import java.io.*;
+import java.util.*;
+import net.nutch.io.*;
+import net.nutch.db.*;
+import net.nutch.net.*;
+import java.util.logging.*;
+
+import net.nutch.util.*;
+import net.nutch.linkdb.*;
+import net.nutch.pagedb.*;
+import net.nutch.fetcher.*;
+
+
+public class DistributedAnalysisTool {   
+    final private static String ASSIGN_FILE_PREFIX = "assignment";
+    final private static String SCORE_EDITS_FILE_PREFIX = "scoreEdits";
+    final private static String ASSIGN_COMPLETE = "assignComplete";
+    
+    final private static float DEFAULT_SCORE = 0.15f;
+    final private static float DECAY_VALUE = 0.85f;
+
+    public static final Logger LOG = LogFormatter.getLogger("net.nutch.tools.DistributedAnalysisTool");
+
+    
+    class EditSet {
+        File distDir;
+        int numEditFiles;
+        int curEditFile;
+        SequenceFile.Reader curReader;
+
+        
+        public EditSet(File distDir, int numEditFiles) throws IOException {
+            this.distDir = distDir;
+            this.numEditFiles = numEditFiles;
+            this.curEditFile = 0;
+            getNextReader();
+        }
+
+        
+        public synchronized boolean next(Writable key, Writable val) throws IOException {
+            
+            
+            
+            if (curReader == null) {
+                getNextReader();
+                
+                if (curReader == null) {
+                    return false;
+                }
+            }
+            return curReader.next(key, val);
+        }
+
+        
+        private void getNextReader() throws IOException {
+            if (curReader != null) {
+                curReader.close();
+            }
+
+            if (curEditFile < numEditFiles) {
+                curReader = new SequenceFile.Reader(new File(distDir, SCORE_EDITS_FILE_PREFIX + "." + curEditFile + ".sorted").getPath());
+                LOG.info("Opened stream to file " + curEditFile);
+                curEditFile++;
+            }
+        }
+
+        
+        public synchronized void close() throws IOException {
+            if (curReader != null) {
+                curReader.close();
+            }
+            curEditFile = numEditFiles;
+        }
+    }
+
+    
+    class ScoreValue implements Writable {
+        float score;
+        float nextScore;
+
+        
+        public ScoreValue() {
+        }
+        
+        public void setScore(float f) {
+            this.score = f;
+        }
+        
+        public void setNextScore(float f) {
+            this.nextScore = f;
+        }
+
+        
+        public float score() {
+            return score;
+        }
+        
+        public float nextScore() {
+            return nextScore;
+        }
+
+        
+        public void write(DataOutput out) throws IOException {
+            out.writeFloat(score);
+            out.writeFloat(nextScore);
+        }
+
+        
+        public void readFields(DataInput in) throws IOException {
+            this.score = in.readFloat();
+            this.nextScore = in.readFloat();
+        }
+    }
+
+    File dbDir;
+
+    
+    public DistributedAnalysisTool(File dbDir) throws IOException, FileNotFoundException {
+        this.dbDir = dbDir;
+    }
+
+    
+    public boolean initRound(int numProcesses, File distDir) throws IOException {
+        
+        
+        
+        if ((distDir.exists() && distDir.isFile()) ||
+            (distDir.exists() && (distDir.list().length != 0))) {
+            LOG.severe("Must be an empty or non-existent dir: " + distDir);
+            return false;
+        }
+        if (! distDir.exists()) {
+            distDir.mkdir();
+        }
+
+        
+        
+        
+        
+        long startPages[] = new long[numProcesses];
+        long totalPages = 0;
+        IWebDBReader reader = new WebDBReader(dbDir);
+        try {
+            totalPages = reader.numPages();     
+        } finally {
+            reader.close();
+        }
+        long chunkSize = totalPages / numProcesses;
+        long pagesProcessedSoFar = 0;
+
+        
+        
+        
+        
+        
+        startPages[0] = 0;
+        for (int i = 1; i < numProcesses; i++) {
+            startPages[i] = startPages[i-1] + chunkSize;
+        }
+
+        
+        
+        
+        try {
+            
+            for (int i = 0; i < numProcesses; i++) {
+                DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(new File(distDir, ASSIGN_FILE_PREFIX + "." + i))));
+                try {
+                    
+                    out.writeLong(startPages[i]);
+
+                    
+                    if (i != numProcesses - 1) {
+                        out.writeLong(chunkSize);
+                    } else {
+                        
+                        out.writeLong(totalPages - ((numProcesses - 1) * chunkSize));
+                    }
+                } finally {
+                    out.close();
+                }
+            }
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            File completeFile = new File(distDir, "assignComplete");
+            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(completeFile)));
+            try {
+                out.writeInt(numProcesses);
+                out.writeLong(totalPages);
+                
+                
+                long extent[] = new long[numProcesses];
+                for (int i = 0; i < numProcesses - 1; i++) {
+                    extent[i] = chunkSize * (i + 1);
+                }
+                extent[numProcesses-1] = totalPages - (chunkSize * (numProcesses - 1));
+                
+                
+                for (int i = 0; i < extent.length; i++) {
+                    out.writeLong(extent[i]);
+                }
+            } finally {
+                out.close();
+            }
+            return true;
+        } catch (IOException ex) {
+            LOG.severe(ex.toString());
+            LOG.severe("Sorry, could not finish assignments");
+        }
+        return false;
+    }
+
+    
+    public void computeRound(int processId, File distDir) throws IOException {
+        File assignFile = new File(distDir, ASSIGN_FILE_PREFIX + "." + processId);
+
+        long startIndex = 0, extent = 0;
+        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(assignFile)));
+        try {
+            startIndex = in.readLong();
+            extent = in.readLong();
+        } finally {
+            in.close();
+        }
+
+        LOG.info("Start at: "+  startIndex);
+        LOG.info("Extent: "+  extent);
+
+        
+        
+        
+        
+        File scoreEdits = new File(distDir, SCORE_EDITS_FILE_PREFIX + "." + processId);
+        SequenceFile.Writer scoreWriter = new SequenceFile.Writer(scoreEdits.getPath() + ".unsorted", UTF8.class, ScoreValue.class);
+
+        
+        
+        
+        
+        try {
+            
+            long curIndex = 0;
+            ScoreValue score = new ScoreValue();
+            IWebDBReader reader = new WebDBReader(dbDir);
+            try {
+                for (Enumeration e = reader.pagesByMD5(); e.hasMoreElements(); curIndex++) {
+                    
+                    
+                    
+                    if (curIndex < startIndex) {
+                        e.nextElement();
+                        continue;
+                    }
+
+                    
+                    
+                    
+                    if (curIndex - startIndex > extent) {
+                        break;
+                    }
+
+                    
+                    
+                    
+                    Page curPage = (Page) e.nextElement();
+                    Link outLinks[] = reader.getLinks(curPage.getMD5());
+                    int targetOutlinkers = 0;
+                    for (int i = 0; i < outLinks.length; i++) {
+                        if (outLinks[i].targetHasOutlink()) {
+                            targetOutlinkers++;
+                        }
+                    }
+
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    
+                    
+                    
+                    float curNextScore = curPage.getNextScore();
+                    if (outLinks.length > 0 && curNextScore == 0.0f) {
+                        curNextScore = curPage.getScore();
+                    }
+
+                    
+                    
+                    
+                    float contributionForAll = (outLinks.length > 0) ? (curNextScore / outLinks.length) : 0.0f;
+                    float contributionForOutlinkers = (targetOutlinkers > 0) ? (curNextScore / targetOutlinkers) : 0.0f;
+                    for (int i = 0; i < outLinks.length; i++) {
+                        
+                        score.setScore(contributionForAll);
+                        score.setNextScore(outLinks[i].targetHasOutlink() ? contributionForOutlinkers : 0.0f);
+                        scoreWriter.append(outLinks[i].getURL(), score);
+                    }
+
+                    if (((curIndex - startIndex) % 5000) == 0) {
+                        LOG.info("Pages consumed: " + (curIndex - startIndex) + " (at index " + curIndex + ")");
+                    }
+                }
+            } finally {
+                reader.close();
+            }
+        } finally {
+            scoreWriter.close();
+        }
+
+        
+        SequenceFile.Sorter sorter = new SequenceFile.Sorter(new UTF8.Comparator(), ScoreValue.class);
+        sorter.sort(scoreEdits.getPath() + ".unsorted", scoreEdits.getPath() + ".sorted");
+        new File(scoreEdits.getPath() + ".unsorted").delete();
+    }
+
+
+    
+    public void completeRound(File distDir, File scoreFile) throws IOException {
+        
+        
+        
+        
+        
+        int numProcesses = 0;
+        long totalPages = 0;
+        long extent[] = null;
+        File overall = new File(distDir, "assignComplete");
+        DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(overall)));
+        try {
+            numProcesses = in.readInt();
+            totalPages = in.readLong();
+            extent = new long[numProcesses];
+            for (int i = 0; i < numProcesses; i++) {
+                extent[i] = in.readLong();
+            }
+        } finally {
+            in.close();
+            in = null;
+        }
+        
+        
+        
+        
+        
+        ScoreStats scoreStats = new ScoreStats();
+        IWebDBReader reader = new WebDBReader(dbDir);
+        IWebDBWriter writer = new WebDBWriter(dbDir);
+        EditSet editSet = new EditSet(distDir, numProcesses);
+        try {
+            int count = 0;
+            UTF8 curEditURL = new UTF8();
+            ScoreValue curContribution = new ScoreValue();
+            boolean hasEdit = editSet.next(curEditURL, curContribution);
+
+            
+            
+            
+            
+            for (Enumeration e = reader.pages(); e.hasMoreElements(); count++) {
+                Page curPage = (Page) e.nextElement();
+                if (! hasEdit) {
+                    break;
+                }
+
+                
+                
+                
+                
+                int comparison = curPage.getURL().compareTo(curEditURL);
+                float newScore = 0.0f, newNextScore = 0.0f;
+                if (comparison < 0) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    newScore = (1 - DECAY_VALUE);
+                    newNextScore = (1 - DECAY_VALUE);
+                } else if (comparison > 0) {
+                    
+                    
+                    
+                    throw new IOException("Impossible situation.  There is a score-edit for " + curEditURL + ", which comes after the current Page " + curPage.getURL());
+                } else {
+                    
+                    
+                    
+                    
+                    
+                    while (hasEdit && curPage.getURL().compareTo(curEditURL) == 0) {
+                        newScore += curContribution.score();
+                        newNextScore += curContribution.nextScore();
+                        hasEdit = editSet.next(curEditURL, curContribution);
+                    }
+                    
+                    newScore = (1 - DECAY_VALUE) + (DECAY_VALUE * newScore);
+                    newNextScore = (1 - DECAY_VALUE) + (DECAY_VALUE * newNextScore);
+                }
+                
+                
+                curPage.setScore(newScore, newNextScore);
+                writer.addPageWithScore(curPage);
+                scoreStats.addScore(newScore);
+                if ((count % 5000) == 0) {
+                    LOG.info("Pages written: " + count);
+                }
+            }
+            LOG.info("Pages encountered: " + count);
+            LOG.info("Target pages from init(): " + totalPages);
+        } finally {
+            reader.close();
+            editSet.close();
+            writer.close();
+        }
+
+        
+        
+        
+        if (scoreFile.exists()) {
+            scoreFile.delete();
+        }
+        PrintStream pout = new PrintStream(new BufferedOutputStream(new FileOutputStream(scoreFile)));
+        try {
+            scoreStats.emitDistribution(pout);
+        } finally {
+            pout.close();
+        }
+
+        
+        
+        
+        FileUtil.fullyDelete(distDir);
+    }
+
+    
+    public static void main(String argv[]) throws IOException {
+        if (argv.length < 2) {
+            System.out.println("usage: java net.nutch.tools.DistributedAnalysisTool -initRound|-computeRound|-completeRound (numProcesses | processId) <dist_dir> <db_dir>");
+            return;
+        }
+
+        String command = null;
+        int numProcesses = 0, processId = 0, numIterations = 0;
+        File distDir = null, dbDir = null;
+
+        for (int i = 0; i < argv.length; i++) {
+            if ("-initRound".equals(argv[i])) {
+                command = argv[i];
+                numProcesses = Integer.parseInt(argv[i+1]);
+                distDir = new File(argv[i+2]);
+                dbDir = new File(argv[i+3]);
+                i+=3;
+            } else if ("-computeRound".equals(argv[i])) {
+                command = argv[i];
+                processId = Integer.parseInt(argv[i+1]);
+                distDir = new File(argv[i+2]);
+                dbDir = new File(argv[i+3]);
+                i+=3;
+            } else if ("-completeRound".equals(argv[i])) {
+                command = argv[i];
+                distDir = new File(argv[i+1]);
+                dbDir = new File(argv[i+2]);
+                i+=2;
+            }
+        }
+
+        System.out.println("Started at " + new Date(System.currentTimeMillis()));
+        try {
+            DistributedAnalysisTool dat = 
+                new DistributedAnalysisTool(dbDir);
+            if ("-initRound".equals(command)) {
+                dat.initRound(numProcesses, distDir);
+            } else if ("-computeRound".equals(command)) {
+                dat.computeRound(processId, distDir);
+            } else if ("-completeRound".equals(command)) {
+                dat.completeRound(distDir, new File(dbDir, "linkstats.txt"));
+            } else {
+                System.out.println("No directive.");
+            }
+        } finally {
+            System.out.println("Finished at " + new Date(System.currentTimeMillis()));
+        }
+    }
+}

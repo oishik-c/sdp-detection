@@ -1,0 +1,18 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.explorer.propertysheet.SetDefaultValueAction {
+~ {static} long serialVersionUID
++ String getName()
++ HelpCtx getHelpCtx()
+# String iconResource()
+}
+
+
+
+
+org.openide.util.actions.CallbackSystemAction <|-- org.openide.explorer.propertysheet.SetDefaultValueAction
+@enduml

@@ -1,0 +1,78 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.contrib;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+
+import CH.ifa.draw.framework.Drawing;
+import CH.ifa.draw.standard.AbstractHandle;
+import CH.ifa.draw.util.Geom;
+
+
+
+class TriangleRotationHandle extends AbstractHandle {
+
+  private Point fOrigin = null;
+  private Point fCenter = null;
+
+  public TriangleRotationHandle(TriangleFigure owner) {
+	super(owner);
+ } 
+
+  public void invokeStart(int  x, int  y, Drawing drawing) {
+	fCenter = owner().center();
+	fOrigin = getOrigin();
+  }  
+
+  public void invokeStep (int dx, int dy, Drawing drawing) {
+	double angle = Math.atan2(fOrigin.y + dy - fCenter.y,
+							  fOrigin.x + dx - fCenter.x);
+	((TriangleFigure)(owner())).rotate(angle);
+  }  
+
+  public void invokeEnd  (int dx, int dy, Drawing drawing) {
+	fOrigin = null;
+	fCenter = null;
+  }  
+
+  public Point locate() {
+	return getOrigin();
+  }  
+
+  Point getOrigin() { 
+	
+	Polygon p = ((TriangleFigure)(owner())).polygon();
+	Point first = new Point(p.xpoints[0], p.ypoints[0]);
+	Point ctr = owner().center();
+	double len = Geom.length(first.x, first.y, ctr.x, ctr.y);
+	if (len == 0) 
+	  return new Point(first.x - HANDLESIZE/2, first.y + HANDLESIZE/2);
+
+	double u = HANDLESIZE / len;
+	if (u > 1.0) 
+	  return new Point((first.x * 3 + ctr.x)/4, (first.y * 3 + ctr.y)/4);
+	else
+	  return new Point((int)(first.x * (1.0 - u) + ctr.x * u),
+					   (int)(first.y * (1.0 - u) + ctr.y * u));
+  }  
+
+  public void draw(Graphics g) {
+	Rectangle r = displayBox();
+
+	g.setColor(Color.yellow);
+	g.fillOval(r.x, r.y, r.width, r.height);
+
+	g.setColor(Color.black);
+	g.drawOval(r.x, r.y, r.width, r.height);
+  }  
+}
+

@@ -1,0 +1,116 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.nodes;
+
+import java.beans.Beans;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+
+public class IndexedPropertySupport extends Node.IndexedProperty {
+    
+    protected Object instance;
+
+    
+    private Method setter;
+
+    
+    private Method getter;
+
+    
+    private Method indexedSetter;
+
+    
+    private Method indexedGetter;
+
+    
+    public IndexedPropertySupport (
+        Object instance,
+        Class valueType,
+        Class elementType,
+        Method getter,
+        Method setter,
+        Method indexedGetter,
+        Method indexedSetter) {
+        super (valueType, elementType);
+        this.instance = instance;
+        this.setter = setter;
+        this.getter = getter;
+        this.indexedSetter = indexedSetter;
+        this.indexedGetter = indexedGetter;
+    }
+
+    
+    public final void setDisplayName (String s) {
+        super.setDisplayName (s);
+    }
+
+    
+    public final void setName (String s) {
+        super.setName (s);
+    }
+
+    
+    public final void setShortDescription (String s) {
+        super.setShortDescription (s);
+    }
+
+    
+    public boolean canRead () {
+        return getter != null;
+    }
+
+    
+    public Object getValue () throws
+        IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        if (!canRead ()) throw new IllegalAccessException ();
+        Object validInstance = Beans.getInstanceOf (instance, getter.getDeclaringClass());
+        return getter.invoke (validInstance, new Object [0]);
+    }
+
+    
+    public boolean canWrite () {
+        return setter != null;
+    }
+
+    
+    public void setValue (Object val) throws
+        IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        if (!canWrite ()) throw new IllegalAccessException ();
+        Object validInstance = Beans.getInstanceOf (instance, setter.getDeclaringClass());
+        setter.invoke (validInstance, new Object [] {val});
+    }
+
+    
+    public boolean canIndexedRead () {
+        return indexedGetter != null;
+    }
+
+    
+    public Object getIndexedValue (int index) throws
+        IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        if (!canIndexedRead ()) throw new IllegalAccessException ();
+        Object validInstance = Beans.getInstanceOf (instance, indexedGetter.getDeclaringClass());
+        return indexedGetter.invoke (validInstance, new Object [] {new Integer (index)});
+    }
+
+    
+    public boolean canIndexedWrite () {
+        return indexedSetter != null;
+    }
+
+    
+    public void setIndexedValue (int index, Object val) throws
+        IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        if (!canIndexedWrite ()) throw new IllegalAccessException ();
+        Object validInstance = Beans.getInstanceOf (instance, indexedSetter.getDeclaringClass());
+        indexedSetter.invoke (validInstance, new Object [] {new Integer (index), val});
+    }
+}
+
+

@@ -1,0 +1,1355 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.form;
+
+import org.openide.explorer.propertysheet.editors.*;
+import org.openide.*;
+import org.openide.nodes.*;
+import org.openide.util.Utilities;
+import org.openide.util.datatransfer.NewType;
+
+import java.beans.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+import javax.swing.JTextField;
+
+
+
+
+public class RADComponent {
+
+    
+    
+
+    public static final String SYNTHETIC_PREFIX = "synthetic_"; 
+    public static final String PROP_NAME = SYNTHETIC_PREFIX + "Name"; 
+
+    static final NewType[] NO_NEW_TYPES = {};
+    static final Node.Property[] NO_PROPERTIES = {};
+
+    
+    
+
+    private RADComponentNode componentNode;
+
+    private Class beanClass;
+    private Object beanInstance;
+    private BeanInfo beanInfo;
+    private String componentName;
+
+    private Node.PropertySet[] beanPropertySets;
+    private Node.Property[] syntheticProperties;
+    private Node.Property[] beanProperties;
+    private Node.Property[] beanExpertProperties;
+    private Node.Property[] beanEvents;
+    private RADComponent.RADProperty[] allProperties;
+
+    
+    private HashMap auxValues;
+
+    
+    private HashMap valuesCache;
+    private HashMap editorsCache;
+    private HashMap nameToProperty;
+    private Map defaultPropertyValues;
+
+    private FormManager2 formManager;
+    private EventsList eventsList;
+    private String gotoMethod;
+
+    private String storedName; 
+
+    
+    public void finalize () throws Throwable {
+        super.finalize ();
+        if (System.getProperty ("netbeans.debug.form.finalize") != null) { 
+            System.out.println("finalized: "+this.getClass ().getName ()+", instance: "+this); 
+        }
+    } 
+
+    
+    
+
+    
+    public RADComponent () {
+        auxValues = new HashMap (10);
+    }
+
+    
+    public void initialize (FormManager2 formManager) {
+        this.formManager = formManager;
+    }
+
+    
+    public void setComponent (Class beanClass) {
+        if (this.beanClass != null) {
+            throw new InternalError ("Component already initialized: current: "+this.beanClass +", new: "+beanClass);
+        }
+
+        this.beanClass = beanClass;
+        beanInstance = createBeanInstance ();
+        beanInfo = BeanSupport.createBeanInfo (beanClass);
+
+        initInternal ();
+    }
+
+    
+    public void setInstance (Object beanInstance) {
+        if (this.beanClass != null) {
+            throw new InternalError ("Component already initialized: current: "+this.beanClass +", new: "+beanClass); 
+        }
+        this.beanClass = beanInstance.getClass ();
+        this.beanInstance = beanInstance;
+        beanInfo = BeanSupport.createBeanInfo (beanClass);
+
+        initInternal ();
+        PropertyDescriptor[] props = beanInfo.getPropertyDescriptors ();
+        for (int i = 0; i < props.length; i++) {
+            if (FormUtils.isIgnoredProperty (beanInstance.getClass (), props[i].getName ())) {
+                
+                continue;
+            }
+            RADProperty prop = (RADProperty)nameToProperty.get (props[i].getName ());
+            try {
+                if (prop == null)       
+                    continue;
+                if ((!prop.canRead ()) || (!prop.canWrite ()))
+                    continue;
+
+                Object currentValue = prop.getValue ();
+                Object defaultValue = defaultPropertyValues.get (props[i].getName ());
+                if (!Utilities.compareObjects (currentValue, defaultValue)) {
+                    prop.setChanged (true);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                
+                
+            }
+        }
+        
+    }
+
+    
+    protected Object createBeanInstance () {
+        return BeanSupport.createBeanInstance (beanClass);
+    }
+
+    
+    void initDeserializedEvents (java.util.Hashtable eventHandlers) {
+        eventsList.initEvents (eventHandlers);
+    }
+
+    void setNodeReference (RADComponentNode node) {
+        this.componentNode = node;
+        componentNode.addPropertyChangeListener (new java.beans.PropertyChangeListener () {
+                    public void propertyChange (java.beans.PropertyChangeEvent evt) {
+                        if (evt.getPropertyName () != null && evt.getPropertyName ().equals ("variableName")) { 
+                            String oldName = (String) evt.getOldValue();
+                            String newName = (String) evt.getNewValue();
+                            EventsList.EventSet[] esets = getEventsList().getEventSets ();
+                            for (int i=0, n=esets.length; i<n; i++) {
+                                EventsList.Event [] evts = esets [i].getEvents ();
+                                for (int j=0, m=evts.length; j<m; j++) {
+                                    String defaultName = FormUtils.getDefaultEventName(oldName, evts[j].getListenerMethod ());
+                                    for (java.util.Iterator iter = evts[j].getHandlers ().iterator (); iter.hasNext();) {
+                                        EventsManager.EventHandler eh = (EventsManager.EventHandler) iter.next();
+                                        if (eh.getName ().equals (defaultName)) {
+                                            String newValue = FormUtils.getDefaultEventName(newName, evts[j].getListenerMethod ());
+                                            formManager.getEventsManager ().renameEventHandler (eh, newValue);
+                                            formManager.fireEventRenamed (RADComponent.this, eh, defaultName);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                                                );
+    }
+
+    private void initInternal () {
+        nameToProperty = new HashMap ();
+
+        syntheticProperties = createSyntheticProperties ();
+        beanProperties = createBeanProperties ();
+        beanExpertProperties = createBeanExpertProperties ();
+
+        beanEvents = createEventsProperties ();
+
+        defaultPropertyValues = BeanSupport.getDefaultPropertyValues (beanClass);
+    }
+
+    
+    
+
+    
+    public Class getBeanClass () {
+        return beanClass;
+    }
+
+    
+    public Object getBeanInstance () {
+        return beanInstance;
+    }
+
+    
+    public BeanInfo getBeanInfo () {
+        return beanInfo;
+    }
+
+    
+    public boolean hasHiddenState () {
+        return (getBeanInfo ().getBeanDescriptor ().getValue ("hidden-state") != null); 
+    }
+
+    
+    public String getName () {
+        return componentName;
+    }
+
+    
+    public void setName (String value) {
+        if ((componentName != null) && (componentName.equals (value))) return; 
+        if (getFormManager ().getVariablesPool ().findVariableType (value) != null) return; 
+        if (!org.openide.util.Utilities.isJavaIdentifier (value)) return;
+
+        String oldName = componentName;
+        componentName = value;
+        if (oldName != null) {
+            getFormManager ().getVariablesPool ().deleteVariable (oldName);
+        }
+        getFormManager ().getVariablesPool ().createVariable (componentName, beanClass);
+
+        getFormManager ().fireComponentChanged (this, PROP_NAME, oldName, componentName);
+        if (getNodeReference () != null) {
+            getNodeReference ().updateName ();
+        }
+    }
+
+    
+    void useStoredName () {
+        String oldName = componentName;
+        componentName = storedName;
+        if (storedName == null || getFormManager ().getVariablesPool ().isReserved (storedName)) {
+            componentName = getFormManager ().getVariablesPool ().getNewName (beanClass);
+        }
+        getFormManager ().getVariablesPool ().createVariable (componentName, beanClass);
+
+        getFormManager ().fireComponentChanged (this, PROP_NAME, oldName, componentName);
+        if (getNodeReference () != null) {
+            getNodeReference ().updateName ();
+        }
+    }
+
+    
+    String getStoredName () {
+        return storedName;
+    }
+
+    
+    void storeName () {
+        storedName = componentName;
+    }
+
+    
+    public void setAuxValue (String key, Object value) {
+        auxValues.put (key, value);
+    }
+
+    
+    public Object getAuxValue (String key) {
+        return auxValues.get (key);
+    }
+
+    
+    public FormManager2 getFormManager () {
+        return formManager;
+    }
+
+    public EventsList getEventsList () {
+        return eventsList;
+    }
+
+    
+    public Map getAuxValues () {
+        return auxValues;
+    }
+
+    
+    public NewType[] getNewTypes () {
+        return NO_NEW_TYPES;
+    }
+
+    RADComponent.RADProperty[] getAllProperties () {
+        if (allProperties == null) {
+            Node.Property[] props = getComponentProperties ();
+            Node.Property[] expertProps = getComponentExpertProperties ();
+            ArrayList list = new ArrayList (props.length + expertProps.length);
+            list.addAll (Arrays.asList (props));
+            list.addAll (Arrays.asList (expertProps));
+            allProperties = FormEditor.sortProperties (list, beanClass);
+        }
+
+        return allProperties;
+    }
+
+    public Node.PropertySet[] getProperties () {
+        if (beanPropertySets == null) {
+            if (beanExpertProperties.length == 0) {
+                
+                beanPropertySets = new Node.PropertySet [] {
+                                       new Node.PropertySet (
+                                           "properties", 
+                                           FormEditor.getFormBundle().getString("CTL_PropertiesTab"),
+                                           FormEditor.getFormBundle().getString("CTL_PropertiesTabHint")
+                                       ) {
+                                           public Node.Property[] getProperties () {
+                                               return getComponentProperties ();
+                                           }
+                                       },
+                                       new Node.PropertySet (
+                                           "events", 
+                                           FormEditor.getFormBundle().getString("CTL_EventsTab"),
+                                           FormEditor.getFormBundle().getString("CTL_EventsTabHint")
+                                       ) {
+                                           public Node.Property[] getProperties () {
+                                               return getComponentEvents ();
+                                           }
+                                       },
+                                       new Node.PropertySet (
+                                           "synthetic", 
+                                           FormEditor.getFormBundle().getString("CTL_SyntheticTab"),
+                                           FormEditor.getFormBundle().getString("CTL_SyntheticTabHint")
+                                       ) {
+                                           public Node.Property[] getProperties () {
+                                               return getSyntheticProperties ();
+                                           }
+                                       },
+                                   };
+            } else {
+                
+                beanPropertySets = new Node.PropertySet [] {
+                                       new Node.PropertySet (
+                                           "properties", 
+                                           FormEditor.getFormBundle().getString("CTL_PropertiesTab"),
+                                           FormEditor.getFormBundle().getString("CTL_PropertiesTabHint")
+                                       ) {
+                                           public Node.Property[] getProperties () {
+                                               return getComponentProperties ();
+                                           }
+                                       },
+                                       new Node.PropertySet (
+                                           "expert", 
+                                           FormEditor.getFormBundle().getString("CTL_ExpertTab"),
+                                           FormEditor.getFormBundle().getString("CTL_ExpertTabHint")
+                                       ) {
+                                           public Node.Property[] getProperties () {
+                                               return getComponentExpertProperties ();
+                                           }
+                                       },
+                                       new Node.PropertySet (
+                                           "events", 
+                                           FormEditor.getFormBundle().getString("CTL_EventsTab"),
+                                           FormEditor.getFormBundle().getString("CTL_EventsTabHint")
+                                       ) {
+                                           public Node.Property[] getProperties () {
+                                               return getComponentEvents ();
+                                           }
+                                       },
+                                       new Node.PropertySet (
+                                           "synthetic", 
+                                           FormEditor.getFormBundle().getString("CTL_SyntheticTab"),
+                                           FormEditor.getFormBundle().getString("CTL_SyntheticTabHint")
+                                       ) {
+                                           public Node.Property[] getProperties () {
+                                               return getSyntheticProperties ();
+                                           }
+                                       },
+                                   };
+            }
+        }
+        return beanPropertySets;
+    }
+
+    
+    public RADComponentNode getNodeReference () {
+        return componentNode;
+    }
+
+    
+    
+
+    public Node.Property[] getSyntheticProperties () {
+        return syntheticProperties;
+    }
+
+    public Node.Property[] getComponentProperties () {
+        return beanProperties;
+    }
+
+    public Node.Property[] getComponentExpertProperties () {
+        return beanExpertProperties;
+    }
+
+    public Node.Property[] getComponentEvents () {
+        return beanEvents;
+    }
+
+    
+    public RADProperty getPropertyByName (String name) {
+        return (RADProperty) nameToProperty.get (name);
+    }
+
+    
+    public Object getDefaultPropertyValue (RADProperty prop) {
+        return defaultPropertyValues.get (prop);
+    }
+
+    
+    
+
+    protected boolean hasDefaultEvent () {
+        return (eventsList.getDefaultEvent () != null);
+    }
+
+    protected void attachDefaultEvent () {
+        EventsList.Event defaultEvt = eventsList.getDefaultEvent ();
+        Vector handlers = defaultEvt.getHandlers();
+        if ( handlers == null || handlers.size() == 0)
+            defaultEvt.createDefaultEventHandler ();
+        defaultEvt.gotoEventHandler ();
+    }
+
+    protected Node.Property[] createSyntheticProperties () {
+        return getFormManager ().getCodeGenerator ().getSyntheticProperties (this);
+    }
+
+    protected Node.Property[] createBeanProperties () {
+        PropertyDescriptor[] props = beanInfo.getPropertyDescriptors ();
+        ArrayList nodeProps = new ArrayList ();
+        for (int i = 0; i < props.length; i++) {
+            if ((!props[i].isHidden ()) && (!props[i].isExpert ())) {
+                Node.Property prop = createProperty (props[i]);
+                nodeProps.add (prop);
+            }
+        }
+
+        Node.Property[] np = new Node.Property [nodeProps.size ()];
+        nodeProps.toArray (np);
+
+        return np;
+    }
+
+    protected Node.Property[] createBeanExpertProperties () {
+        PropertyDescriptor[] props = beanInfo.getPropertyDescriptors ();
+        ArrayList nodeProps = new ArrayList ();
+        for (int i = 0; i < props.length; i++) {
+            if ((!props[i].isHidden ()) && props[i].isExpert ()) {
+                Node.Property prop = createProperty (props[i]);
+                nodeProps.add (prop);
+            }
+        }
+
+        Node.Property[] np = new Node.Property [nodeProps.size ()];
+        nodeProps.toArray (np);
+
+        return np;
+    }
+
+    protected Node.Property[] createEventsProperties () {
+        eventsList = new EventsList (this);
+
+        Node.Property[] nodeEvents = new Node.Property[eventsList.getEventCount ()];
+        int idx = 0;
+        EventsList.EventSet[] eventSets = eventsList.getEventSets ();
+
+        for (int i = 0; i < eventSets.length; i++) {
+            EventsList.Event[] events = eventSets[i].getEvents();
+            for (int j = 0; j < events.length; j++) {
+                Node.Property ep = new EventProperty (events[j]) {
+
+                                       public Object getValue () {
+                                           if (event.getHandlers ().size () == 0)
+                                               lastSelectedHandler = null;
+                                           else
+                                               lastSelectedHandler = ((EventsManager.EventHandler) event.getHandlers ().get (0)).getName ();
+                                           return lastSelectedHandler;
+                                       }
+
+                                       public void setValue (Object val) throws IllegalArgumentException {
+                                           if (val == null)
+                                               return;
+                                           
+                                           if (!(val instanceof HandlerSetChange)) {
+                                               if (val instanceof String) {
+                                                   HandlerSetChange change = new HandlerSetChange ();
+                                                   change.getRenamedNewNames ().add ((String)val);
+                                                   change.getRenamedOldNames ().add ((String) getValue ());
+                                                   val = change;
+                                               }
+                                               else
+                                                   throw new IllegalArgumentException();
+                                           }
+                                           Hashtable handlersByName = new Hashtable ();
+                                           Vector handlers = event.getHandlers ();
+
+                                           for (Iterator it = handlers.iterator (); it.hasNext (); ) {
+                                               EventsManager.EventHandler h = (EventsManager.EventHandler) it.next ();
+                                               handlersByName.put(h.getName (), h);
+                                           }
+
+                                           HandlerSetChange change = (HandlerSetChange) val;
+                                           if (change.hasAdded ()) {
+                                               for (Iterator iter = change.getAdded ().iterator (); iter.hasNext(); ) {
+                                                   String handlerName = (String) iter.next ();
+                                                   if (!Utilities.isJavaIdentifier (handlerName)) {
+                                                       TopManager.getDefault ().notify (new NotifyDescriptor.Message (java.text.MessageFormat.format(FormEditor.getFormBundle().getString("FMT_MSG_InvalidJavaIdentifier"), new Object [] {handlerName}), NotifyDescriptor.ERROR_MESSAGE));
+                                                       continue;
+                                                   }
+                                                   
+                                                   formManager.getEventsManager ().addEventHandler (event, handlerName);
+                                                   EventsManager.EventHandler handler = (EventsManager.EventHandler) event.getHandlers ().get (event.getHandlers ().size () -1);
+                                                   formManager.fireEventAdded (RADComponent.this, handler);
+                                               }
+                                           }
+                                           if (change.hasRenamed ()) {
+                                               for (int k=0, n = change.getRenamedOldNames ().size (); k<n; k++) {
+                                                   String oldName = (String) change.getRenamedOldNames ().get (k);
+                                                   String newName = (String) change.getRenamedNewNames ().get (k);
+                                                   if (!Utilities.isJavaIdentifier (newName)) continue;
+                                                   if (newName.equals (oldName)) continue; 
+                                                   EventsManager.EventHandler handler = (EventsManager.EventHandler) handlersByName.get(oldName);
+                                                   formManager.getEventsManager ().renameEventHandler (handler, newName);
+                                                   formManager.fireEventRenamed (RADComponent.this, handler, oldName);
+                                               }
+                                           }
+                                           if (change.hasRemoved ()) {
+                                               for (Iterator iter = change.getRemoved ().iterator (); iter.hasNext(); ) {
+                                                   EventsManager.EventHandler handler = (EventsManager.EventHandler) handlersByName.get((String) iter.next ());
+                                                   formManager.getEventsManager ().removeEventHandler (event, handler);
+                                                   formManager.fireEventRemoved (RADComponent.this, handler);
+                                               }
+                                           }
+                                           String newSelectedHandler = ""; 
+                                           if (event.getHandlers ().size () >0)
+                                               newSelectedHandler = ((EventsManager.EventHandler) event.getHandlers ().get (0)).getName ();
+                                           getNodeReference ().firePropertyChangeHelper (this.getName (), lastSelectedHandler, newSelectedHandler);
+                                           ((java.beans.PropertyEditorSupport)getPropertyEditor()).firePropertyChange ();
+                                       }
+                                   };
+                nodeEvents[idx++] = ep;
+            }
+        }
+        return nodeEvents;
+
+    }
+
+    
+    void restorePropertyValue (PropertyDescriptor desc, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        setPropertyValue (desc, value);
+        Object defValue = defaultPropertyValues.get (desc.getName ());
+        
+        RADProperty prop = (RADProperty)nameToProperty.get (desc.getName ());
+        if (prop != null)
+            prop.setChanged (true);
+    }
+
+    
+    
+
+    protected Object getPropertyValue (PropertyDescriptor desc) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        if (isChangedValue (desc)) {
+            return getChangedValue (desc);
+        }
+        Method readMethod = desc.getReadMethod ();
+        if (readMethod == null) {
+            throw new IllegalAccessException ();
+        }
+        return readMethod.invoke (getBeanInstance (), new Object[0]);
+    }
+
+    protected void setPropertyValue (PropertyDescriptor desc, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        cacheValue (desc, value);
+
+        
+        if ("enabled".equals (desc.getName ()) || 
+                "visible".equals (desc.getName ())) 
+        {
+            
+            return;
+        }
+
+        Method writeMethod = desc.getWriteMethod ();
+        if (writeMethod == null) {
+            throw new IllegalAccessException ();
+        }
+        Object valueToSet = value;
+        if (value instanceof FormDesignValue) {
+            valueToSet = ((FormDesignValue)value).getDesignValue (RADComponent.this);
+            if (valueToSet == FormDesignValue.IGNORED_VALUE) return; 
+        }
+        writeMethod.invoke (getBeanInstance (), new Object[] { valueToSet });
+    }
+
+    protected Object getIndexedPropertyValue (IndexedPropertyDescriptor desc, int index) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Method readMethod = desc.getIndexedReadMethod ();
+        if (readMethod == null) {
+            throw new IllegalAccessException ();
+        }
+        return readMethod.invoke (getBeanInstance (), new Object[] { new Integer (index) });
+    }
+
+    protected void setIndexedPropertyValue (IndexedPropertyDescriptor desc, int index, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Method writeMethod = desc.getIndexedWriteMethod ();
+        if (writeMethod == null) {
+            throw new IllegalAccessException ();
+        }
+        writeMethod.invoke (getBeanInstance (), new Object[] { new Integer (index), value });
+    }
+
+    protected void cacheValue (PropertyDescriptor desc, Object value) {
+        if (valuesCache == null) {
+            valuesCache = new HashMap (10);
+            editorsCache = new HashMap (10);
+        }
+        valuesCache.put (desc, value);
+    }
+
+    protected boolean isChangedValue (PropertyDescriptor desc) {
+        if (valuesCache == null) {
+            return false;
+        }
+        return valuesCache.containsKey (desc);
+    }
+
+    protected Object getChangedValue (PropertyDescriptor desc) {
+        if (valuesCache == null) {
+            throw new InternalError ();
+        }
+        return valuesCache.get (desc);
+    }
+
+    
+    
+
+    public java.lang.String toString () {
+        return super.toString () + ", name: "+getName ()+", class: "+getBeanClass ()+", beaninfo: "+getBeanInfo () + ", instance: "+getBeanInstance (); 
+    }
+
+    public void debugChangedValues () {
+        if (System.getProperty ("netbeans.debug.form.full") != null) { 
+            System.out.println("-- debug.form: Changed property values in: "+this+" -------------------------"); 
+            for (java.util.Iterator it = nameToProperty.values ().iterator (); it.hasNext ();) {
+                RADProperty prop = (RADProperty)it.next ();
+                if (prop.isChanged ()) {
+                    PropertyDescriptor desc = prop.getPropertyDescriptor ();
+                    try {
+                        System.out.println("Changed Property: "+desc.getName ()+", value: "+prop.getValue ()); 
+                    } catch (Exception e) {
+                        
+                    }
+                }
+            }
+            System.out.println("--------------------------------------------------------------------------------------"); 
+        }
+    }
+
+    
+    
+
+    public void notifyPropertiesChange () {
+        if (componentNode != null) componentNode.notifyPropertiesChange ();
+    }
+
+    public interface RADProperty {
+        public String getName ();
+        public PropertyDescriptor getPropertyDescriptor ();
+        public PropertyEditor getPropertyEditor ();
+        public PropertyEditor getCurrentEditor ();
+        public PropertyEditor getExpliciteEditor ();
+        public void setCurrentEditor (PropertyEditor editor);
+        public RADComponent getRADComponent ();
+        public boolean canRead ();
+        public Object getValue () throws IllegalAccessException, IllegalArgumentException, InvocationTargetException;
+        public boolean canWrite ();
+        public void setValue (Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException;
+        public boolean supportsDefaultValue ();
+        public void restoreDefaultValue ();
+        public Object getDefaultValue ();
+
+        public String getPreCode ();
+        public String getPostCode ();
+        public void setPreCode (String value);
+        public void setPostCode (String value);
+
+        public boolean isChanged ();
+        public void setChanged (boolean value);
+    }
+
+    private Node.Property createProperty (final PropertyDescriptor desc) {
+        Node.Property prop;
+        if (desc instanceof IndexedPropertyDescriptor) {
+            prop = new RADIndexedPropertyImpl ((IndexedPropertyDescriptor)desc);
+        } else {
+            prop = new RADPropertyImpl (desc);
+        }
+
+        prop.setName (desc.getName ());
+        prop.setDisplayName (desc.getDisplayName ());
+        prop.setShortDescription (desc.getShortDescription ());
+
+        nameToProperty.put (desc.getName (), prop);
+        return prop;
+    }
+
+    class RADPropertyImpl extends Node.Property implements RADProperty {
+        private PropertyEditor currentPropertyEditor;
+        private PropertyDescriptor desc;
+        String preCode = null;                      
+        String postCode = null;                     
+        boolean changed = false;
+
+        RADPropertyImpl (PropertyDescriptor desc) {
+            super (desc.getPropertyType ());
+            this.desc = desc;
+        }
+
+        public PropertyDescriptor getPropertyDescriptor () {
+            return desc;
+        }
+
+        public RADComponent getRADComponent () {
+            return RADComponent.this;
+        }
+
+        public PropertyEditor getCurrentEditor () {
+            if (currentPropertyEditor == null) {
+                currentPropertyEditor = findDefaultEditor (desc);
+            }
+            return currentPropertyEditor;
+        }
+
+        public void setCurrentEditor (PropertyEditor value) {
+            currentPropertyEditor = value;
+        }
+
+        
+        public boolean canRead () {
+            return (desc.getReadMethod () != null);
+        }
+
+        
+        public Object getValue () throws
+            IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            return getPropertyValue (desc);
+        }
+
+        
+        public boolean canWrite () {
+            return (desc.getWriteMethod () != null);
+        }
+
+        
+        public void setValue (Object val) throws IllegalAccessException,
+            IllegalArgumentException, InvocationTargetException {
+            Object old = null;
+
+            if (canRead ()) {
+                try {
+                    old = getValue ();
+                } catch (IllegalArgumentException e) {  
+                } catch (IllegalAccessException e) {    
+                } catch (InvocationTargetException e) { 
+                }
+            }
+
+            if (old == val) return; 
+            if ((old != null) && (val != null) && (val.equals (old))) return; 
+
+            try {
+                setPropertyValue (desc, val);
+            } catch (IllegalArgumentException e) {  
+            } catch (IllegalAccessException e) {    
+            } catch (InvocationTargetException e) { 
+            }
+
+
+            boolean isChanged = false;
+            if (defaultPropertyValues.containsKey (desc.getName ())) { 
+                Object defValue = defaultPropertyValues.get (desc.getName ());
+                isChanged = !Utilities.compareObjects (defValue, val);
+            } else { 
+                isChanged = true;
+            }
+            setChanged (isChanged);
+
+            debugChangedValues ();
+
+            getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), old, val);
+            if (componentNode != null) componentNode.firePropertyChangeHelper (RADPropertyImpl.this.getName (), old, val);
+
+            if (RADComponent.this instanceof RADVisualComponent) {
+                if (beanInstance instanceof javax.swing.JComponent) {
+                    ((javax.swing.JComponent)beanInstance).repaint ();
+                    ((javax.swing.JComponent)beanInstance).revalidate ();
+                } else {
+                    java.awt.Container cc = ((java.awt.Component)beanInstance).getParent ();
+                    if ((cc != null) && (cc.getParent () != null)) {
+                        cc.getParent ().validate ();
+                    }
+                }
+            }
+        }
+
+        
+        public boolean supportsDefaultValue () {
+            return defaultPropertyValues.containsKey (desc.getName ()); 
+        }
+
+        
+        public void restoreDefaultValue () {
+            
+            setChanged (false);
+
+            Object old = null;
+
+            if (canRead ()) {
+                try {
+                    old = getValue ();
+                } catch (IllegalArgumentException e) {  
+                } catch (IllegalAccessException e) {    
+                } catch (InvocationTargetException e) { 
+                }
+            }
+
+            
+            if (defaultPropertyValues.containsKey (desc.getName ())) { 
+                Object def = defaultPropertyValues.get (desc.getName ());
+                try {
+                    setValue (def);
+                } catch (IllegalAccessException e) {
+                    
+                } catch (IllegalArgumentException e) {
+                    
+                } catch (InvocationTargetException e) {
+                    
+                }
+                getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), old, def);
+                notifyPropertiesChange ();
+                if (componentNode != null) componentNode.firePropertyChangeHelper (RADPropertyImpl.this.getName (), old, def);
+            }
+            
+        }
+
+        public Object getDefaultValue () {
+            return defaultPropertyValues.get (desc.getName ());
+        }
+
+        
+        public PropertyEditor getPropertyEditor () {
+            
+            
+            if (!getFormManager ().getFormEditorSupport ().supportsAdvancedFeatures ()) {
+                PropertyEditor prEd = findDefaultEditor (desc);
+                if (prEd instanceof FormAwareEditor) {
+                    ((FormAwareEditor)prEd).setRADComponent (RADComponent.this, RADPropertyImpl.this);
+                }
+                if (prEd instanceof org.openide.explorer.propertysheet.editors.NodePropertyEditor) {
+                    ((org.openide.explorer.propertysheet.editors.NodePropertyEditor)prEd).attach (new org.openide.nodes.Node[] { getNodeReference () });
+                }
+                return prEd;
+            }
+            
+            PropertyEditor defaultEditor = findDefaultEditor (desc);
+            FormPropertyEditor editor = null;
+            if (defaultEditor != null) {
+                editor = new FormPropertyEditor (RADComponent.this, desc.getPropertyType (), RADPropertyImpl.this);
+            }
+            return editor;
+        }
+
+        public PropertyEditor getExpliciteEditor () {
+            if (desc.getPropertyEditorClass () != null) {
+                try {
+                    return (PropertyEditor) desc.getPropertyEditorClass ().newInstance ();
+                } catch (Exception ex) {
+                    if (System.getProperty ("netbeans.debug.exceptions") != null) ex.printStackTrace (); 
+                }
+            }
+            return null;
+        }
+
+        private PropertyEditor findDefaultEditor (PropertyDescriptor desc) {
+            PropertyEditor defaultEditor = getExpliciteEditor ();
+            if (defaultEditor == null) {
+                return FormPropertyEditorManager.findEditor (desc.getPropertyType ());
+            } else {
+                return defaultEditor;
+            }
+        }
+
+        public String getPreCode () {
+            return preCode;
+        }
+
+        public void setPreCode (String value) {
+            preCode = value;
+            getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), null, null);
+        }
+
+        public String getPostCode () {
+            return postCode;
+        }
+
+        public void setPostCode (String value) {
+            postCode = value;
+            getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), null, null);
+        }
+
+        public boolean isChanged () {
+            return changed;
+        }
+
+        public void setChanged (boolean value) {
+            changed = value;
+        }
+    }
+
+
+    class RADIndexedPropertyImpl extends Node.IndexedProperty implements RADProperty {
+        private PropertyEditor currentEditor;
+        private IndexedPropertyDescriptor desc;
+        String preCode = null;                      
+        String postCode = null;                     
+        boolean changed = false;
+
+        RADIndexedPropertyImpl (IndexedPropertyDescriptor desc) {
+            super (getIndexedType (desc), desc.getIndexedPropertyType ());
+            this.desc = desc;
+            currentEditor = findDefaultIndexedEditor (desc);
+        }
+
+        public PropertyDescriptor getPropertyDescriptor () {
+            return desc;
+        }
+
+        public PropertyEditor getCurrentEditor () {
+            return currentEditor;
+        }
+
+        public void setCurrentEditor (PropertyEditor editor) {
+            currentEditor = editor;
+        }
+
+        public RADComponent getRADComponent () {
+            return RADComponent.this;
+        }
+
+        
+        public boolean canRead () {
+            return (desc.getReadMethod () != null);
+        }
+
+        
+        public Object getValue () throws
+            IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            return getPropertyValue (desc);
+        }
+
+        
+        public boolean canWrite () {
+            return (desc.getWriteMethod () != null);
+        }
+
+        
+        public void setValue (Object val) throws IllegalAccessException,
+            IllegalArgumentException, InvocationTargetException {
+            Object old = null;
+
+            if (canRead ()) {
+                try {
+                    old = getValue ();
+                    if (Utilities.compareObjects(old, val)) return; 
+                } catch (IllegalArgumentException e) {  
+                } catch (IllegalAccessException e) {    
+                } catch (InvocationTargetException e) { 
+                }
+            }
+
+
+            try {
+                setPropertyValue (desc, val);
+            } catch (IllegalArgumentException e) {  
+            } catch (IllegalAccessException e) {    
+            } catch (InvocationTargetException e) { 
+            }
+
+            boolean isChanged = false;
+            if (defaultPropertyValues.containsKey (desc.getName ())) { 
+                Object defValue = defaultPropertyValues.get (desc.getName ());
+                isChanged = !Utilities.compareObjects (defValue, val);
+            } else { 
+                isChanged = true;
+            }
+            setChanged (isChanged);
+            debugChangedValues ();
+            getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), old, val);
+            if (componentNode != null) componentNode.firePropertyChangeHelper (RADIndexedPropertyImpl.this.getName (), old, val);
+            if (RADComponent.this instanceof RADVisualComponent) {
+                if (beanInstance instanceof javax.swing.JComponent) {
+                    ((javax.swing.JComponent)beanInstance).repaint ();
+                    ((javax.swing.JComponent)beanInstance).revalidate ();
+                } else {
+                    java.awt.Container cc = ((java.awt.Component)beanInstance).getParent ();
+                    if ((cc != null) && (cc.getParent () != null)) {
+                        cc.getParent ().validate ();
+                    }
+                }
+            }
+        }
+
+        
+        public boolean supportsDefaultValue () {
+            return defaultPropertyValues.containsKey (desc.getName ()); 
+        }
+
+        
+        public void restoreDefaultValue () {
+            
+            setChanged (false);
+
+            Object old = null;
+
+            if (canRead ()) {
+                try {
+                    old = getValue ();
+                } catch (IllegalArgumentException e) {  
+                } catch (IllegalAccessException e) {    
+                } catch (InvocationTargetException e) { 
+                }
+            }
+
+            
+            if (defaultPropertyValues.containsKey (desc.getName ())) { 
+                Object def = defaultPropertyValues.get (desc.getName ());
+                try {
+                    setValue (def);
+                } catch (IllegalAccessException e) {
+                    
+                } catch (IllegalArgumentException e) {
+                    
+                } catch (InvocationTargetException e) {
+                    
+                }
+                getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), old, def);
+                if (componentNode != null) componentNode.firePropertyChangeHelper (RADIndexedPropertyImpl.this.getName (), old, def);
+            }
+            
+        }
+
+        public Object getDefaultValue () {
+            return defaultPropertyValues.get (desc.getName ());
+        }
+
+        
+        public PropertyEditor getPropertyEditor () {
+            
+            
+            if (!getFormManager ().getFormEditorSupport ().supportsAdvancedFeatures ()) {
+                PropertyEditor prEd = findDefaultIndexedEditor (desc);
+                if (prEd instanceof FormAwareEditor) {
+                    ((FormAwareEditor)prEd).setRADComponent (RADComponent.this, RADIndexedPropertyImpl.this);
+                }
+                if (prEd instanceof org.openide.explorer.propertysheet.editors.NodePropertyEditor) {
+                    ((org.openide.explorer.propertysheet.editors.NodePropertyEditor)prEd).attach (new org.openide.nodes.Node[] { getNodeReference () });
+                }
+                return prEd;
+            }
+
+            
+
+            PropertyEditor defaultEditor = findDefaultIndexedEditor (desc);
+            FormPropertyEditor editor = null;
+            if (defaultEditor != null) {
+                editor = new FormPropertyEditor (RADComponent.this, desc.getIndexedPropertyType (), RADIndexedPropertyImpl.this);
+            }
+            return editor;
+        }
+
+        public PropertyEditor getExpliciteEditor () {
+            if (desc.getPropertyEditorClass () != null) {
+                try {
+                    return (PropertyEditor) desc.getPropertyEditorClass ().newInstance ();
+                } catch (Exception ex) {
+                    if (System.getProperty ("netbeans.debug.exceptions") != null) ex.printStackTrace (); 
+                }
+            }
+            return null;
+        }
+
+        private PropertyEditor findDefaultIndexedEditor (IndexedPropertyDescriptor desc) {
+            PropertyEditor defaultEditor = getExpliciteEditor ();
+            if (defaultEditor == null) {
+                return FormPropertyEditorManager.findEditor (desc.getIndexedPropertyType ());
+            } else {
+                return defaultEditor;
+            }
+        }
+
+        
+        public boolean canIndexedRead () {
+            return (desc.getIndexedReadMethod () != null);
+        }
+
+        
+        public Object getIndexedValue (int index) throws
+            IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            return null;
+            
+        }
+
+        
+        public boolean canIndexedWrite () {
+            return (desc.getIndexedWriteMethod () != null);
+        }
+
+        
+        public void setIndexedValue (int indx, Object val) throws
+            IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            
+        }
+
+        
+        
+        
+        
+
+        public String getPreCode () {
+            return preCode;
+        }
+
+        public void setPreCode (String value) {
+            preCode = value;
+            getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), null, null);
+        }
+
+        public String getPostCode () {
+            return postCode;
+        }
+
+        public void setPostCode (String value) {
+            postCode = value;
+            getFormManager ().firePropertyChanged (RADComponent.this, desc.getName (), null, null);
+        }
+
+        public boolean isChanged () {
+            return changed;
+        }
+
+        public void setChanged (boolean value) {
+            changed = value;
+        }
+    }
+
+    
+    private static Class getIndexedType (IndexedPropertyDescriptor desc) {
+        Class valueType = desc.getPropertyType ();
+        if (valueType == null) {
+            try {
+                valueType = org.openide.TopManager.getDefault ().currentClassLoader ().loadClass (
+                                "[L" + desc.getIndexedPropertyType ().getName () + ";" 
+                            );
+            } catch (Exception e) {
+                valueType = Object[].class;
+            }
+        }
+        return valueType;
+    }
+
+
+    abstract class EventProperty extends PropertySupport.ReadWrite {
+        EventsList.Event event;
+        String lastSelectedHandler;
+
+        EventProperty (EventsList.Event event) {
+            super (FormEditor.EVENT_PREFIX + event.getName(),
+                   String.class,
+                   event.getName(),
+                   event.getName());
+            this.event = event;
+        }
+
+        
+        public java.beans.PropertyEditor getPropertyEditor () {
+            return new EventEditor ();
+        }
+
+        class HandlerSetChange {
+            boolean hasAdded () {
+                return (added !=null && added.size()>0);
+            }
+            boolean hasRemoved () {
+                return (removed !=null && removed.size()>0);
+            }
+            boolean hasRenamed () {
+                return (renamedOldName !=null && renamedOldName.size()>0);
+            }
+            Vector getAdded () {
+                if (added == null) added = new Vector ();
+                return added;
+            }
+            Vector getRemoved () {
+                if (removed == null) removed = new Vector ();
+                return removed;
+            }
+            Vector getRenamedOldNames () {
+                if (renamedOldName == null) renamedOldName = new Vector ();
+                return renamedOldName;
+            }
+            Vector getRenamedNewNames () {
+                if (renamedNewName == null) renamedNewName = new Vector ();
+                return renamedNewName;
+            }
+            private Vector added;
+            private Vector removed;
+            private Vector renamedOldName;
+            private Vector renamedNewName;
+        }
+
+        class EventEditor extends PropertyEditorSupport implements EnhancedPropertyEditor {
+            public String getAsText () {
+                if (getValue () == null)
+                    return FormEditor.getFormBundle().getString("CTL_NoEvent");
+                else
+                    return (String) getValue ();
+            }
+
+            public void setAsText (String selected) {
+                HandlerSetChange change = new HandlerSetChange ();
+                if (getValue () == null) {               
+                    change.getAdded ().add (selected);
+                } else {                                 
+                    change.getRenamedNewNames ().add (selected);
+                    change.getRenamedOldNames ().add (getAsText ());
+                }
+                setValue (change);
+            }
+
+            public boolean supportsEditingTaggedValues () {
+                return false;
+            }
+            
+            public java.awt.Component getInPlaceCustomEditor () {
+                if (formManager.getFormEditorSupport ().supportsAdvancedFeatures ()) {
+                    final javax.swing.JComboBox eventCombo = new javax.swing.JComboBox ();
+                    eventCombo.setEditable (true);
+
+                    Vector handlers = event.getHandlers ();
+                    if (handlers.size () == 0) {
+                        eventCombo.getEditor().setItem(FormUtils.getDefaultEventName (RADComponent.this, event.getListenerMethod ()));
+                    } else {
+                        for (int i=0, n=handlers.size(); i<n; i++) {
+                            eventCombo.addItem (((EventsManager.EventHandler) handlers.get(i)).getName ()); 
+                        }
+                    }
+
+                    eventCombo.addActionListener(new java.awt.event.ActionListener () {
+                                                     public void actionPerformed (java.awt.event.ActionEvent e) {
+                                                         String selected = (String) eventCombo.getEditor().getItem();
+                                                         lastSelectedHandler = selected;
+                                                         event.gotoEventHandler (selected);
+                                                     }
+                                                 }
+                                                );
+                    eventCombo.addFocusListener (new java.awt.event.FocusAdapter () {
+                                                     public void focusGained (java.awt.event.FocusEvent evt) {
+                                                         Vector hand = event.getHandlers ();
+                                                         eventCombo.removeAllItems ();
+                                                         if (hand.size () == 0) {
+                                                             eventCombo.getEditor().setItem(FormUtils.getDefaultEventName (RADComponent.this, event.getListenerMethod ()));
+                                                         } else {
+                                                             for (int i=0, n=hand.size(); i<n; i++) {
+                                                                 eventCombo.addItem (((EventsManager.EventHandler) hand.get(i)).getName ());
+                                                             }
+                                                         }
+                                                     }
+                                                 }
+                                                );
+                    eventCombo.getEditor().addActionListener(new java.awt.event.ActionListener () {
+                                public void actionPerformed (java.awt.event.ActionEvent e) {
+                                    String selected = (String) eventCombo.getEditor().getItem();
+                                    lastSelectedHandler = selected;
+                                    boolean isNew = true;
+                                    String items[] = new String[eventCombo.getItemCount()];
+                                    for (int i=0, n=eventCombo.getItemCount(); i<n; i++) {
+                                        items[i] = (String) eventCombo.getItemAt(i);
+                                        if(eventCombo.getItemAt(i).equals(selected)) {
+                                            isNew = false;
+                                        }
+                                    }
+                                    if(isNew) {
+                                        HandlerSetChange change = new HandlerSetChange ();
+                                        change.getAdded ().add (selected);
+                                        setValue (change);
+                                        eventCombo.addItem(selected);
+                                    }
+                                    event.gotoEventHandler (selected);
+                                }
+                            }
+                                                            );
+                    return eventCombo;
+                } else {
+                    final JTextField eventField = new JTextField ();
+                    Vector handlers = event.getHandlers ();
+                    if (handlers.size () == 0) {
+                        eventField.setText (FormUtils.getDefaultEventName (RADComponent.this, event.getListenerMethod ()));
+                    } else {
+                        eventField.setText (((EventsManager.EventHandler) handlers.get(0)).getName ());
+                    }
+                    eventField.addActionListener (new java.awt.event.ActionListener () {
+                                                      public void actionPerformed (java.awt.event.ActionEvent e) {
+                                                          setAsText (eventField.getText ());
+                                                      }
+                                                  }
+                                                 );
+                    return eventField;
+                }
+            }
+
+            
+            public boolean hasInPlaceCustomEditor () {
+                return true;
+            }
+
+            public boolean supportsCustomEditor () {
+                return formManager.getFormEditorSupport ().supportsAdvancedFeatures ();
+            }
+
+            public java.awt.Component getCustomEditor () {
+                final EventCustomEditor ed = new EventCustomEditor (EventProperty.this);
+                DialogDescriptor dd = new DialogDescriptor (ed,
+                                      java.text.MessageFormat.format(FormEditor.getFormBundle().getString("FMT_MSG_HandlersFor"), new Object [] {event.getName ()}),
+                                      true,
+                                      new java.awt.event.ActionListener () {
+                                          public void actionPerformed (java.awt.event.ActionEvent evt) {
+                                              if (evt.getSource().equals(DialogDescriptor.OK_OPTION)) {
+                                                  ed.doChanges ();
+                                              }
+                                          }
+                                      }
+                                                           );
+                return TopManager.getDefault ().createDialog (dd);
+            }
+        }
+    }
+}
+
+

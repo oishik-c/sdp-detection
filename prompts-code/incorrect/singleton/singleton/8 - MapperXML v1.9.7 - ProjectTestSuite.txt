@@ -1,0 +1,54 @@
+Given the following java code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package test;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+
+
+public class ProjectTestSuite extends TestCase {
+
+  public ProjectTestSuite(String _name) {
+    super(_name);
+  }
+
+  public static Test suite() {
+    TestSuite theSuite = new TestSuite();
+    theSuite.addTestSuite(com.taursys.dom.test.DOM_1_20000929_DocumentAdapterTest.class);
+    theSuite.addTestSuite(com.taursys.html.test.HTMLComponentFactoryTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.DefaultSelectModelTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.DefaultTextModelTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.ObjectArrayValueHolderTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.PropertyAccessorTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.VOCollectionValueHolderTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.VOValueHolderTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.VariantValueHolderTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.DefaultCheckboxModelTest.class);
+    theSuite.addTestSuite(com.taursys.model.test.VOComparatorTest.class);
+    theSuite.addTestSuite(com.taursys.servlet.test.ServletParameterDispatcherTest.class);
+    theSuite.addTestSuite(com.taursys.servlet.test.ServletFormFactoryTest.class);
+    theSuite.addTestSuite(com.taursys.servlet.test.ServletInputDispatcherTest.class);
+    theSuite.addTestSuite(com.taursys.servlet.test.ServletTriggerDispatcherTest.class);
+    theSuite.addTestSuite(com.taursys.servlet.test.HttpMultiPartServletRequestTest.class);
+    theSuite.addTestSuite(com.taursys.servlet.test.ServletFormTest.class);
+    theSuite.addTestSuite(com.taursys.tools.util.test.ClassPathTest.class);
+    theSuite.addTestSuite(com.taursys.xml.event.test.ParameterDispatcherTest.class);
+    theSuite.addTestSuite(com.taursys.xml.event.test.InputDispatcherTest.class);
+    theSuite.addTestSuite(com.taursys.xml.event.test.TriggerDispatcherTest.class);
+    theSuite.addTestSuite(com.taursys.xml.test.ParameterTest.class);
+    theSuite.addTestSuite(com.taursys.xml.test.SelectFieldTest.class);
+    theSuite.addTestSuite(com.taursys.xml.test.CheckboxFieldTest.class);
+    return theSuite;
+  }
+
+  
+  public static void main(String[] argv) {
+    String[] testCaseList = {ProjectTestSuite.class.getName()};
+    junit.swingui.TestRunner.main(testCaseList);
+  }
+}

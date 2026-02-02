@@ -1,0 +1,152 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.xml;
+
+import java.util.ArrayList;
+import java.util.EventObject;
+import com.taursys.dom.DocumentAdapter;
+import java.util.Iterator;
+import com.taursys.xml.event.*;
+import java.util.HashMap;
+
+
+public abstract class Container extends Component {
+  private ArrayList components = new ArrayList();
+  private HashMap dispatchers = new HashMap();
+
+  
+  public Container() {
+  }
+
+  
+  
+  
+
+  
+  public void add(Component c) {
+    if (!components.contains(c)) {
+      
+      if (c.parent != null)
+        c.parent.remove(c);
+      
+      components.add(c);
+      c.parent = this;
+      c.addNotify();
+    }
+  }
+
+  
+  public void remove(Component c) {
+    c.removeNotify();
+    components.remove(c);
+    c.parent = null;
+  }
+
+  
+  public boolean contains(Component c) {
+    
+    if (components.contains(c))
+      return true;
+    
+    Iterator iter = components.iterator();
+    while (iter.hasNext()) {
+      Object item = iter.next();
+      if (item instanceof Container) {
+        if (((Container)item).contains(c))
+          return true;
+      }
+    }
+    return false;
+  }
+
+  
+  public DocumentComponent get(String id) {
+    if (id == null)
+      return null;
+    Iterator iter = components.iterator();
+    while (iter.hasNext()) {
+      Object item = iter.next();
+      if (item instanceof DocumentComponent)
+        if (id.equals(((DocumentComponent)item).getId()))
+          return (DocumentComponent)item;
+      if (item instanceof Container) {
+        DocumentComponent dc = ((Container)item).get(id);
+        if (dc != null)
+          return dc;
+      }
+    }
+    return null;
+  }
+
+  
+  public Component[] getComponents() {
+    return (Component[])components.toArray(new Component[]{});
+  }
+
+  
+  
+  
+
+  
+  public DocumentAdapter getDocumentAdapter() {
+    if (this.parent != null)
+      return parent.getDocumentAdapter();
+    else
+      return null;
+  }
+
+  
+  
+  
+
+  
+  public void addDispatcher(String eventType, Dispatcher d) {
+    dispatchers.put(eventType, d);
+  }
+
+  
+  public void removeDispatcher(String eventType) {
+    dispatchers.remove(eventType);
+  }
+
+  
+  public Dispatcher getDispatcher(String eventType) {
+    Dispatcher d = (Dispatcher)dispatchers.get(eventType);
+    if (d == null && parent != null)
+      d = parent.getDispatcher(eventType);
+    return d;
+  }
+
+  
+  
+  
+
+  
+  public Dispatcher getParameterDispatcher() {
+    return getDispatcher(ParameterEvent.class.getName());
+  }
+
+  
+  public Dispatcher getInputDispatcher() {
+    return getDispatcher(InputEvent.class.getName());
+  }
+
+  
+  public Dispatcher getTriggerDispatcher() {
+    return getDispatcher(TriggerEvent.class.getName());
+  }
+
+  
+  public RenderDispatcher getRenderDispatcher() {
+    return (RenderDispatcher)getDispatcher(RenderEvent.class.getName());
+  }
+
+  
+  public RecycleDispatcher getRecycleDispatcher() {
+    return (RecycleDispatcher)getDispatcher(RecycleEvent.class.getName());
+  }
+}

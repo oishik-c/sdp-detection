@@ -1,0 +1,30 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.uml.refactor.SignatureUpdateAdapter {
+- ExtractMethodDialog emd
++ <<Create>> SignatureUpdateAdapter(ExtractMethodDialog)
++ void intervalAdded(ListDataEvent)
++ void intervalRemoved(ListDataEvent)
++ void contentsChanged(ListDataEvent)
++ void actionPerformed(ActionEvent)
++ void focusGained(FocusEvent)
++ void focusLost(FocusEvent)
++ void valueChanged(ListSelectionEvent)
++ void insertUpdate(DocumentEvent)
++ void removeUpdate(DocumentEvent)
++ void changedUpdate(DocumentEvent)
+}
+
+
+
+
+javax.swing.event.ListDataListener <|.. org.acm.seguin.uml.refactor.SignatureUpdateAdapter
+java.awt.event.ActionListener <|.. org.acm.seguin.uml.refactor.SignatureUpdateAdapter
+java.awt.event.FocusListener <|.. org.acm.seguin.uml.refactor.SignatureUpdateAdapter
+javax.swing.event.ListSelectionListener <|.. org.acm.seguin.uml.refactor.SignatureUpdateAdapter
+javax.swing.event.DocumentListener <|.. org.acm.seguin.uml.refactor.SignatureUpdateAdapter
+@enduml

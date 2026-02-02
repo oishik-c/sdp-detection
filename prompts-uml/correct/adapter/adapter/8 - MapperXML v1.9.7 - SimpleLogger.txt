@@ -1,0 +1,35 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.debug.SimpleLogger {
+- int level
++ <<Create>> SimpleLogger()
++ <<Create>> SimpleLogger(int)
++ void debug(Object)
++ void debug(Object,Throwable)
++ void info(Object)
++ void info(Object,Throwable)
++ void warn(Object)
++ void warn(Object,Throwable)
++ void error(Object)
++ void error(Object,Throwable)
++ void fatal(Object)
++ void fatal(Object,Throwable)
++ boolean isDebugEnabled()
++ boolean isInfoEnabled()
++ boolean isEnabledFor(int)
++ void log(int,Object)
++ void log(int,Object,Throwable)
++ void setLevel(int)
++ int getLevel()
+- void printMessage(int,Object)
+}
+
+
+
+
+com.taursys.debug.LoggerAdapter <|.. com.taursys.debug.SimpleLogger
+@enduml

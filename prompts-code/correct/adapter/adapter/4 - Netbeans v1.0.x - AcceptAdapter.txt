@@ -1,0 +1,223 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.search;
+
+import java.util.*;
+
+import org.openidex.search.*;
+import org.openide.nodes.*;
+
+
+
+public class SearchTaskImpl extends SearchTask {
+
+    
+
+
+    
+    private Vector threads;
+    private volatile boolean stop = false;
+    private ThreadGroup group;
+
+    
+    private Node[] nodes;
+    private SearchType[] types;
+    private NodeAcceptor na;
+
+    
+    private Vector found = new Vector();
+
+    private final boolean TRACE = false;
+
+    
+    public SearchTaskImpl(Node[] nodes, SearchType[] types, NodeAcceptor na) {
+
+        super(org.openide.util.Task.EMPTY);
+
+        group = new ThreadGroup("Search group"); 
+        group.setDaemon(true);
+        group.setMaxPriority(3);
+
+        threads = new Vector();
+
+        this.nodes = nodes;
+        this.types = types;
+
+        this.na = na;
+    }
+
+    
+    public void run() {
+
+        t("run()"); 
+
+        try {
+
+            
+            
+            HashMap scannerInstances = new HashMap();
+
+            if (types == null) return;
+
+            
+
+            for (int i = 0; i<types.length; i++) {
+
+                try {
+                    Class clzz = types[i].getScannerClass();
+
+                    if ( ! scannerInstances.containsKey(clzz) ) {
+                        scannerInstances.put(clzz, clzz.newInstance());
+                    }
+
+                    ((Scanner) scannerInstances.get(clzz)).add(types[i]);
+
+                } catch (InstantiationException ex) {
+                    
+                } catch (IllegalAccessException ex) {
+                    
+                }
+            }
+
+
+            AcceptAdapter adapter = new AcceptAdapter(na);
+            SearchResultIntersection intersector =
+                new SearchResultIntersection(adapter , scannerInstances.size());
+
+            Iterator it = scannerInstances.values().iterator();
+            while (it.hasNext()) {
+                Scanner next = (Scanner) it.next();
+
+                t("scanner: " + next); 
+                ScannerThread thread = new ScannerThread(next, nodes);
+                try {
+                    next.addScannerListener(intersector);
+
+                    Thread t = new Thread(group, thread, next.toString());
+                    t.start();
+                    threads.add(t);
+
+                } catch (TooManyListenersException ex) {
+                    
+                }
+
+            }
+
+
+            
+
+            Iterator tit = threads.iterator();
+            while (tit.hasNext()) {
+                Thread next = (Thread) tit.next();
+
+                try {
+                    next.join(stop ? 1:0);
+                } catch (InterruptedException ex) {
+                    
+                }
+
+                if (next.isAlive()) {
+                    next.setPriority(1);
+                }
+            }
+
+        } finally {
+            notifyFinished();
+            notifyStop();
+            t("done."); 
+        }
+    }
+
+    
+    public void stop() {
+
+        t("stop()"); 
+
+        try {
+            group.interrupt();
+            group.setMaxPriority(1);
+            group.setDaemon(true);
+        } catch (Exception ex) {
+            
+            
+        } finally {
+            notifyStop();
+        }
+    }
+
+    
+    public Node[] getResult() {
+        waitStop();
+        return (Node[]) found.toArray();
+    }
+
+    
+    private synchronized void waitStop() {
+        try {
+            while (!stop) wait();
+        } catch (InterruptedException ex) {
+            
+        }
+    }
+
+    
+    private synchronized void notifyStop() {
+        stop = true;
+        notifyAll();
+    }
+
+    
+    private class ScannerThread implements Runnable {
+        private Node[] nodes;
+        private Scanner scanner;
+
+        
+        public ScannerThread(Scanner scanner, Node[] nodes) {
+            this.scanner = scanner;
+            this.nodes = nodes;
+        }
+
+        public void run() {
+            scanner.scan(nodes);
+        }
+    }
+
+
+    
+    private class AcceptAdapter implements ScannerListener {
+
+        private final NodeAcceptor acceptor;
+
+        public AcceptAdapter(NodeAcceptor acceptor) {
+            this.acceptor = acceptor;
+        }
+
+        
+        public void scannerFound(ScannerEvent event) throws InterruptedException {
+            if (stop)
+                throw new InterruptedException();
+
+            
+            if (acceptor != null) {
+                acceptor.acceptNodes(event.getFound());
+            }
+
+            found.addAll(Arrays.asList(event.getFound()));
+        }
+    }
+
+    private void t(String msg) {
+        if (TRACE)
+            System.err.println("SearchTaskI " + msg);
+    }
+
+}
+
+
+ 
+

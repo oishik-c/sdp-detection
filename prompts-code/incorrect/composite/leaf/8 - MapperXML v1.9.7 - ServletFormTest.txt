@@ -1,0 +1,48 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package com.taursys.servlet.test;
+
+import junit.framework.TestCase;
+import com.taursys.servlet.*;
+import java.util.*;
+
+
+public class ServletFormTest extends TestCase {
+
+  public ServletFormTest(String _name) {
+    super(_name);
+  }
+
+  
+  protected void setUp() {
+  }
+
+  
+  protected void tearDown() {
+  }
+
+  
+  public void testCreateParameterMap() {
+    ServletForm form = new ServletForm();
+    TestHttpServletRequest request = new TestHttpServletRequest();
+    request.addParameter("name", "Marty");
+    request.addParameter("colors", new String[] {"red","yellow", "green"});
+    form.setRequest(request);
+    Map map = form.createParameterMap();
+    String[] values = (String[])map.get("name");
+    assertEquals("name", "Marty", values[0]);
+    values = (String[])map.get("colors");
+    assertEquals("color 1", "red", values[0]);
+    assertEquals("color 2", "yellow", values[1]);
+    assertEquals("color 3", "green", values[2]);
+  }
+
+  
+  public static void main(String[] argv) {
+    String[] testCaseList = {ServletFormTest.class.getName()};
+    junit.swingui.TestRunner.main(testCaseList);
+  }
+}

@@ -1,0 +1,82 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.core.FSPoolNode {
+~ {static} long serialVersionUID
+- {static} FSPoolNode fsPoolNode
+- <<Create>> FSPoolNode(DSMap)
++ HelpCtx getHelpCtx()
+- {static} FSPoolNode createFSPoolNode()
++ {static} FSPoolNode getFSPoolNode()
+- void init()
++ Handle getHandle()
++ SystemAction[] createActions()
++ NewType[] getNewTypes()
+# void createPasteTypes(Transferable,List)
++ void fileSystemAdded(RepositoryEvent)
++ void fileSystemRemoved(RepositoryEvent)
++ void fileSystemPoolReordered(RepositoryReorderedEvent)
+~ void refresh()
+~ void refresh(FileSystem)
+}
+
+
+class org.netbeans.core.FSPoolNode$FSNHandle {
+~ {static} long serialVersionUID
++ Node getNode()
+}
+
+
+class org.netbeans.core.FSPoolNode$FSNode {
+- FileSystem fs
++ <<Create>> FSNode(FileSystem)
++ HelpCtx getHelpCtx()
++ void propertyChange(PropertyChangeEvent)
+# void createProperties(Object,BeanInfo)
++ boolean canDestroy()
++ boolean canCut()
++ void destroy()
++ Transferable clipboardCut()
++ SystemAction[] getActions()
++ Node.Cookie getCookie(Class)
+}
+
+
+class org.netbeans.core.FSPoolNode$DSMap {
+# Node[] createNodes(Object)
++ void refresh(FileSystem)
+}
+
+class org.netbeans.core.FSPoolNode$Index {
++ Node[] getNodes()
++ int getNodesCount()
++ void reorder(int[])
+}
+
+class org.netbeans.core.FSPoolNode$Paste {
+- InstanceCookie cookie
++ <<Create>> Paste(InstanceCookie)
++ String getName()
++ Transferable paste()
+}
+
+
+
+
+org.openide.filesystems.RepositoryListener <|.. org.netbeans.core.FSPoolNode
+org.netbeans.core.AbstractNode <|-- org.netbeans.core.FSPoolNode
+org.netbeans.core.FSPoolNode +.. org.netbeans.core.FSPoolNode$FSNHandle
+org.netbeans.core.Handle <|.. org.netbeans.core.FSPoolNode$FSNHandle
+org.netbeans.core.FSPoolNode +.. org.netbeans.core.FSPoolNode$FSNode
+org.netbeans.core.PropertyChangeListener <|.. org.netbeans.core.FSPoolNode$FSNode
+org.netbeans.core.BeanNode <|-- org.netbeans.core.FSPoolNode$FSNode
+org.netbeans.core.FSPoolNode +.. org.netbeans.core.FSPoolNode$DSMap
+org.netbeans.core.Keys <|-- org.netbeans.core.FSPoolNode$DSMap
+org.netbeans.core.FSPoolNode +.. org.netbeans.core.FSPoolNode$Index
+org.netbeans.core.Support <|-- org.netbeans.core.FSPoolNode$Index
+org.netbeans.core.FSPoolNode +.. org.netbeans.core.FSPoolNode$Paste
+org.netbeans.core.PasteType <|-- org.netbeans.core.FSPoolNode$Paste
+@enduml

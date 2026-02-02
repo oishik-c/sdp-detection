@@ -1,0 +1,163 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.swing;
+
+import javax.swing.table.*;
+import javax.swing.*;
+import com.taursys.model.*;
+import com.taursys.util.*;
+import javax.swing.event.*;
+import com.taursys.model.event.*;
+import java.util.List;
+import java.util.ArrayList;
+
+
+public class MTableModel extends AbstractTableModel implements ChangeListener {
+  private ListSelectionBinder listSelectionBinder = new ListSelectionBinder();
+  private ListValueHolder listValueHolder;
+  private ArrayList columns = new ArrayList();
+  private javax.swing.ListSelectionModel listSelectionModel;
+
+  
+  public MTableModel() {
+    listValueHolder = createDefaultListValueHolder();
+
+  }
+
+  protected ListValueHolder createDefaultListValueHolder() {
+    return new VOListValueHolder();
+  }
+
+  
+  public void setValueObjectClass(Class newValueObjectClass) {
+    if (listValueHolder != null && listValueHolder instanceof VOListValueHolder) {
+      ((VOListValueHolder)listValueHolder).setValueObjectClass(newValueObjectClass);
+    }
+  }
+
+  
+  public Class getValueObjectClass() {
+    if (listValueHolder != null && listValueHolder instanceof VOListValueHolder) {
+      return ((VOListValueHolder)listValueHolder).getValueObjectClass();
+    } else {
+      return null;
+    }
+  }
+
+  
+  public void setList(List newList) {
+    if (listValueHolder != null && listValueHolder instanceof VOListValueHolder) {
+      ((VOListValueHolder)listValueHolder).setList(newList);
+      listValueHolder.first();
+    }
+  }
+
+  
+  public List getList() {
+    if (listValueHolder != null && listValueHolder instanceof VOListValueHolder) {
+      return ((VOListValueHolder)listValueHolder).getList();
+    } else {
+      return null;
+    }
+  }
+
+
+  public boolean isCellEditable(int parm1, int parm2) {
+    return false;
+  }
+
+  public int getColumnCount() {
+    return columns.size();
+  }
+
+  public String getColumnName(int col) {
+    return (String)columns.get(col);
+  }
+
+  public int findColumn(String columnName) {
+    return columns.indexOf(columnName);
+  }
+
+  public Object getValueAt(int row, int col) {
+    try {
+      return listValueHolder.getPropertyValue((String)columns.get(col), row);
+    } catch (ModelException ex) {
+      return ex.getMessage();
+    }
+  }
+
+  public int getRowCount() {
+    if (listValueHolder == null)
+      return 0;
+    return listValueHolder.getRowCount();
+  }
+
+  public Class getColumnClass(int col) {
+    try {
+      return DataTypes.getClassForType(listValueHolder.getJavaDataType((String)columns.get(col)));
+    } catch (ModelException ex) {
+      return String.class;
+    }
+  }
+
+  public void setListValueHolder(com.taursys.model.ListValueHolder newListValueHolder) {
+    listSelectionBinder.setListValueHolder(newListValueHolder);
+    if (listValueHolder != null)
+      listValueHolder.removeChangeListener(this);
+    listValueHolder = newListValueHolder;
+    listValueHolder.addChangeListener(this);
+    fireTableStructureChanged();
+  }
+
+  public com.taursys.model.ListValueHolder getListValueHolder() {
+    return listValueHolder;
+  }
+
+  public void setListSelectionModel(javax.swing.ListSelectionModel newListSelectionModel) {
+    listSelectionModel = newListSelectionModel;
+    listSelectionBinder.setListSelectionModel(listSelectionModel);
+  }
+
+  public javax.swing.ListSelectionModel getListSelectionModel() {
+    return listSelectionModel;
+  }
+
+  public void setColumnNames(String[] newColumnNames) {
+    columns.clear();
+    columns.addAll(java.util.Arrays.asList(newColumnNames));
+    fireTableStructureChanged();
+  }
+
+  public String[] getColumnNames() {
+    return (String[])columns.toArray(new String[]{});
+  }
+
+  public int getColumnIndex(String columnName) {
+    return columns.indexOf(columnName);
+  }
+
+  public void addColumn(String columnName) {
+    columns.add(columnName);
+  }
+
+  public void removeColumn(String columnName) {
+    columns.remove(columnName);
+  }
+
+  public void stateChanged(ChangeEvent e) {
+    if (e instanceof ContentValueChangeEvent) {
+      fireTableCellUpdated(listValueHolder.getPosition(),
+          getColumnIndex(((ContentValueChangeEvent)e).getPropertyName()));
+    } else if (e instanceof ListContentChangeEvent) {
+      fireTableDataChanged();
+    } else if (e instanceof ContentChangeEvent) {
+      fireTableRowsUpdated(listValueHolder.getPosition(),listValueHolder.getPosition());
+    } else if (e instanceof StructureChangeEvent) {
+      fireTableStructureChanged();
+    }
+  }
+}

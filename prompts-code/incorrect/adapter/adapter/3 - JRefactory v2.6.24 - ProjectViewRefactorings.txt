@@ -1,0 +1,38 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.ide.jbuilder;
+
+import com.borland.primetime.actions.ActionGroup;
+import com.borland.primetime.ide.Browser;
+import com.borland.primetime.ide.ContextActionProvider;
+import com.borland.primetime.node.Node;
+import javax.swing.Action;
+import org.acm.seguin.ide.jbuilder.refactor.JBuilderAddChildClassAction;
+import org.acm.seguin.ide.jbuilder.refactor.JBuilderAddParentClassAction;
+import org.acm.seguin.ide.jbuilder.refactor.JBuilderExtractInterfaceAction;
+import org.acm.seguin.ide.jbuilder.refactor.JBuilderMoveClassAction;
+import org.acm.seguin.ide.jbuilder.refactor.JBuilderRemoveClassAction;
+import org.acm.seguin.ide.jbuilder.refactor.JBuilderRenameClassAction;
+
+
+public class ProjectViewRefactorings implements ContextActionProvider {
+	
+	public Action getContextAction(Browser browser, Node[] nodes)
+	{
+		ActionGroup group = new ActionGroup("JRefactory");
+		group.setPopup(true);
+
+		group.add(new JBuilderRenameClassAction(nodes));
+		group.add(new JBuilderMoveClassAction(nodes));
+		group.add(new JBuilderAddParentClassAction(nodes));
+		group.add(new JBuilderAddChildClassAction(nodes));
+		group.add(new JBuilderRemoveClassAction(nodes));
+		group.add(new JBuilderExtractInterfaceAction(nodes));
+
+		return group;
+	}
+}

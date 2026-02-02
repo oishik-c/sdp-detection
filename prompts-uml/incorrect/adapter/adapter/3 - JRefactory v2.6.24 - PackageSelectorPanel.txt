@@ -1,0 +1,47 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.ide.command.PackageSelectorPanel {
+# String rootDir
+- HashMap viewList
+- ButtonPanel buttons
+- {static} PackageSelectorPanel mainPanel
+# <<Create>> PackageSelectorPanel(String)
++ void actionPerformed(ActionEvent)
++ void reload()
++ void save()
++ void loadPackages()
++ void loadSummaries()
+# void setRootDirectory(String)
+# UMLFrame getPackage(PackageSummary)
+# void addPackage(PackageSummary,UMLFrame)
+- void showSummary(PackageSummary)
+- void hideSummary(PackageSummary)
+- void createNewView(PackageSummary)
+- void createFrame()
++ {static} PackageSelectorPanel getMainPanel(String)
++ {static} void main(String[])
+}
+
+
+class org.acm.seguin.ide.command.PackageSelectorPanel$ButtonPanel {
+- ActionListener listener
++ <<Create>> ButtonPanel(ActionListener)
++ Dimension getPreferredSize()
++ Dimension getMaximumSize()
+- void init()
+}
+
+
+
+
+java.awt.event.ActionListener <|.. org.acm.seguin.ide.command.PackageSelectorPanel
+org.acm.seguin.io.Saveable <|.. org.acm.seguin.ide.command.PackageSelectorPanel
+org.acm.seguin.uml.loader.Reloader <|.. org.acm.seguin.ide.command.PackageSelectorPanel
+org.acm.seguin.ide.common.PackageSelectorArea <|-- org.acm.seguin.ide.command.PackageSelectorPanel
+org.acm.seguin.ide.command.PackageSelectorPanel +.. org.acm.seguin.ide.command.PackageSelectorPanel$ButtonPanel
+org.acm.seguin.ide.command.JPanel <|-- org.acm.seguin.ide.command.PackageSelectorPanel$ButtonPanel
+@enduml

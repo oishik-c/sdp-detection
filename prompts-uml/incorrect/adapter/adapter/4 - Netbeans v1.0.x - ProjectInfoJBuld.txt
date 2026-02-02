@@ -1,0 +1,46 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.projects.ProjectInfoJBuld {
+# String fileSystem
+# char firstChar
+# java.util.Vector classPath
+# java.util.Vector fileSystems
+# java.util.Vector files
+# java.util.Vector systemClasspath
+# String mainClass
+# int version
+# int typeOfBlock
+# int PROJECT
+# int CONTENTS
+# int PARAMS
+# String SYSTEMCLASSPATH1
+# String SYSTEMCLASSPATH2
+# File currentSysFile1
+# File currentSysFile2
++ <<Create>> ProjectInfoJBuld()
++ ImportProject load(java.io.File)
+~ int testVersion(String)
+# void parseLine(String)
+# boolean parseComment(String)
+# boolean parseBeginBlock(String)
+# boolean parseProject(String)
+~ java.util.Vector parseFiles(String)
+# boolean parseContents(String)
+# boolean parseParams(String)
++ javax.swing.filechooser.FileFilter getFileFilter()
+# java.io.File getSystemIniFile()
+# void parseJBuilder3(String)
+# void loadSystemClassPath(java.io.File)
+~ java.io.File createFile(File,String)
++ {static} void main(String[])
+}
+
+
+
+
+org.netbeans.modules.projects.ProjectInfo <|-- org.netbeans.modules.projects.ProjectInfoJBuld
+@enduml

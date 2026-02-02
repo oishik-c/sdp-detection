@@ -1,0 +1,122 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.jndi.utils;
+
+import java.util.Vector;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import org.openide.nodes.Children;
+import org.openide.nodes.Node;
+import org.openide.TopManager;
+import org.openide.NotifyDescriptor;
+import org.netbeans.modules.jndi.JndiRootNode;
+import org.netbeans.modules.jndi.JndiDisabledNode;
+import org.netbeans.modules.jndi.JndiChildren;
+import org.netbeans.modules.jndi.JndiNode;
+import org.netbeans.modules.jndi.JndiException;
+import org.netbeans.modules.jndi.JndiKey;
+import org.netbeans.modules.jndi.WaitNode;
+import org.netbeans.modules.jndi.gui.NotFoundPanel;
+import org.netbeans.modules.jndi.gui.TimeOutPanel;
+
+public class Refreshd extends Thread {
+    Vector newItems;
+    int stepSleepTime;
+    int cycleSleepTime;
+
+    
+    public Refreshd() {
+        super();
+        this.setName("jndi.refreshd");
+        this.setDaemon(true);
+        this.newItems = new Vector();
+    }
+
+    
+    public void run(){
+        APCTarget target;
+
+        while (true){
+            synchronized(this.newItems){
+                if (this.newItems.size()==0)
+                    try{
+                        this.newItems.wait();
+                    }catch(InterruptedException ie){}
+            }
+            synchronized(this.newItems){
+                target = (APCTarget)this.newItems.firstElement();
+                this.newItems.removeElementAt(0);
+            }
+            if (target == null) continue;
+            try{
+                target.preAction();
+                target.performAction();
+                target.postAction();
+            }catch(NamingException namingException){
+                
+                
+                Node parent = ((JndiChildren)target).getOwner().getParentNode();
+                JndiNode failedNode = (JndiNode)((JndiChildren)target).getOwner();
+                if (parent != null && parent!= JndiRootNode.getDefault()){
+                    JndiKey key = (JndiKey)failedNode.getKey();
+                    key.failed = true;
+                    ((JndiChildren)parent.getChildren()).updateKey(key);
+                }
+                else if (parent != null){
+                    JndiRootNode root = (JndiRootNode) parent;
+                    try{
+                        JndiDisabledNode newNode = new JndiDisabledNode(failedNode.getInitialDirContextProperties());
+                        root.getChildren().remove(new Node[]{failedNode});
+                        root.getChildren().add(new Node[]{newNode});
+                    }catch(NamingException innerNamingException){
+                        
+                        JndiRootNode.notifyForeignException(innerNamingException);
+                    }
+                }
+            }
+
+            catch(Exception foreignException){
+                JndiRootNode.notifyForeignException(foreignException);
+            }
+        }
+    }
+
+    
+    public void addNewItem(APCTarget item){
+        synchronized(this.newItems){
+            this.newItems.addElement(item);
+            this.newItems.notify();
+        }
+    }
+
+    
+    public void removeItem(APCTarget item){
+        
+    }
+
+    
+    public void setCycleSleepTime(int sleep){
+        this.cycleSleepTime=sleep;
+    }
+
+    
+    public void setStepSleepTime(int sleep){
+        this.stepSleepTime=sleep;
+    }
+
+    
+    public int getCycleSleepTime(){
+        return this.cycleSleepTime;
+    }
+
+    
+    public int getStepSleepTime(){
+        return this.stepSleepTime;
+    }
+
+}

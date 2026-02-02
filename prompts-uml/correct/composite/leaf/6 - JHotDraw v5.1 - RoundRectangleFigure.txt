@@ -1,0 +1,34 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.figures.RoundRectangleFigure {
+- Rectangle fDisplayBox
+- int fArcWidth
+- int fArcHeight
+- {static} int DEFAULT_ARC
+- {static} long serialVersionUID
+- int roundRectangleSerializedDataVersion
++ <<Create>> RoundRectangleFigure()
++ <<Create>> RoundRectangleFigure(Point,Point)
++ void basicDisplayBox(Point,Point)
++ void setArc(int,int)
++ Point getArc()
++ Vector handles()
++ Rectangle displayBox()
+# void basicMoveBy(int,int)
++ void drawBackground(Graphics)
++ void drawFrame(Graphics)
++ Insets connectionInsets()
++ Connector connectorAt(int,int)
++ void write(StorableOutput)
++ void read(StorableInput)
+}
+
+
+
+
+CH.ifa.draw.figures.AttributeFigure <|-- CH.ifa.draw.figures.RoundRectangleFigure
+@enduml

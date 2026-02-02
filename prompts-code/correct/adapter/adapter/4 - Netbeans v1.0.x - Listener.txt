@@ -1,0 +1,325 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.explorer;
+
+import java.awt.Component;
+import java.beans.*;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.ObjectInputValidation;
+import java.util.*;
+
+import org.openide.util.datatransfer.*;
+import org.openide.TopManager;
+import org.openide.util.*;
+import org.openide.nodes.*;
+
+
+public final class ExplorerManager extends Object
+    implements Serializable, Cloneable {
+    
+    static final long serialVersionUID = -4330330689803575792L;
+
+    
+    public static final String PROP_ROOT_CONTEXT = "rootContext"; 
+    
+    public static final String PROP_EXPLORED_CONTEXT = "exploredContext"; 
+    
+    public static final String PROP_SELECTED_NODES = "selectedNodes"; 
+
+    
+    private transient VetoableChangeSupport vetoableSupport;
+    
+    private transient PropertyChangeSupport propertySupport;
+
+    
+    private Node rootContext;
+    
+    private Node exploredContext;
+    
+    private Node[] selectedNodes;
+    
+    private transient Listener listener;
+    
+    private transient NodeListener weakListener;
+
+    
+    static java.util.ResourceBundle explorerBundle = NbBundle.getBundle (ExplorerManager.class);
+
+    
+    public ExplorerManager () {
+        init ();
+    }
+
+    
+    private void init () {
+        exploredContext = rootContext = Node.EMPTY;
+        selectedNodes = new Node[0];
+        listener = new Listener ();
+        weakListener = WeakListener.node (listener, null);
+    }
+
+    
+    public Object clone () {
+        ExplorerManager em = new ExplorerManager ();
+        em.rootContext = rootContext;
+        em.exploredContext = exploredContext;
+        em.selectedNodes = selectedNodes;
+        return em;
+    }
+
+    
+    public Node[] getSelectedNodes () {
+        return selectedNodes;
+    }
+
+    
+    public final void setSelectedNodes (Node[] value) throws PropertyVetoException {
+        if (Arrays.equals (value, selectedNodes)) {
+            return;
+        }
+
+        if (value.length != 0 && vetoableSupport != null) {
+            
+            vetoableSupport.fireVetoableChange(PROP_SELECTED_NODES, selectedNodes, value);
+        }
+
+        Node[] oldValue = selectedNodes;
+        selectedNodes = value;
+
+        if (propertySupport != null) {
+            propertySupport.firePropertyChange(PROP_SELECTED_NODES, oldValue, selectedNodes);
+        }
+    }
+
+    
+    public final Node getExploredContext() {
+        return exploredContext;
+    }
+
+    
+    public final void setExploredContext(Node value) {
+        if ((exploredContext != null) && (exploredContext.equals(value))) return;
+
+        if (!isUnderRoot(value)) return; 
+        try {
+            setSelectedNodes(new Node[0]);
+        } catch (PropertyVetoException e) {
+            throw new InternalError(explorerBundle.getString("ERR_MustNotVetoEmptySelection"));
+        }
+        Node oldValue = exploredContext;
+        exploredContext = value;
+
+        if (propertySupport != null)
+            propertySupport.firePropertyChange(PROP_EXPLORED_CONTEXT, oldValue, exploredContext);
+    }
+
+    
+    public final Node getRootContext() {
+        return rootContext;
+    }
+
+    
+    public final void setRootContext(Node value) {
+        if ((rootContext != null) && (rootContext.equals (value))) return;
+        Node oldValue = rootContext;
+        rootContext = value;
+
+        oldValue.removeNodeListener (weakListener);
+        rootContext.addNodeListener (weakListener);
+
+        if (propertySupport != null)
+            propertySupport.firePropertyChange(PROP_ROOT_CONTEXT, oldValue, rootContext);
+        setExploredContext(rootContext);
+    }
+
+    
+    public synchronized void addPropertyChangeListener(PropertyChangeListener l) {
+        if (propertySupport == null)
+            propertySupport = new PropertyChangeSupport(this);
+        propertySupport.addPropertyChangeListener(l);
+    }
+
+    
+    public synchronized void removePropertyChangeListener(PropertyChangeListener l) {
+        if (propertySupport != null)
+            propertySupport.removePropertyChangeListener(l);
+    }
+
+    
+    public synchronized void addVetoableChangeListener(VetoableChangeListener l) {
+        if (vetoableSupport == null)
+            vetoableSupport = new VetoableChangeSupport(this);
+        vetoableSupport.addVetoableChangeListener(l);
+    }
+
+    
+    public synchronized void removeVetoableChangeListener(VetoableChangeListener l) {
+        if (vetoableSupport != null)
+            vetoableSupport.removeVetoableChangeListener(l);
+    }
+
+    
+    private boolean isUnderRoot(Node node) {
+        while (node != null) {
+            if (node.equals(rootContext)) return true;
+            node = node.getParentNode();
+        }
+        return false;
+    }
+
+    
+    private void writeObject (java.io.ObjectOutputStream os)
+    throws java.io.IOException {
+        Node root = NodeOp.findRoot(rootContext);
+        Node.Handle rootHandle = root.getHandle();
+        
+
+        os.writeObject(rootHandle);
+
+        if (rootHandle != null) {
+            os.writeObject(NodeOp.createPath(rootContext, root));
+            os.writeObject(NodeOp.createPath(exploredContext, root));
+            for (int i = selectedNodes.length; --i >= 0;) {
+                os.writeObject(NodeOp.createPath(selectedNodes[i], root));
+            }
+            os.writeObject(null);
+        }
+    }
+
+    
+    private void readObject(java.io.ObjectInputStream ois)
+    throws java.io.IOException, ClassNotFoundException {
+        
+        init();
+
+        
+        Node.Handle h = (Node.Handle) ois.readObject();
+
+        ObjectInputValidation oiv;
+
+        if (h == null) {
+            oiv = new MyValidation ();
+        } else {
+            String[] rootCtx = (String[])ois.readObject();
+            String[] exploredCtx = (String[])ois.readObject ();
+            LinkedList ll = new LinkedList ();
+            for (;;) {
+                String[] path = (String[])ois.readObject();
+                if (path == null) break;
+                ll.add(path);
+            };
+            oiv = new MyValidation (h.getNode (), rootCtx, exploredCtx, ll);
+        }
+
+        ois.registerValidation (oiv, 10);
+    }
+
+
+    
+    public static ExplorerManager find (Component comp) {
+        
+        for (;;) {
+            comp = comp.getParent ();
+            if (comp == null) {
+                
+                return new ExplorerManager ();
+            }
+            if (comp instanceof Provider) {
+                
+                return ((Provider)comp).getExplorerManager ();
+            }
+        }
+    }
+
+    
+    static Node findPath(Node r, String[] path) {
+        try {
+            return NodeOp.findPath(r, path);
+        } catch (NodeNotFoundException ex) {
+            return ex.getClosestNode();
+        }
+    }
+
+    
+    
+    
+
+    
+    public static interface Provider {
+        
+        public ExplorerManager getExplorerManager ();
+    }
+
+    
+    private class Listener extends NodeAdapter {
+        
+        public void nodeDestroyed(NodeEvent ev) {
+            if (ev.getNode ().equals (getRootContext ())) {
+                
+                setRootContext (Node.EMPTY);
+            }
+        }
+    }
+
+    
+    private final class MyValidation
+        implements java.io.ObjectInputValidation, Runnable {
+        Node root;
+        String[] rootCtx;
+        String[] exploredCtx;
+        List selNodes;
+
+        public MyValidation(Node r, String[] rc, String[] e, List list) {
+            root = r;
+            rootCtx = rc;
+            exploredCtx = e;
+            selNodes = list;
+        }
+
+        public MyValidation() {
+        }
+
+        public void validateObject() {
+            synchronized (ExplorerManager.this) {
+                if (rootCtx == null) {
+                    Node rep = TopManager.getDefault().getPlaces().nodes().repository();
+                    setRootContext(rep);
+                    setExploredContext(rep);
+                    return;
+                }
+            }
+
+            run ();
+            
+            
+        }
+
+        public void run () {
+            synchronized (ExplorerManager.this) {
+                setRootContext(findPath(root, rootCtx));
+                setExploredContext(findPath(root, exploredCtx));
+
+                try {
+                    
+                    ListIterator it = selNodes.listIterator ();
+                    while (it.hasNext ()) {
+                        String[] path = (String[])it.next ();
+                        it.set (findPath(root, path));
+                    }
+
+                    setSelectedNodes((Node[]) selNodes.toArray(new Node[selNodes.size ()]));
+                } catch (PropertyVetoException ex) {
+                }
+            }
+        }
+    }
+}
+
+

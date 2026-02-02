@@ -1,0 +1,667 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.loaders;
+
+import java.net.URL;
+import java.io.*;
+import java.util.*;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.text.MessageFormat;
+
+import org.xml.sax.*;
+import org.xml.sax.helpers.*;
+import org.w3c.dom.Document;
+
+import org.openide.*;
+import org.openide.actions.*;
+import org.openide.cookies.EditorCookie;
+import org.openide.filesystems.*;
+import org.openide.loaders.*;
+import org.openide.text.*;
+import org.openide.util.*;
+import org.openide.util.actions.SystemAction;
+import org.openide.nodes.Node;
+import org.openide.nodes.Children;
+import org.openide.nodes.CookieSet;
+
+
+
+public class XMLDataObject extends MultiDataObject {
+    
+    public static final String XMLINFO_DTD_PUBLIC_ID = "-//Forte for Java//DTD xmlinfo//EN"; 
+    public static final String XMLINFO_DTD_PUBLIC_ID_OLD = "-//NetBeans IDE//DTD xmlinfo//EN"; 
+
+    
+    private static RequestProcessor XML_RP = new RequestProcessor ("XMLDataObject::Info"); 
+
+    
+    public static final int STATUS_NOT     = 0;
+    
+    public static final int STATUS_OK      = 1;
+    
+    public static final int STATUS_WARNING = 2;
+    
+    public static final int STATUS_ERROR   = 3;
+
+    
+    public static final String PROP_DOCUMENT = "document"; 
+
+    
+    public static final String PROP_INFO = "info"; 
+
+    
+    static final long serialVersionUID = 8757854986453256578L;
+
+    
+    private Task infoTask = Task.EMPTY;
+
+    
+    private Info info;
+
+    
+    private Reference xmlDocument = new SoftReference (null);
+
+    
+    static private ErrorPrinter errorHandler = new ErrorPrinter();
+
+    
+    static private com.sun.xml.parser.Resolver entityResolver = new com.sun.xml.parser.Resolver();
+
+    
+    private int status;
+
+    
+    private EditorCookie editor = createEditorCookie();
+
+    
+    private InfoParser infoParser = new InfoParser ();
+
+    static {
+        entityResolver.setIgnoringMIME (true);
+        registerCatalogEntry (XMLINFO_DTD_PUBLIC_ID,
+                              "org/openide/resources/xmlinfo.dtd", 
+                              ClassLoader.getSystemClassLoader());
+        registerCatalogEntry (XMLINFO_DTD_PUBLIC_ID_OLD,              
+                              "org/openide/resources/xmlinfo.dtd", 
+                              ClassLoader.getSystemClassLoader());
+    }
+
+    
+    public XMLDataObject (FileObject fo, MultiFileLoader loader)
+    throws DataObjectExistsException {
+        super (fo, loader);
+
+        fo.getParent ().addFileChangeListener (
+            WeakListener.fileChange (infoParser, fo.getParent ())
+        );
+
+        status = STATUS_NOT;
+        info = null;
+
+        fo = FileUtil.findBrother (fo, Loader.XMLINFO_EXT);
+        registerEntry (fo);
+
+        infoParser.setInfoFile (fo);
+    }
+
+    
+    protected Node createNodeDelegate () {
+        DataNode node = new DataNode (this, Children.LEAF);
+        node.setIconBase ("/org/openide/resources/xmlObject"); 
+        node.setDefaultAction (SystemAction.get (OpenAction.class));
+        return node;
+    }
+
+    
+    protected void updateIconBase (String res) {
+        DataNode node = (DataNode)getNodeDelegate();
+        node.setIconBase (res);
+    }
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (XMLDataObject.class);
+    }
+
+    
+    public Node.Cookie getCookie (Class cls) {
+        infoTask.waitFinished();
+        return super.getCookie (cls);
+    }
+
+    
+    protected EditorCookie createEditorCookie () {
+        return new EditorSupport (getPrimaryEntry());
+    }
+
+    
+    public final Document getDocument () throws IOException, SAXException {
+        Document doc = (Document)xmlDocument.get ();
+        if (doc != null)
+            return doc;
+
+        synchronized (this) {
+            doc = (Document)xmlDocument.get ();
+            if (doc != null)
+                return doc;
+
+            status = STATUS_OK;
+            try {
+                doc = parsePrimaryFile ();
+            } catch (SAXException e) {
+                status = STATUS_ERROR;
+                throw e;
+            } catch (IOException e) {
+                status = STATUS_ERROR;
+                throw e;
+            }
+            
+            
+
+            
+            xmlDocument = new SoftReference (doc);
+
+            return doc;
+        }
+    }
+
+    
+    final void clearDocument () {
+        xmlDocument.clear ();
+        firePropertyChange (PROP_DOCUMENT, null, null);
+    }
+
+    
+    public final int getStatus () {
+        return status;
+    }
+
+    
+    public final Info getInfo () {
+        infoTask.waitFinished();
+        if (info == null)
+            return info;
+        return (Info)info.clone();
+    }
+
+    
+    public final synchronized void setInfo (Info ii) throws IOException {
+        setInfoImpl (ii);
+        writeInfo();
+    }
+
+    private final void setInfoImpl (Info ii) throws IOException {
+        if (info == ii)
+            return;
+        if ((info != null) && info.equals (ii))
+            return;
+        Info prevInfo = info;
+        info = ii;
+
+        if (info != null) {
+            for (Iterator it = info.processorClasses(); it.hasNext(); ) {
+                try {
+                    Class c = (Class)it.next();
+                    Object o = c.newInstance ();
+                    Processor proc = (Processor)o;
+                    proc.attachTo (this);
+                    getCookieSet().add (proc);
+                } catch (InstantiationException e) {
+                    throw new IOException (e.getClass().getName() + ": " + e.getMessage()); 
+                } catch (IllegalAccessException e) {
+                    throw new IOException (e.getClass().getName() + ": " + e.getMessage()); 
+                }
+            }
+            String iconBase = info.getIconBase();
+            if (iconBase != null) {
+                infoTask.waitFinished();
+                updateIconBase (iconBase);
+            }
+        }
+        firePropertyChange (PROP_INFO, prevInfo, info);
+    }
+
+    private void writeInfo () throws IOException {
+        if (info == null)
+            return;
+
+        final FileObject primary = getPrimaryFile();
+        final FileObject parent = primary.getParent();
+        final org.openide.filesystems.FileSystem FS = parent.getFileSystem();
+
+        FS.runAtomicAction (new org.openide.filesystems.FileSystem.AtomicAction () {
+                                public void run () throws IOException {
+                                    FileLock lock = null;
+                                    OutputStream os = null;
+
+                                    FileObject infoFO = FS.find (parent.getName(), primary.getName(), Loader.XMLINFO_EXT);
+                                    if (infoFO == null)
+                                        infoFO = parent.createData (primary.getName(), Loader.XMLINFO_EXT);
+                                    try {
+                                        lock = infoFO.lock ();
+                                        os = infoFO.getOutputStream (lock);
+                                        PrintWriter writer = new PrintWriter (os);
+                                        info.write (writer);
+                                        writer.close();
+                                    } finally {
+                                        if (os != null)
+                                            os.close ();
+                                        if (lock != null)
+                                            lock.releaseLock ();
+                                    }
+                                }
+                            });
+    }
+
+    
+    final Document parsePrimaryFile () throws IOException, SAXException {
+        URL url = getPrimaryFile ().getURL ();
+
+        return parse (url, errorHandler, false);
+    }
+
+    
+    
+    public static Document parse (URL url) throws IOException, SAXException {
+        return parse (url, errorHandler, false);
+    }
+
+    
+    public static Document parse (URL url, boolean validate) throws IOException, SAXException {
+        return parse (url, errorHandler, validate);
+    }
+
+    
+    public static Document parse (URL url, ErrorHandler eh) throws IOException, SAXException {
+        return parse (url, eh, false);
+    }
+
+    
+    public static Document parse (URL url, ErrorHandler eh, boolean validate) throws IOException, SAXException {
+        Parser parser;
+        com.sun.xml.tree.XmlDocumentBuilder builder;
+
+        parser = createParser (validate);
+        parser.setErrorHandler (eh);
+        builder = new com.sun.xml.tree.XmlDocumentBuilder();
+        builder.setDisableNamespaces (true);
+        builder.setParser (parser);
+        parser.parse (createInputSource (url));
+
+        return builder.getDocument ();
+    }
+
+    
+    public static Parser createParser () {
+        return createParser (false);
+    }
+
+    
+    public static Parser createParser (boolean validate) {
+        Parser parser;
+
+        if (validate)
+            parser = new com.sun.xml.parser.ValidatingParser (true);
+        else
+            parser = new com.sun.xml.parser.Parser ();
+        parser.setEntityResolver (entityResolver);
+
+        return parser;
+    }
+
+    
+    public static Document createDocument () {
+        return new com.sun.xml.tree.XmlDocument ();
+    }
+
+    
+    public static void write (Document doc, Writer writer) throws IOException {
+        if (doc instanceof com.sun.xml.tree.XmlDocument) {
+            ((com.sun.xml.tree.XmlDocument)doc).write (writer);
+        } else {
+            throw new InternalError ("Unsupported DOM Document!"); 
+        }
+    }
+
+    
+    public static org.xml.sax.InputSource createInputSource (URL url) throws IOException {
+        InputStream stream = url.openStream();
+        if (stream instanceof PushbackInputStream)
+            stream = new DataInputStream (stream); 
+        org.xml.sax.InputSource retval =
+            entityResolver.createInputSource (null, stream, false, url.getProtocol());
+        retval.setSystemId (url.toString ());
+        return retval;
+        
+        
+        
+        
+    }
+
+    
+    public static void registerCatalogEntry (String publicId, String uri) {
+        entityResolver.registerCatalogEntry (publicId, uri);
+    }
+
+    
+    public static void registerCatalogEntry (String publicId, String resourceName, ClassLoader loader) {
+        entityResolver.registerCatalogEntry (publicId, resourceName, loader);
+    }
+    
+
+
+    
+    static class ErrorPrinter implements org.xml.sax.ErrorHandler {
+        private void message (final String level, final org.xml.sax.SAXParseException e) {
+            TopManager.getDefault ().notifyException (new Throwable () {
+                        public String getMessage () {
+                            return new String (MessageFormat.format
+                                               (NbBundle.getBundle (XMLDataObject.class).getString ("PROP_XmlMessage"),
+                                                new Object [] { level,
+                                                                e.getMessage(),
+                                                                (e.getSystemId() == null ? "" : e.getSystemId()), 
+                                                                e.getLineNumber()+"", 
+                                                                e.getColumnNumber()+"" 
+                                                              }));
+                        }
+                    });
+        }
+
+        public void error (org.xml.sax.SAXParseException e) {
+            message (NbBundle.getBundle (XMLDataObject.class).getString ("PROP_XmlError"), e);
+        }
+
+        public void warning (org.xml.sax.SAXParseException e) {
+            message (NbBundle.getBundle (XMLDataObject.class).getString ("PROP_XmlWarning"), e);
+        }
+
+        public void fatalError (org.xml.sax.SAXParseException e) {
+            message (NbBundle.getBundle (XMLDataObject.class).getString ("PROP_XmlFatalError"), e);
+        }
+    } 
+
+
+    
+    public static interface Processor extends Node.Cookie {
+        
+        public void attachTo (XMLDataObject xmlDO);
+    }
+
+
+    
+    private final class InfoParser extends HandlerBase
+        implements Runnable, FileChangeListener {
+        
+        private static final String TAG_INFO = "info"; 
+        
+        private static final String TAG_PROCESSOR = "processor"; 
+        
+        private static final String ATT_PROCESSOR_CLASS = "class"; 
+        
+        private static final String TAG_ICON = "icon"; 
+        
+        private static final String ATT_ICON_BASE = "base"; 
+
+        
+        private FileObject fileObject;
+
+        private Info tempInfo;
+
+        
+        public synchronized void setInfoFile (FileObject fo) {
+            
+            
+            infoTask.waitFinished ();
+
+            fileObject = fo;
+
+            CookieSet cs = new CookieSet ();
+            cs.add (editor);
+            setCookieSet (cs);
+
+            if (fileObject == null)
+                return;
+            
+            infoTask = XML_RP.post (
+                           this, 0, Thread.NORM_PRIORITY - 1
+                       );
+        }
+
+        public void startDocument () {
+            tempInfo = new Info();
+        }
+
+        public void endDocument () {
+            try {
+                XMLDataObject.this.setInfoImpl (tempInfo);
+            } catch (Exception e) {
+                TopManager.getDefault().notifyException (e);
+            }
+        }
+
+        
+        public void startElement (String name, AttributeList attr) {
+            if (name.equals (TAG_PROCESSOR)) {
+                String className = attr.getValue (ATT_PROCESSOR_CLASS);
+                if (className != null) {
+                    try {
+                        className = org.openide.util.Utilities.translate(className);
+                        Class c = Class.forName (className, true, TopManager.getDefault().systemClassLoader ());
+                        tempInfo.addProcessorClass (c);
+                    } catch (Exception e) {
+                        TopManager.getDefault ().notifyException (e);
+                    }
+                }
+                return;
+            }
+            if (name.equals (TAG_ICON)) {
+                String file = attr.getValue (ATT_ICON_BASE);
+                tempInfo.setIconBase (file);
+                return;
+            }
+        }
+
+        
+        public void run () {
+            try {
+                Parser p = createParser ();
+                p.setDocumentHandler (this);
+                p.setErrorHandler (errorHandler);
+                p.parse (createInputSource (fileObject.getURL()));
+            } catch (SAXException ex) {
+                TopManager.getDefault ().notifyException (ex);
+            } catch (IOException ex) {
+                TopManager.getDefault ().notifyException (ex);
+            }
+        }
+
+        public void fileFolderCreated (FileEvent fe) {
+            
+        }
+
+        public void fileDataCreated (FileEvent fe) {
+            FileObject fo = fe.getFile ();
+            if (
+                fo.hasExt (Loader.XMLINFO_EXT) &&
+                fo.getName ().equals (getPrimaryFile ().getName ())
+            ) {
+                
+                setInfoFile (fo);
+            }
+        }
+
+        
+        public void fileChanged (FileEvent fe) {
+            if (fe.getFile().equals (fileObject)) {
+                
+                setInfoFile (fe.getFile ());
+            } else {
+                if (getPrimaryFile ().equals (fe.getFile ())) {
+                    
+                    clearDocument ();
+                }
+            }
+        }
+
+        public void fileDeleted (FileEvent fe) {
+            if (fe.getFile().equals (fileObject)) {
+                
+                setInfoFile (null);
+            }
+        }
+
+        public void fileRenamed (FileRenameEvent fe) {
+            
+            fileDeleted (fe);
+        }
+
+        public void fileAttributeChanged (FileAttributeEvent fe) {
+        }
+
+    } 
+
+    
+    static class Loader extends MultiFileLoader {
+        
+        static final String XML_EXT = "xml"; 
+        static final String XMLINFO_EXT = "xmlinfo"; 
+
+        static final long serialVersionUID =3917883920409453930L;
+        
+        public Loader () {
+            super (XMLDataObject.class);
+        }
+
+        
+        protected void initialize () {
+            setDisplayName(
+                NbBundle.getBundle (XMLDataObject.class).getString ("PROP_XmlLoader_Name")
+            );
+
+            setActions(new SystemAction[] {
+                           SystemAction.get(OpenAction.class),
+                           null,
+                           SystemAction.get(CutAction.class),
+                           SystemAction.get(CopyAction.class),
+                           SystemAction.get(PasteAction.class),
+                           null,
+                           SystemAction.get(DeleteAction.class),
+                           SystemAction.get(RenameAction.class),
+                           null,
+                           SystemAction.get(SaveAsTemplateAction.class),
+                           null,
+                           SystemAction.get(ToolsAction.class),
+                           SystemAction.get(PropertiesAction.class)
+                       });
+        }
+
+        
+        protected FileObject findPrimaryFile (FileObject fo) {
+            if (XML_EXT.equals(fo.getExt())) {
+                return fo;
+            }
+            if ("tld".equals(fo.getExt())) { 
+                return fo; 
+            }
+            if (XMLINFO_EXT.equals(fo.getExt())) {
+                return FileUtil.findBrother (fo, XML_EXT);
+            }
+            
+            return null;
+        }
+
+        
+        protected MultiDataObject createMultiObject (FileObject primaryFile)
+        throws DataObjectExistsException {
+            return new XMLDataObject (primaryFile, this);
+        }
+
+        
+        protected MultiDataObject.Entry createPrimaryEntry (MultiDataObject obj, FileObject primaryFile) {
+            return new FileEntry (obj, primaryFile);
+        }
+
+        
+        protected MultiDataObject.Entry createSecondaryEntry (MultiDataObject obj, FileObject secondaryFile) {
+            return new FileEntry (obj, secondaryFile);
+        }
+    }
+
+    
+    public static final class Info implements Cloneable {
+        
+        Set processors;
+        String iconBase;
+
+        
+        public Info () {
+            processors = new HashSet (7);
+            iconBase = null;
+        }
+
+        public Object clone () {
+            Info ii = new Info();
+            for (Iterator it = processors.iterator(); it.hasNext();) {
+                Class proc = (Class)it.next();
+                ii.processors.add (proc);
+            }
+            ii.iconBase = iconBase;
+            return ii;
+        }
+
+        
+        public void addProcessorClass (Class proc) {
+            if (!Processor.class.isAssignableFrom (proc))
+                throw new IllegalArgumentException();
+            processors.add (proc);
+        }
+
+        
+        public boolean removeProcessorClass (Class proc) {
+            return processors.remove (proc);
+        }
+
+        public Iterator processorClasses () {
+            return processors.iterator();
+        }
+
+        
+        public void setIconBase (String base) {
+            iconBase = base;
+        }
+
+        
+        public String getIconBase () {
+            return iconBase;
+        }
+
+        
+        public void write (Writer writer) throws IOException {
+            writer.write ("<?xml version=\"1.0\"?>\n\n"); 
+            writer.write (MessageFormat.format ("<!DOCTYPE {0} PUBLIC \"{1}\" \"\">\n\n", 
+                                                new Object [] { InfoParser.TAG_INFO, XMLINFO_DTD_PUBLIC_ID }));
+            writer.write (MessageFormat.format ("<{0}>\n", 
+                                                new Object [] { InfoParser.TAG_INFO }));
+            for (Iterator it = processors.iterator(); it.hasNext();)
+                writer.write (MessageFormat.format ("  <{0} {1}=\"{2}\" />\n", 
+                                                    new Object [] { InfoParser.TAG_PROCESSOR,
+                                                                    InfoParser.ATT_PROCESSOR_CLASS,
+                                                                    ((Class)it.next()).getName() }));
+            if (iconBase != null)
+                writer.write (MessageFormat.format ("  <{0} {1}=\"{2}\" />\n", 
+                                                    new Object [] { InfoParser.TAG_ICON,
+                                                                    InfoParser.ATT_ICON_BASE,
+                                                                    iconBase }));
+            writer.write (MessageFormat.format ("</{0}>\n", 
+                                                new Object [] { InfoParser.TAG_INFO }));
+        }
+    } 
+}
+
+
+

@@ -1,0 +1,66 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.ide.jbuilder;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+
+import org.acm.seguin.ide.common.MultipleDirClassDiagramReloader;
+
+
+public class NewProjectAdapter extends BrowserAdapter {
+	private LinkedList list;
+
+
+	
+	public NewProjectAdapter() {
+		list = new LinkedList();
+	}
+
+
+	
+	public void browserProjectActivated(Browser browser, Project project) {
+		if (!list.contains(project)) {
+			list.add(project);
+
+			if (project instanceof JBProject) {
+				MultipleDirClassDiagramReloader reloader =
+						UMLNodeViewerFactory.getFactory().getReloader();
+				JBProject jbProject = (JBProject) project;
+				registerProject(reloader, jbProject);
+				reloader.reload();
+			}
+		}
+	}
+
+
+	
+	public void browserProjectClosed(Browser browser, Project project) {
+		list.remove(project);
+
+		MultipleDirClassDiagramReloader reloader =
+				UMLNodeViewerFactory.getFactory().getReloader();
+		reloader.clear();
+
+		Iterator iter = list.iterator();
+		while (iter.hasNext()) {
+			JBProject jbProject = (JBProject) iter.next();
+			registerProject(reloader, jbProject);
+		}
+	}
+
+
+	
+	private void registerProject(MultipleDirClassDiagramReloader reloader, JBProject jbProject) {
+		ProjectPathSet paths = jbProject.getPaths();
+		Url[] dirs = paths.getSourcePath();
+		for (int ndx = 0; ndx < dirs.length; ndx++) {
+			String directory = dirs[ndx].getFile();
+			reloader.addRootDirectory(directory);
+		}
+	}
+}

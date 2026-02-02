@@ -1,0 +1,26 @@
+Given the following java code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+
+package net.nutch.io;
+
+import java.io.*;
+
+
+public class NullWritable implements Writable {
+
+  private static final NullWritable THIS = new NullWritable();
+
+  private NullWritable() {}                       
+
+  
+  public static NullWritable get() { return THIS; }
+
+  public void readFields(DataInput in) throws IOException {}
+  public void write(DataOutput out) throws IOException {}
+}
+

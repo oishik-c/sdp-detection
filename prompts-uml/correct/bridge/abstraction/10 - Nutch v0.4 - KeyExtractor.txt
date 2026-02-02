@@ -1,0 +1,60 @@
+Given the following uml code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.nutch.db.EditSectionGroupWriter {
+~ {static} int CUR_VERSION
++ {static} String GROUP_METAINFO
++ {static} int URL_KEYSPACE
++ {static} int MD5_KEYSPACE
+~ int machineNum
+~ KeyExtractor extractor
+~ String label
+~ WritableComparable[] sectionKeys
+~ EditSectionWriter[] sectionWriters
++ <<Create>> EditSectionGroupWriter(NutchFileSystem,String,int,int,String,Class,Class,EditSectionGroupWriter.KeyExtractor)
++ {static} void createEditGroup(NutchFileSystem,String,String,int,int)
++ void append(WritableComparable,Writable)
++ void close()
+}
+
+
+abstract class net.nutch.db.EditSectionGroupWriter$KeyExtractor {
++ <<Create>> KeyExtractor()
++ {abstract}WritableComparable extractInnerKey(WritableComparable)
+}
+
+class net.nutch.db.EditSectionGroupWriter$PageURLExtractor {
++ <<Create>> PageURLExtractor()
++ WritableComparable extractInnerKey(WritableComparable)
+}
+
+class net.nutch.db.EditSectionGroupWriter$PageMD5Extractor {
++ <<Create>> PageMD5Extractor()
++ WritableComparable extractInnerKey(WritableComparable)
+}
+
+class net.nutch.db.EditSectionGroupWriter$LinkURLExtractor {
++ <<Create>> LinkURLExtractor()
++ WritableComparable extractInnerKey(WritableComparable)
+}
+
+class net.nutch.db.EditSectionGroupWriter$LinkMD5Extractor {
++ <<Create>> LinkMD5Extractor()
++ WritableComparable extractInnerKey(WritableComparable)
+}
+
+
+
+net.nutch.db.EditSectionGroupWriter +.. net.nutch.db.EditSectionGroupWriter$KeyExtractor
+net.nutch.db.EditSectionGroupWriter +.. net.nutch.db.EditSectionGroupWriter$PageURLExtractor
+net.nutch.db.KeyExtractor <|-- net.nutch.db.EditSectionGroupWriter$PageURLExtractor
+net.nutch.db.EditSectionGroupWriter +.. net.nutch.db.EditSectionGroupWriter$PageMD5Extractor
+net.nutch.db.KeyExtractor <|-- net.nutch.db.EditSectionGroupWriter$PageMD5Extractor
+net.nutch.db.EditSectionGroupWriter +.. net.nutch.db.EditSectionGroupWriter$LinkURLExtractor
+net.nutch.db.KeyExtractor <|-- net.nutch.db.EditSectionGroupWriter$LinkURLExtractor
+net.nutch.db.EditSectionGroupWriter +.. net.nutch.db.EditSectionGroupWriter$LinkMD5Extractor
+net.nutch.db.KeyExtractor <|-- net.nutch.db.EditSectionGroupWriter$LinkMD5Extractor
+@enduml

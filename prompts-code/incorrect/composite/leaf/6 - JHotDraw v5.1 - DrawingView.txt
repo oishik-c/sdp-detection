@@ -1,0 +1,143 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.framework;
+
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.image.ImageObserver;
+import java.util.Vector;
+
+
+
+
+public interface DrawingView extends ImageObserver, DrawingChangeListener {
+
+	
+	public void setEditor(DrawingEditor editor);
+
+	
+	public Tool tool();
+
+	
+	public Drawing drawing();
+
+	
+	public void setDrawing(Drawing d);
+
+	
+	public DrawingEditor editor();
+
+	
+	public Figure add(Figure figure);
+
+	
+	public Figure remove(Figure figure);
+
+	
+	public void addAll(Vector figures);
+
+	
+	public Dimension getSize();
+
+	
+	public Dimension getMinimumSize();
+
+	
+	public Dimension getPreferredSize();
+
+	
+	public void setDisplayUpdate(Painter updateStrategy);
+
+	
+	public Vector selection();
+
+	
+	public FigureEnumeration selectionElements();
+
+	
+	public Vector selectionZOrdered();
+
+	
+	public int selectionCount();
+
+	
+	public void addToSelection(Figure figure);
+
+	
+	public void addToSelectionAll(Vector figures);
+
+	
+	public void removeFromSelection(Figure figure);
+
+	
+	public void toggleSelection(Figure figure);
+
+	
+	public void clearSelection();
+
+	
+	public FigureSelection getFigureSelection();
+
+	
+	public Handle findHandle(int x, int y);
+
+	
+	public Point lastClick();
+
+	
+	public void setConstrainer(PointConstrainer p);
+
+	
+	public PointConstrainer getConstrainer();
+
+	
+	public void checkDamage();
+
+	
+	public void repairDamage();
+
+	
+	public void paint(Graphics g);
+
+	
+	public Image createImage(int width, int height);
+
+	
+	public Graphics getGraphics();
+
+	
+	public Color getBackground();
+
+	
+	public void setBackground(Color c);
+
+	
+	public void drawAll(Graphics g);
+
+	
+	public void drawHandles(Graphics g);
+
+	
+	public void drawDrawing(Graphics g);
+
+	
+	public void drawBackground(Graphics g);
+
+	
+	public void setCursor(Cursor c);
+
+	
+	public void freezeView();
+
+	
+	public void unfreezeView();
+}

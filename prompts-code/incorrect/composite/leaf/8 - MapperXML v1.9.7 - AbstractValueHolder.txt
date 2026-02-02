@@ -1,0 +1,137 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.model;
+
+import java.util.Vector;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import com.taursys.util.DataTypes;
+import com.taursys.util.UnsupportedDataTypeException;
+import com.taursys.model.event.ContentValueChangeEvent;
+
+
+
+public abstract class AbstractValueHolder implements ValueHolder {
+  private String alias;
+  private transient Vector changeListeners;
+  private boolean multiplePropertiesChanging;
+
+  
+  public AbstractValueHolder() {
+  }
+
+  
+  
+  
+
+  
+  public abstract int getJavaDataType(String propertyName)
+      throws ModelException;
+
+  
+  public abstract Object getPropertyValue(String propertyName)
+      throws ModelException;
+
+  
+  public Object[] getPropertyValues(String[] propertyNames)
+      throws ModelException {
+    if (propertyNames != null && propertyNames.length > 0) {
+      Object[] results = new Object[propertyNames.length];
+      for (int i = 0; i < propertyNames.length; i++) {
+        results[i] = getPropertyValue(propertyNames[i]);
+      }
+      return results;
+    } else {
+      return new Object[]{};
+    }
+  }
+
+  
+  public abstract void setPropertyValue(String propertyName, Object value)
+      throws ModelException;
+
+  
+  public void setPropertyValues(String[] propertyNames, Object[] values)
+      throws ModelException {
+    
+    checkArrays(propertyNames, values);
+    setMultiplePropertiesChanging(true);
+    try {
+      for (int i = 0; i < propertyNames.length; i++) {
+        setPropertyValue(propertyNames[i], values[i]);
+      }
+      fireStateChanged(new ContentValueChangeEvent(this, null, null, null));
+    } finally {
+      setMultiplePropertiesChanging(false);
+    }
+  }
+
+  
+  protected void checkArrays(String[] propertyNames, Object[] values)
+      throws ModelException {
+    if (propertyNames == null || values == null
+        || propertyNames.length != values.length)
+      throw new ModelException(ModelException.REASON_MULTI_PROPERTY_MISMATCH);
+  }
+
+  
+  
+  
+
+  
+  public void setAlias(String newAlias) {
+    alias = newAlias;
+  }
+
+  
+  public String getAlias() {
+    return alias;
+  }
+
+  
+  protected void setMultiplePropertiesChanging(boolean multiplePropertiesChanging) {
+    this.multiplePropertiesChanging = multiplePropertiesChanging;
+  }
+
+  
+  protected boolean isMultiplePropertiesChanging() {
+    return multiplePropertiesChanging;
+  }
+
+  
+  
+  
+
+  
+  public synchronized void removeChangeListener(ChangeListener l) {
+    if (changeListeners != null && changeListeners.contains(l)) {
+      Vector v = (Vector) changeListeners.clone();
+      v.removeElement(l);
+      changeListeners = v;
+    }
+  }
+
+  
+  public synchronized void addChangeListener(ChangeListener l) {
+    Vector v = changeListeners == null ? new Vector(2) : (Vector) changeListeners.clone();
+    if (!v.contains(l)) {
+      v.addElement(l);
+      changeListeners = v;
+    }
+  }
+
+  
+  protected void fireStateChanged(ChangeEvent e) {
+    if (changeListeners != null) {
+      Vector listeners = changeListeners;
+      int count = listeners.size();
+      for (int i = 0; i < count; i++) {
+        ((ChangeListener) listeners.elementAt(i)).stateChanged(e);
+      }
+    }
+  }
+}

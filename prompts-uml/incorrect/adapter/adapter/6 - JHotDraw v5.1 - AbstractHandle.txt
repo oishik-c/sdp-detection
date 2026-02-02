@@ -1,0 +1,28 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class CH.ifa.draw.standard.AbstractHandle {
++ {static} int HANDLESIZE
+- Figure fOwner
++ <<Create>> AbstractHandle(Figure)
++ {abstract}Point locate()
++ void invokeStart(int,int,Drawing)
++ void invokeStart(int,int,DrawingView)
++ void invokeStep(int,int,Drawing)
++ void invokeStep(int,int,int,int,DrawingView)
++ void invokeEnd(int,int,int,int,DrawingView)
++ void invokeEnd(int,int,Drawing)
++ Figure owner()
++ Rectangle displayBox()
++ boolean containsPoint(int,int)
++ void draw(Graphics)
+}
+
+
+
+
+CH.ifa.draw.framework.Handle <|.. CH.ifa.draw.standard.AbstractHandle
+@enduml

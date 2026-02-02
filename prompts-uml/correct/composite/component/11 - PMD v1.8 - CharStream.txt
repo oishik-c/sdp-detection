@@ -1,0 +1,22 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+interface net.sourceforge.pmd.ast.CharStream {
+~ char readChar()
+~ int getColumn()
+~ int getLine()
+~ int getEndColumn()
+~ int getEndLine()
+~ int getBeginColumn()
+~ int getBeginLine()
+~ void backup(int)
+~ char BeginToken()
+~ String GetImage()
+~ char[] GetSuffix(int)
+~ void Done()
+}
+
+@enduml

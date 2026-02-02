@@ -1,0 +1,234 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.autoupdate;
+
+import java.io.File;
+import java.beans.PropertyEditorSupport;
+import java.util.ResourceBundle;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+
+
+import org.openide.options.SystemOption;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+
+
+public class Settings extends SystemOption 
+{
+
+    private static final String PROP_ASK_BEFORE = "askBefore"; 
+    private static final String PROP_NEGATIVE_RESULTS = "negativeResults"; 
+    private static final String PROP_PERIOD = "period"; 
+    private static final String PROP_LAST_CHECK = "lastCheck"; 
+    private static final String PROP_LAST_STAMP = "lastStamp"; 
+    private static final String PROP_REGISTARTION_NUMBER = "registrationNumber"; 
+
+    public static final int EVERY_STARTUP = 0;
+    public static final int EVERY_DAY = 1;
+    public static final int EVERY_WEEK = 2;
+    public static final int EVERY_2WEEKS = 3;
+    public static final int EVERY_MONTH = 4;
+    public static final int EVERY_NEVER = 5;
+
+    
+    static final long serialVersionUID = 362844553936969452L;
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+
+
+    public Settings() {
+        
+
+        setAskBefore( true );
+        setNegativeResults( true );
+        setPeriod( EVERY_WEEK );
+        
+        setLastCheck( null );
+        setRegistrationNumber( "" ); 
+    }
+
+
+    static Settings getShared() {
+        return (Settings)findObject( Settings.class, true );
+    }
+
+    
+    public String displayName() {
+        return NbBundle.getBundle( Settings.class).getString("CTL_Settings_Name");
+    }
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx ( Settings.class );
+    }
+
+    
+    public int getPeriod() {
+        return ((Integer)getProperty( PROP_PERIOD )).intValue();
+        
+    }
+
+    
+    public void setPeriod( int period ) {
+        putProperty( PROP_PERIOD, new Integer( period ), true );
+        
+    }
+
+    
+    public boolean isAskBefore () {
+        return ((Boolean)getProperty( PROP_ASK_BEFORE )).booleanValue();
+        
+    }
+
+    
+    public void setAskBefore (boolean askBefore) {
+        
+        putProperty( PROP_ASK_BEFORE, new Boolean( askBefore ), true );
+    }
+
+    
+    public boolean isNegativeResults () {
+        return ((Boolean)getProperty( PROP_NEGATIVE_RESULTS )).booleanValue();
+        
+    }
+
+    
+    public void setNegativeResults (boolean negativeResults) {
+        putProperty( PROP_NEGATIVE_RESULTS, new Boolean( negativeResults ), true );
+        
+    }
+
+    
+    public Date getLastCheck() {
+        return ((Date)getProperty( PROP_LAST_CHECK ));
+
+    }
+
+    
+    public void setLastCheck( Date lastCheck ) {
+        putProperty( PROP_LAST_CHECK, lastCheck, true );
+        
+    }
+
+    
+    public Date getLastStamp() {
+        return ((Date)getProperty( PROP_LAST_STAMP ));
+
+    }
+
+    
+    public void setLastStamp( Date lastStamp ) {
+        putProperty( PROP_LAST_STAMP, lastStamp, true );
+        
+    }
+
+    
+    public String getRegistrationNumber() {
+        return ((String)getProperty( PROP_REGISTARTION_NUMBER ));
+
+    }
+
+    
+    public void setRegistrationNumber( String registartionNumber ) {
+        putProperty( PROP_REGISTARTION_NUMBER, registartionNumber, true );
+        
+    }
+
+
+    
+    public static class PeriodPropertyEditor extends PropertyEditorSupport {
+
+        private static ResourceBundle bundle = NbBundle.getBundle( PeriodPropertyEditor.class );
+
+        
+        private static final String[] tags = {
+            bundle.getString( "CTL_PeriodEditor_Startup" ),
+            bundle.getString( "CTL_PeriodEditor_Day" ),
+            bundle.getString( "CTL_PeriodEditor_Week" ),
+            bundle.getString( "CTL_PeriodEditor_2Weeks" ),
+            bundle.getString( "CTL_PeriodEditor_Month" ),
+            bundle.getString( "CTL_PeriodEditor_Never" ) } ;
+
+        private static final int [] values = {
+            Settings.EVERY_STARTUP,
+            Settings.EVERY_DAY,
+            Settings.EVERY_WEEK,
+            Settings.EVERY_2WEEKS,
+            Settings.EVERY_MONTH,
+            Settings.EVERY_NEVER };
+
+        
+        public String[] getTags() {
+            return tags;
+        }
+
+        
+        public String getAsText () {
+            long value = ((Integer)getValue()).intValue();
+
+            for (int i = 0; i < values.length ; i++)
+                if (values[i] == value)
+                    return tags[i];
+
+            return bundle.getString( "CTL_PeriodEditor_Unsupported" );
+        }
+
+        
+        public void setAsText (String text) {
+            for (int i = 0; i < tags.length ; i++)
+                if (tags[i] == text) {
+                    setValue(new Integer(values[i]));
+                    return;
+                }
+
+            setValue( new Integer(0) );
+        }
+    }
+
+    
+    public static class LastCheckPropertyEditor extends PropertyEditorSupport {
+
+        private static ResourceBundle bundle = NbBundle.getBundle( PeriodPropertyEditor.class );
+
+        private static final SimpleDateFormat sdf = new SimpleDateFormat();
+
+
+        
+        public String getAsText () {
+            return sdf.format( (Date)getValue() );
+        }
+
+        
+        public void setAsText (String text) {
+
+            try {
+                Date newValue = sdf.parse( text );
+                setValue( newValue );
+            }
+            catch ( java.text.ParseException e ) {
+                
+            }
+        }
+    }
+
+
+}
+
+

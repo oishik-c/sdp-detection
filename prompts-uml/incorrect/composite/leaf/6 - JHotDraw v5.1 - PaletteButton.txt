@@ -1,0 +1,40 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class CH.ifa.draw.util.PaletteButton {
+~ {static} int NORMAL
+~ {static} int PRESSED
+~ {static} int SELECTED
+- PaletteListener fListener
+- int fState
+- int fOldState
++ <<Create>> PaletteButton(PaletteListener)
++ {abstract}void paintBackground(Graphics)
++ {abstract}void paintNormal(Graphics)
++ {abstract}void paintPressed(Graphics)
++ {abstract}void paintSelected(Graphics)
++ Object value()
++ String name()
++ void reset()
++ void select()
++ void mousePressed(MouseEvent)
++ void mouseDragged(MouseEvent)
++ void mouseReleased(MouseEvent)
++ void mouseMoved(MouseEvent)
++ void mouseExited(MouseEvent)
++ void mouseClicked(MouseEvent)
++ void mouseEntered(MouseEvent)
++ void update(Graphics)
++ void paint(Graphics)
+}
+
+
+
+
+java.awt.event.MouseListener <|.. CH.ifa.draw.util.PaletteButton
+java.awt.event.MouseMotionListener <|.. CH.ifa.draw.util.PaletteButton
+java.awt.Canvas <|-- CH.ifa.draw.util.PaletteButton
+@enduml

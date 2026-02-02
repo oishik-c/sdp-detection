@@ -1,0 +1,64 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.beaninfo;
+
+import java.awt.Image;
+import java.beans.*;
+import java.util.ResourceBundle;
+
+import org.openide.util.NbBundle;
+import org.openide.explorer.propertysheet.editors.FileOnlyEditor;
+import org.openide.filesystems.*;
+
+
+public class ExJarFileSystemBeanInfo extends SimpleBeanInfo {
+    
+    private static Image icon;
+    private static Image icon32;
+
+    
+    private static PropertyDescriptor[] desc;
+    
+    static {
+        try {
+            desc = new PropertyDescriptor[1];
+            desc [0] = new PropertyDescriptor ("archiveFile", JarFileSystem.class, "getJarFile", "setJarFile"); 
+            desc [0].setPropertyEditorClass (JarFileEditor.class);
+            ResourceBundle bundle = NbBundle.getBundle(JarFileSystemBeanInfo.class);
+            desc[0].setDisplayName (bundle.getString("PROP_archiveFile"));
+            desc[0].setShortDescription (bundle.getString("HINT_archiveFile"));
+        } catch (IntrospectionException ex) {
+            if (System.getProperty ("netbeans.debug.exceptions") != null) ex.printStackTrace();
+        }
+    }
+
+    
+    public Image getIcon(int type) {
+        if (icon == null) {
+            icon = loadImage("/org/openide/resources/jarFS.gif"); 
+            icon32 = loadImage("/org/openide/resources/jarFS32.gif"); 
+        }
+
+        if ((type == java.beans.BeanInfo.ICON_COLOR_16x16) || (type == java.beans.BeanInfo.ICON_MONO_16x16))
+            return icon;
+        else
+            return icon32;
+    }
+
+    
+    public PropertyDescriptor[] getPropertyDescriptors () {
+        return desc;
+    }
+
+    
+    public final BeanInfo[] getAdditionalBeanInfo() {
+        return new BeanInfo[] {new FileSystemBeanInfo()};
+    }
+}
+
+

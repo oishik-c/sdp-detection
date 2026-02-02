@@ -1,0 +1,179 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class org.openide.util.WeakListener {
+- {static} ReferenceQueue QUEUE
+- {static} int CLEANER_TIME
+- {static} RequestProcessor.Task CLEANER_TASK
+- Reference ref
+~ Class listenerClass
+- Reference source
+- {static} Factory factory
+# <<Create>> WeakListener(Class,java.util.EventListener)
+~ void setSource(Object)
+# {abstract}String removeMethodName()
+# java.util.EventListener get(java.util.EventObject)
+- void removeListener()
+- void removeListener(Object)
++ String toString()
++ {static} NodeListener node(NodeListener,Object)
++ {static} PropertyChangeListener propertyChange(PropertyChangeListener,Object)
++ {static} VetoableChangeListener vetoableChange(VetoableChangeListener,Object)
++ {static} FileChangeListener fileChange(FileChangeListener,Object)
++ {static} FileStatusListener fileStatus(FileStatusListener,Object)
++ {static} RepositoryListener repository(RepositoryListener,Object)
++ {static} DocumentListener document(DocumentListener,Object)
++ {static} ChangeListener change(ChangeListener,Object)
++ {static} FocusListener focus(FocusListener,Object)
++ {static} OperationListener operation(OperationListener,Object)
+}
+
+
+class org.openide.util.WeakListener$PropertyChange {
++ <<Create>> PropertyChange(PropertyChangeListener)
+~ <<Create>> PropertyChange(Class,PropertyChangeListener)
++ void propertyChange(PropertyChangeEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$VetoableChange {
++ <<Create>> VetoableChange(VetoableChangeListener)
++ void vetoableChange(PropertyChangeEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$FileChange {
++ <<Create>> FileChange(FileChangeListener)
++ void fileFolderCreated(FileEvent)
++ void fileDataCreated(FileEvent)
++ void fileChanged(FileEvent)
++ void fileDeleted(FileEvent)
++ void fileRenamed(FileRenameEvent)
++ void fileAttributeChanged(FileAttributeEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$FileStatus {
++ <<Create>> FileStatus(FileStatusListener)
++ void annotationChanged(FileStatusEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$Repository {
++ <<Create>> Repository(RepositoryListener)
++ void fileSystemAdded(RepositoryEvent)
++ void fileSystemRemoved(RepositoryEvent)
++ void fileSystemPoolReordered(RepositoryReorderedEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$Document {
++ <<Create>> Document(DocumentListener)
++ void changedUpdate(DocumentEvent)
++ void insertUpdate(DocumentEvent)
++ void removeUpdate(DocumentEvent)
+# String removeMethodName()
+- DocumentListener docGet(DocumentEvent)
+}
+
+class org.openide.util.WeakListener$Change {
++ <<Create>> Change(ChangeListener)
++ void stateChanged(ChangeEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$Node {
++ <<Create>> Node(NodeListener)
++ void childrenAdded(NodeMemberEvent)
++ void childrenRemoved(NodeMemberEvent)
++ void childrenReordered(NodeReorderEvent)
++ void nodeDestroyed(NodeEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$Focus {
++ <<Create>> Focus(FocusListener)
++ void focusGained(FocusEvent)
++ void focusLost(FocusEvent)
+# String removeMethodName()
+}
+
+class org.openide.util.WeakListener$Operation {
++ <<Create>> Operation(OperationListener)
+# String removeMethodName()
++ void operationPostCreate(OperationEvent)
++ void operationCopy(OperationEvent.Copy)
++ void operationMove(OperationEvent.Move)
++ void operationDelete(OperationEvent)
++ void operationRename(OperationEvent.Rename)
++ void operationCreateShadow(OperationEvent.Copy)
++ void operationCreateFromTemplate(OperationEvent.Copy)
+}
+
+class org.openide.util.WeakListener$ListenerReference {
+~ WeakListener weakListener
++ <<Create>> ListenerReference(Object,WeakListener)
+}
+
+
+class org.openide.util.WeakListener$Cleaner {
++ void run()
+}
+
+interface org.openide.util.WeakListener$Factory {
++ NodeListener node(NodeListener,Object)
++ PropertyChangeListener propertyChange(PropertyChangeListener,Object)
++ VetoableChangeListener vetoableChange(VetoableChangeListener,Object)
++ FileChangeListener fileChange(FileChangeListener,Object)
++ FileStatusListener fileStatus(FileStatusListener,Object)
++ RepositoryListener repository(RepositoryListener,Object)
++ DocumentListener document(DocumentListener,Object)
++ ChangeListener change(ChangeListener,Object)
++ FocusListener focus(FocusListener,Object)
++ OperationListener operation(OperationListener,Object)
+}
+
+
+
+java.util.EventListener <|.. org.openide.util.WeakListener
+org.openide.util.Object <|-- org.openide.util.WeakListener
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$PropertyChange
+org.openide.util.PropertyChangeListener <|.. org.openide.util.WeakListener$PropertyChange
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$PropertyChange
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$VetoableChange
+org.openide.util.VetoableChangeListener <|.. org.openide.util.WeakListener$VetoableChange
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$VetoableChange
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$FileChange
+org.openide.util.FileChangeListener <|.. org.openide.util.WeakListener$FileChange
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$FileChange
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$FileStatus
+org.openide.util.FileStatusListener <|.. org.openide.util.WeakListener$FileStatus
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$FileStatus
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Repository
+org.openide.util.RepositoryListener <|.. org.openide.util.WeakListener$Repository
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$Repository
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Document
+org.openide.util.DocumentListener <|.. org.openide.util.WeakListener$Document
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$Document
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Change
+org.openide.util.ChangeListener <|.. org.openide.util.WeakListener$Change
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$Change
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Node
+org.openide.util.NodeListener <|.. org.openide.util.WeakListener$Node
+org.openide.util.PropertyChange <|-- org.openide.util.WeakListener$Node
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Focus
+org.openide.util.FocusListener <|.. org.openide.util.WeakListener$Focus
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$Focus
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Operation
+org.openide.util.OperationListener <|.. org.openide.util.WeakListener$Operation
+org.openide.util.WeakListener <|-- org.openide.util.WeakListener$Operation
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$ListenerReference
+org.openide.util.WeakReference <|-- org.openide.util.WeakListener$ListenerReference
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Cleaner
+org.openide.util.Runnable <|.. org.openide.util.WeakListener$Cleaner
+org.openide.util.Object <|-- org.openide.util.WeakListener$Cleaner
+org.openide.util.WeakListener +.. org.openide.util.WeakListener$Factory
+@enduml

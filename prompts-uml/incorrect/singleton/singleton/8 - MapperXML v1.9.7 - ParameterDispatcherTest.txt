@@ -1,0 +1,36 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.xml.event.test.ParameterDispatcherTest {
+# TestParameter testParm
+- ParameterDispatcher dispatcher
+- HashMap map
++ <<Create>> ParameterDispatcherTest(String)
+# void setUp()
+# void tearDown()
+- void addParameter(String,String)
++ void testDispatchWithValue()
++ void testDispatchWithBlankValue()
++ void testDispatchWithNullValue()
++ void testDispatchDefaultWithValue()
++ void testDispatchDefaultWithNullValue()
++ {static} void main(String[])
+}
+
+
+class com.taursys.xml.event.test.ParameterDispatcherTest$TestParameter {
+- ParameterEvent savedEvent
+# void processParameterEvent(ParameterEvent)
++ ParameterEvent getSavedEvent()
+}
+
+
+
+
+junit.framework.TestCase <|-- com.taursys.xml.event.test.ParameterDispatcherTest
+com.taursys.xml.event.test.ParameterDispatcherTest +.. com.taursys.xml.event.test.ParameterDispatcherTest$TestParameter
+com.taursys.xml.event.test.Parameter <|-- com.taursys.xml.event.test.ParameterDispatcherTest$TestParameter
+@enduml

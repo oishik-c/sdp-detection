@@ -1,0 +1,92 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.standard.StandardDrawingView {
+- DrawingEditor fEditor
+- Drawing fDrawing
+- Rectangle fDamage
+- Vector fSelection
+- Vector fSelectionHandles
+- Dimension fViewSize
+- Point fLastClick
+- Vector fBackgrounds
+- Vector fForegrounds
+- Painter fUpdateStrategy
+- PointConstrainer fConstrainer
+- {static} long serialVersionUID
+- int drawingViewSerializedDataVersion
++ <<Create>> StandardDrawingView(DrawingEditor,int,int)
++ void setEditor(DrawingEditor)
++ Tool tool()
++ Drawing drawing()
++ void setDrawing(Drawing)
++ DrawingEditor editor()
++ Figure add(Figure)
++ Figure remove(Figure)
++ void addAll(Vector)
++ Dimension getMinimumSize()
++ Dimension getPreferredSize()
++ void setDisplayUpdate(Painter)
++ Vector selection()
++ FigureEnumeration selectionElements()
++ Vector selectionZOrdered()
++ int selectionCount()
++ void addToSelection(Figure)
++ void addToSelectionAll(Vector)
++ void removeFromSelection(Figure)
++ void toggleSelection(Figure)
++ void clearSelection()
+- Enumeration selectionHandles()
++ FigureSelection getFigureSelection()
++ Handle findHandle(int,int)
+# void selectionChanged()
++ Point lastClick()
++ void setConstrainer(PointConstrainer)
++ PointConstrainer getConstrainer()
+# Point constrainPoint(Point)
++ void mousePressed(MouseEvent)
++ void mouseDragged(MouseEvent)
++ void mouseMoved(MouseEvent)
++ void mouseReleased(MouseEvent)
++ void keyPressed(KeyEvent)
+# void handleCursorKey(int)
+- void moveSelection(int,int)
++ void checkDamage()
++ void repairDamage()
++ void drawingInvalidated(DrawingChangeEvent)
++ void drawingRequestUpdate(DrawingChangeEvent)
++ void update(Graphics)
++ void paint(Graphics)
++ void drawAll(Graphics)
++ void drawHandles(Graphics)
++ void drawDrawing(Graphics)
++ void drawBackground(Graphics)
+- void drawPainters(Graphics,Vector)
++ void addBackground(Painter)
++ void removeBackground(Painter)
++ void removeForeground(Painter)
++ void addForeground(Painter)
++ void freezeView()
++ void unfreezeView()
+- void readObject(ObjectInputStream)
+- void checkMinimumSize()
++ boolean isFocusTraversable()
++ void mouseEntered(MouseEvent)
++ void mouseExited(MouseEvent)
++ void mouseClicked(MouseEvent)
++ void keyTyped(KeyEvent)
++ void keyReleased(KeyEvent)
+}
+
+
+
+
+CH.ifa.draw.framework.DrawingView <|.. CH.ifa.draw.standard.StandardDrawingView
+java.awt.event.MouseListener <|.. CH.ifa.draw.standard.StandardDrawingView
+java.awt.event.MouseMotionListener <|.. CH.ifa.draw.standard.StandardDrawingView
+java.awt.event.KeyListener <|.. CH.ifa.draw.standard.StandardDrawingView
+java.awt.Panel <|-- CH.ifa.draw.standard.StandardDrawingView
+@enduml

@@ -1,0 +1,29 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.diagram.ClassRendererComponent {
+# {static} CustomUI classUI
+# {static} Insets margin
+# JTextField title
+# FlatTextArea fields
+# FlatTextArea members
+# int divider
++ <<Create>> ClassRendererComponent()
++ void setTitle(String)
++ String getTitle()
++ void setFields(String)
++ String getFields()
++ void setMembers(String)
++ String getMembers()
++ void setDivider(int)
++ void doLayout()
+}
+
+
+
+
+uml.diagram.CustomComponent <|-- uml.diagram.ClassRendererComponent
+@enduml

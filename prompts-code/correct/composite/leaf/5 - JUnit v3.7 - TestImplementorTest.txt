@@ -1,0 +1,57 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package junit.tests;
+
+import junit.framework.Protectable;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+
+
+public class TestImplementorTest extends TestCase {
+	public static class DoubleTestCase implements Test {
+		private TestCase fTestCase;
+		
+		public DoubleTestCase(TestCase testCase) {
+			fTestCase= testCase;
+		}
+		
+		public int countTestCases() {
+			return 2;
+		}
+		
+		public void run(TestResult result) {
+			result.startTest(this);
+			Protectable p= new Protectable() {
+				public void protect() throws Throwable {
+					fTestCase.runBare();
+					fTestCase.runBare();
+				}
+			};
+			result.runProtected(this, p);
+			result.endTest(this);
+		}
+	}
+	
+	private DoubleTestCase fTest;
+	
+	public TestImplementorTest(String name) {
+		super(name);
+		TestCase testCase= new TestCase("noop") {
+			public void runTest() {
+			}
+		};
+		fTest= new DoubleTestCase(testCase);
+	}
+	
+	public void testSuccessfulRun() {
+		TestResult result= new TestResult();
+		fTest.run(result);
+		assertEquals(fTest.countTestCases(), result.runCount());
+		assertEquals(0, result.errorCount());
+		assertEquals(0, result.failureCount());
+	}
+}

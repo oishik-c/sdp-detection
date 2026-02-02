@@ -1,0 +1,100 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.xml.event.test;
+
+import junit.framework.TestCase;
+import com.taursys.xml.event.ParameterDispatcher;
+import com.taursys.xml.Parameter;
+import com.taursys.xml.event.ParameterEvent;
+import java.util.HashMap;
+
+
+public class ParameterDispatcherTest extends TestCase {
+  protected TestParameter testParm;
+  private ParameterDispatcher dispatcher;
+  private HashMap map;
+
+  public ParameterDispatcherTest(String _name) {
+    super(_name);
+  }
+
+  
+  protected void setUp() {
+    testParm = new TestParameter();
+    testParm.setParameter("parm1");
+    dispatcher = new ParameterDispatcher();
+    map = new HashMap();
+  }
+
+  
+  protected void tearDown() {
+  }
+
+  private void addParameter(String key, String value) {
+    map.put(key, new String[]{value});
+  }
+
+  
+  public void testDispatchWithValue() throws Exception {
+    addParameter("parm1", "red");
+    dispatcher.addNotify(testParm);
+    dispatcher.dispatch(map);
+    assertEquals("red",testParm.getSavedEvent().getValue());
+  }
+
+  
+  public void testDispatchWithBlankValue() throws Exception {
+    addParameter("parm1", "");
+    dispatcher.addNotify(testParm);
+    dispatcher.dispatch(map);
+    assertEquals("",testParm.getSavedEvent().getValue());
+  }
+
+  
+  public void testDispatchWithNullValue() throws Exception {
+    dispatcher.addNotify(testParm);
+    dispatcher.dispatch(map);
+    assertEquals(null,testParm.getSavedEvent());
+  }
+
+  
+  public void testDispatchDefaultWithValue() throws Exception {
+    addParameter("parm1", "red");
+    testParm.setDefaultValue("green");
+    dispatcher.addNotify(testParm);
+    dispatcher.dispatch(map);
+    assertEquals("red",testParm.getSavedEvent().getValue());
+  }
+
+  
+  public void testDispatchDefaultWithNullValue() throws Exception {
+    dispatcher.addNotify(testParm);
+    testParm.setDefaultValue("green");
+    dispatcher.dispatch(map);
+    assertEquals("green",testParm.getSavedEvent().getValue());
+  }
+
+  
+  
+  
+
+  public class TestParameter extends Parameter {
+    private ParameterEvent savedEvent = null;
+    protected void processParameterEvent(ParameterEvent e) throws Exception {
+      savedEvent = e;
+    }
+    public ParameterEvent getSavedEvent() {
+      return savedEvent;
+    }
+  }
+
+  
+  public static void main(String[] argv) {
+    String[] testCaseList = {ParameterDispatcherTest.class.getName()};
+    junit.swingui.TestRunner.main(testCaseList);
+  }
+}

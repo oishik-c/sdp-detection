@@ -1,0 +1,26 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.samples.javadraw.JavaDrawViewer {
+- Drawing fDrawing
+- Tool fTool
+- StandardDrawingView fView
+- Iconkit fIconkit
++ void init()
+- void loadDrawing(String)
++ DrawingView view()
++ Drawing drawing()
++ Tool tool()
++ void toolDone()
++ void selectionChanged(DrawingView)
+}
+
+
+
+
+CH.ifa.draw.framework.DrawingEditor <|.. CH.ifa.draw.samples.javadraw.JavaDrawViewer
+java.applet.Applet <|-- CH.ifa.draw.samples.javadraw.JavaDrawViewer
+@enduml

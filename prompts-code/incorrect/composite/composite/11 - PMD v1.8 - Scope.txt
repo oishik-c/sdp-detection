@@ -1,0 +1,37 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package net.sourceforge.pmd.symboltable;
+
+import java.util.Map;
+
+
+public interface Scope {
+
+    
+    Map getVariableDeclarations(boolean lookingForUsed);
+
+    
+    void addDeclaration(VariableNameDeclaration decl);
+
+    
+    void addDeclaration(MethodNameDeclaration decl);
+
+    
+    boolean contains(NameOccurrence occ);
+
+    
+    NameDeclaration addVariableNameOccurrence(NameOccurrence occ);
+
+    
+    void setParent(Scope parent);
+
+    
+    Scope getParent();
+
+    
+    ClassScope getEnclosingClassScope();
+}

@@ -1,0 +1,47 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class org.openide.util.actions.CookieAction {
+- {static} String PROP_COOKIES
+- {static} String PROP_COOKIE_CHANGE
++ {static} int MODE_ONE
++ {static} int MODE_SOME
++ {static} int MODE_ALL
++ {static} int MODE_EXACTLY_ONE
++ {static} int MODE_ANY
+~ {static} long serialVersionUID
+# {abstract}int mode()
+# {abstract}Class[] cookieClasses()
+# void initialize()
+# void addNotify()
+# void removeNotify()
+- Class[] getCookies()
+# boolean enable(Node[])
+~ boolean doEnable(Node[])
+- int resolveSupported(Node[])
+}
+
+
+class org.openide.util.actions.CookieAction$CookiesChangeListener {
+~ Node[] nodes
+~ boolean active
+- Class clazz
++ <<Create>> CookiesChangeListener(Class)
+~ void setActive(boolean)
+~ boolean isActive()
+~ void setNodes(Node[])
+~ void detachListeners(Node[])
+~ void attachListeners(Node[])
++ void propertyChange(PropertyChangeEvent)
+}
+
+
+
+
+org.openide.util.actions.NodeAction <|-- org.openide.util.actions.CookieAction
+org.openide.util.actions.CookieAction +.. org.openide.util.actions.CookieAction$CookiesChangeListener
+org.openide.util.actions.NodeAdapter <|-- org.openide.util.actions.CookieAction$CookiesChangeListener
+@enduml

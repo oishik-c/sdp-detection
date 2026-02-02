@@ -1,0 +1,286 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram;
+
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
+
+import javax.swing.JComponent;
+import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+
+
+public class Diagram extends JComponent 
+  implements Scrollable {
+  
+  
+  private static final String uiClassID = "DiagramUI";
+
+  
+  private SelectionModel selectionModel;
+  private DiagramModel diagramModel;
+
+  
+  private Rectangle figureBounds = new Rectangle();
+
+  
+  private HashMap rendererMap = new HashMap();
+  private HashMap editorMap = new HashMap();
+
+  private boolean fastRefresh;
+
+  static {
+    UIManager.put("DiagramUI", "diagram.DiagramUI");
+  }
+
+  
+  public Diagram() {
+    this(new DefaultDiagramModel());
+  }
+
+
+  
+  public Diagram(DiagramModel model) {
+    this(model, new DefaultSelectionModel());
+  }
+
+
+  
+  public Diagram(DiagramModel model, SelectionModel selectionModel) {
+    this(model, selectionModel, true);
+
+  }
+
+  
+  public Diagram(DiagramModel model, SelectionModel selectionModel, boolean doubleBuffered) {
+
+    if(model == null || selectionModel == null)
+      throw new IllegalArgumentException();
+
+    setDoubleBuffered(doubleBuffered);
+
+    updateUI();
+    
+    setOpaque(true);
+    setModel(model);
+    setSelectionModel(selectionModel);
+
+    enableFastRefresh(true);
+
+  }
+
+
+  
+  public DiagramUI getUI() {
+    return (DiagramUI)ui;
+  }
+
+
+  
+  public String getUIClassID() {
+    return uiClassID;
+  }
+
+
+  
+  public void setUI(DiagramUI ui) {
+    super.setUI(ui);
+  }
+
+
+  
+  public void updateUI() { 
+    setUI((DiagramUI)UIManager.getUI(this));
+  }
+
+
+  
+  public void setModel(DiagramModel diagramModel) {
+     
+    DiagramModel oldValue = this.diagramModel;
+    this.diagramModel = diagramModel;
+
+    firePropertyChange("model", oldValue, diagramModel);
+    
+  }
+
+
+  
+  public DiagramModel getModel() {
+    return diagramModel;
+  }
+
+
+  
+  public void setSelectionModel(SelectionModel selectionModel) {
+
+    SelectionModel oldValue = this.selectionModel;
+    this.selectionModel = selectionModel;
+
+    firePropertyChange("selectionModel", oldValue, selectionModel);
+
+  }
+
+
+  
+  public SelectionModel getSelectionModel() {
+    return selectionModel;
+  }
+
+
+  
+  public FigureRenderer getFigureRenderer(Class itemClass) {
+    
+    for(Object o = null; o == null && itemClass != null; itemClass = itemClass.getSuperclass()) {
+      if((o = rendererMap.get(itemClass)) != null)
+        return (FigureRenderer)o;
+    }
+    
+    return null;
+
+  }
+
+  
+  public void setFigureRenderer(Class itemClass, FigureRenderer renderer) {
+
+    if(renderer == null)
+      rendererMap.remove(itemClass);
+    else
+      rendererMap.put(itemClass, renderer);
+
+  }
+
+
+  
+  public FigureEditor getFigureEditor(Class itemClass) {
+
+    for(Object o = null; o == null && itemClass != null; itemClass = itemClass.getSuperclass()) {
+      if((o = editorMap.get(itemClass)) != null)
+        return (FigureEditor)o;
+    }
+    
+    return null;
+
+  }
+
+
+  
+  public void setFigureEditor(Class itemClass, FigureEditor editor) {
+
+    if(editor == null)
+      editorMap.remove(itemClass);
+    else
+      editorMap.put(itemClass, editor);
+
+  }
+
+
+  
+  public Figure findFigure(Point2D pt) {
+    return (ui == null) ? null : ((DiagramUI)ui).findFigure(pt);
+  }
+
+
+  
+  public void enableFastRefresh(boolean flag) {
+
+    if(flag != fastRefresh) {
+
+      boolean last = fastRefresh;
+      fastRefresh = flag;
+      
+      firePropertyChange("fastRefresh", (last ? "true":"false"), (last ? "false":"true"));
+    
+    }
+
+  }
+
+  
+  public boolean isFastRefreshEnabled() {
+    return fastRefresh;
+  }
+
+
+  
+  public Rectangle2D getDecoratedBounds(Figure figure, Rectangle2D rcBounds) {
+    
+    
+    FigureRenderer renderer = null;
+    if(figure == null || (renderer = getFigureRenderer(figure.getClass())) == null)
+      return rcBounds;
+
+    
+    return (rcBounds = renderer.getDecoratedBounds(this, figure, rcBounds));
+
+  }
+
+
+  
+
+
+  private void checkScrollableParameters(Rectangle visibleRect, int orientation) {
+
+    if (visibleRect == null) 
+      throw new IllegalArgumentException("visibleRect must be non-null");
+
+    switch (orientation) {
+        case SwingConstants.VERTICAL:
+        case SwingConstants.HORIZONTAL:
+          break;
+        default:
+          throw new IllegalArgumentException("orientation must be one of: VERTICAL, HORIZONTAL");
+    }
+
+  }
+
+  
+  public Dimension getPreferredScrollableViewportSize() {
+    return getPreferredSize();
+  }
+
+  
+  public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+    
+    checkScrollableParameters(visibleRect, orientation);
+    return 4;
+
+  }
+
+  
+  public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+    checkScrollableParameters(visibleRect, orientation);
+    return (orientation == SwingConstants.VERTICAL) ? visibleRect.height : visibleRect.width;
+
+  }
+
+  
+  public boolean getScrollableTracksViewportWidth() {
+
+    if(getParent() instanceof JViewport) 
+      return (((JViewport)getParent()).getWidth() > getPreferredSize().width);
+    
+    return false;
+
+  }
+
+  
+  public boolean getScrollableTracksViewportHeight() {
+
+    if(getParent() instanceof JViewport) 
+      return (((JViewport)getParent()).getHeight() > getPreferredSize().height);
+    
+    return false;
+
+  }
+
+}

@@ -1,0 +1,24 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.core.execution.SysInStream {
+~ java.io.Reader in
++ <<Create>> SysInStream(java.io.Reader)
++ int read()
++ int read(byte[],int,int)
++ int available()
++ void close()
++ void mark(int)
++ void reset()
++ boolean markSupported()
++ long skip(long)
+}
+
+
+
+
+org.netbeans.core.execution.InputStream <|-- org.netbeans.core.execution.SysInStream
+@enduml

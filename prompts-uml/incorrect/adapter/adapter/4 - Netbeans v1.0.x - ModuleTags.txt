@@ -1,0 +1,30 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+interface org.netbeans.core.ModuleTags {
+~ {static} String XML_HEADER
+~ {static} String MODULES_HEADER
+~ {static} String MODULES_FOOTER
+~ {static} String MODULE
+~ {static} String TEST_MODULE
+~ {static} String DELETED_MODULE
+~ {static} String CODENAMEBASE
+~ {static} String RELEASE
+~ {static} String SPECVERSION
+~ {static} String URL
+~ {static} String ENABLED
+~ {static} String DELETED
+~ {static} String BASE
+~ {static} String BASE_USER
+~ {static} String BASE_CENTRAL
+~ {static} String BASE_JAR
+~ {static} String NEW_LINE
+~ {static} String MANIFEST
+~ {static} String TAB
+~ {static} String TABx2
+}
+
+@enduml

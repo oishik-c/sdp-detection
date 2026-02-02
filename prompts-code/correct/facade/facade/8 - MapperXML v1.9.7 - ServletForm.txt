@@ -1,0 +1,280 @@
+Given the following java code, determine whether it contains an instance of the facade design pattern playing the role of facade.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.servlet;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import com.taursys.dom.AbstractWriter;
+import com.taursys.dom.DocumentAdapter;
+import com.taursys.dom.XMLWriter;
+import com.taursys.dom.DOM_1_20000929_DocumentAdapter;
+import com.taursys.xml.event.*;
+import com.taursys.servlet.respond.Responder;
+import com.taursys.servlet.respond.HTMLResponder;
+import com.taursys.debug.Debug;
+import com.taursys.xml.Container;
+import com.taursys.xml.Form;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Enumeration;
+import java.util.Collections;
+
+
+public class ServletForm extends Form {
+  private HttpServletRequest request;
+  private HttpServletResponse response;
+  private boolean enableInput = true;
+  private boolean enableActions = true;
+  private com.taursys.servlet.respond.Responder responder;
+
+  
+  
+  
+
+  
+  public ServletForm() {
+    setResponder(createDefaultResponder());
+  }
+
+  
+  public boolean recycle() {
+    try {
+      ((RecycleDispatcher)getDispatcher(RecycleEvent.class.getName())).dispatch();
+      return true;
+    } catch (RecycleException ex) {
+      com.taursys.debug.Debug.error("Problem during recycling",ex);
+      return false;
+    }
+  }
+
+  
+  
+  
+
+  
+  public void doGet(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+    try {
+      response = resp;
+      request = req;
+      if (!isInitialized())
+        initForm();
+      if (req.getContentType() != null && req.getContentType().startsWith(
+          HttpMultiPartServletRequest.MULTIPART_FORM_DATA)) {
+        request = createRequestWrapper(req);
+      }
+      setParameterMap(createParameterMap());
+      
+      dispatchInitContext();
+      dispatchInitForm();
+      
+      dispatchParameters();
+      openForm();
+      dispatchOpenForm();
+      if (enableInput) {
+        dispatchInput();
+      }
+      if (enableActions) {
+        dispatchActions();
+      }
+      sendResponse();
+    } catch (Exception ex) {
+      handleException(ex);
+    } finally {
+      dispatchCloseForm();
+      closeForm();
+    }
+  }
+
+  
+  
+  
+
+  
+  protected void dispatchInitContext() throws Exception {
+    HashMap newContext = new HashMap(getFormContext());
+    newContext.put(HttpServletRequest.class.getName(), request);
+    newContext.put(HttpServletResponse.class.getName(), response);
+    newContext.put(PARAMETER_MAP, getParameterMap());
+    getDispatcher(InitContextEvent.class.getName()).dispatch(newContext);
+  }
+
+  
+  protected void sendResponse() throws Exception {
+    responder.respond();
+  }
+
+  
+  protected void handleException(Exception ex) throws Exception {
+    throw ex;
+  }
+
+  
+  
+  
+
+  
+  protected HttpServletRequest createRequestWrapper(HttpServletRequest rq)
+      throws Exception {
+    HttpMultiPartServletRequest multi = new HttpMultiPartServletRequest(rq);
+    multi.parseRequest();
+    return multi;
+  }
+
+  
+  protected Responder createDefaultResponder() {
+    return new HTMLResponder();
+  }
+
+  
+  public Map createParameterMap() {
+    HashMap map = new HashMap();
+    Enumeration enum = request.getParameterNames();
+    while (enum.hasMoreElements()) {
+      String key = (String)enum.nextElement();
+      map.put(key, request.getParameterValues(key));
+    }
+    return Collections.unmodifiableMap(map);
+  }
+
+  
+  
+  
+
+  
+  protected void processInitContextEvent(InitContextEvent e) throws Exception {
+    request = (HttpServletRequest)
+        e.getContext().get(HttpServletRequest.class.getName());
+    response = (HttpServletResponse)
+        e.getContext().get(HttpServletResponse.class.getName());
+    super.processInitContextEvent(e);
+  }
+
+  
+  
+  
+
+  
+  public void setRequest(HttpServletRequest newRequest) {
+    request = newRequest;
+  }
+
+  
+  public HttpServletRequest getRequest() {
+    return request;
+  }
+
+  
+  public void setResponse(HttpServletResponse newResponse) {
+    response = newResponse;
+  }
+
+  
+  public HttpServletResponse getResponse() {
+    return response;
+  }
+
+  
+  public void setEnableInput(boolean newEnableInput) {
+    enableInput = newEnableInput;
+  }
+
+  
+  public boolean isEnableInput() {
+    return enableInput;
+  }
+
+  
+  public void setEnableActions(boolean newEnableActions) {
+    enableActions = newEnableActions;
+  }
+
+  
+  public boolean isEnableActions() {
+    return enableActions;
+  }
+
+  
+  public void setResponder(Responder newResponder) {
+    responder = newResponder;
+    responder.setServletForm(this);
+  }
+
+  
+  public Responder getResponder() {
+    return responder;
+  }
+
+  
+  
+  
+  private ServletParameterDispatcher spd;
+  private AbstractWriter xmlWriter;
+  private ServletInputDispatcher sid;
+  private ServletTriggerDispatcher std;
+
+  
+  protected AbstractWriter createDefaultWriter() {
+    return new XMLWriter();
+  }
+
+  
+  public void setXmlWriter(AbstractWriter newXmlWriter) {
+    xmlWriter = newXmlWriter;
+  }
+
+  
+  public AbstractWriter getXmlWriter() {
+    return xmlWriter;
+  }
+
+  
+  protected ServletParameterDispatcher createDefaultServletParameterDispatcher() {
+    return new ServletParameterDispatcher();
+  }
+
+  
+  protected ServletInputDispatcher createDefaultServletInputDispatcher() {
+    return new ServletInputDispatcher();
+  }
+
+  
+  protected ServletTriggerDispatcher createDefaultServletTriggerDispatcher() {
+    return new ServletTriggerDispatcher();
+  }
+
+  
+  public void setServletParameterDispatcher(ServletParameterDispatcher d) {
+    spd = d;
+  }
+
+  
+  public ServletParameterDispatcher getServletParameterDispatcher() {
+    return spd;
+  }
+
+  
+  public void setServletInputDispatcher(ServletInputDispatcher dispatcher) {
+    sid = dispatcher;
+  }
+
+  
+  public ServletInputDispatcher getServletInputDispatcher() {
+    return sid;
+  }
+
+
+  
+  public void setServletTriggerDispatcher(ServletTriggerDispatcher newTriggerDispatcher) {
+    std = newTriggerDispatcher;
+  }
+
+  
+  public ServletTriggerDispatcher getServletTriggerDispatcher() {
+    return std;
+  }
+
+}

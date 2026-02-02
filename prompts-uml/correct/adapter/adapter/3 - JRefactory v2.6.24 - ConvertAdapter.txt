@@ -1,0 +1,19 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.uml.ConvertAdapter {
+- UMLPackage packagePanel
+- UMLType typePanel
+- UMLField fieldPanel
++ <<Create>> ConvertAdapter(UMLPackage,UMLField)
++ void actionPerformed(ActionEvent)
+}
+
+
+
+
+java.awt.event.ActionListener <|.. org.acm.seguin.uml.ConvertAdapter
+@enduml

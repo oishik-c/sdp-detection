@@ -1,0 +1,98 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.uml.line;
+
+import java.awt.Point;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+
+import org.acm.seguin.uml.UMLPackage;
+
+
+public class DragPanelAdapter implements MouseListener, MouseMotionListener {
+	private EndPointPanel panel;
+	private LinedPanel parent;
+	private Point mouseStart;
+	private Point panelStart;
+
+
+	
+	public DragPanelAdapter(EndPointPanel initPanel, LinedPanel initParent) {
+		panel = initPanel;
+		parent = initParent;
+	}
+
+
+	
+	public void mouseClicked(MouseEvent mevt) {
+		boolean newState = !panel.isSelected();
+		if ((mevt.getModifiers() & MouseEvent.BUTTON1_MASK) == 0) {
+			return;
+		}
+		else if (!mevt.isControlDown()) {
+			parent.deselectAll();
+		}
+
+		panel.setSelected(newState);
+	}
+
+
+	
+	public void mouseEntered(MouseEvent mevt) {
+	}
+
+
+	
+	public void mouseExited(MouseEvent mevt) {
+	}
+
+
+	
+	public void mousePressed(MouseEvent mevt) {
+		mouseStart = mevt.getPoint();
+		panelStart = panel.getLocation(panelStart);
+	}
+
+
+	
+	public void mouseReleased(MouseEvent mevt) {
+		if ((mevt.getModifiers() & MouseEvent.BUTTON1_MASK) != 0) {
+			if (parent instanceof LinedPanel) {
+				((LinedPanel) parent).drop();
+			}
+			if (parent instanceof UMLPackage) {
+				((UMLPackage) parent).setDirty();
+			}
+		}
+	}
+
+
+	
+	public void mouseDragged(MouseEvent mevt) {
+		if ((mevt.getModifiers() & MouseEvent.BUTTON1_MASK) != 0) {
+			Point currentMouse = mevt.getPoint();
+
+			int deltaX = currentMouse.x - mouseStart.x;
+			int deltaY = currentMouse.y - mouseStart.y;
+
+			if (!panel.isSelected()) {
+				panel.shift(deltaX, deltaY);
+			}
+			else {
+				parent.shift(deltaX, deltaY);
+			}
+
+			parent.repaint();
+		}
+	}
+
+
+	
+	public void mouseMoved(MouseEvent mevt) {
+	}
+}

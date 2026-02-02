@@ -1,0 +1,80 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.autoupdate;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import org.w3c.dom.*;
+
+
+class ModuleGroup extends Object
+    implements org.openide.nodes.Node.Cookie {
+
+    private static final String ATTR_NAME = "name"; 
+
+    
+    private Node node;
+
+    
+    private String name;
+
+    
+    private Collection items;
+
+    
+    public ModuleGroup( ) {
+        this( null );
+    }
+
+    
+    public ModuleGroup( Node node ) {
+        items = new ArrayList( 11 );
+        if ( node != null ) {
+            this.node = node;
+            setName( getAttribute( ATTR_NAME ) );
+        }
+    }
+
+    
+    void addItem( ModuleGroup group ) {
+        items.add( group );
+    }
+
+    
+    void addItem( ModuleUpdate update ) {
+        items.add( update );
+    }
+
+    
+
+    
+    public String getName() {
+        return name;
+    }
+
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    
+    public Collection getItems() {
+        return items;
+    }
+
+    
+
+    
+    private String getAttribute( String attribute ) {
+        Node attr = node.getAttributes().getNamedItem( attribute );
+        return attr == null ? null : attr.getNodeValue();
+    }
+
+}
+

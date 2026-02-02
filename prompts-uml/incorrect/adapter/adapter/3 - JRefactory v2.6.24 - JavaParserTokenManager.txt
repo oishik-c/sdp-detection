@@ -1,0 +1,83 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.parser.JavaParserTokenManager {
++ {static} String[] jjstrLiteralImages
++ {static} String[] lexStateNames
++ {static} int[] jjnewLexState
+# {static} char curChar
+~ {static} long[] jjbitVec0
+~ {static} long[] jjbitVec1
+~ {static} long[] jjbitVec3
+~ {static} long[] jjbitVec4
+~ {static} long[] jjbitVec5
+~ {static} long[] jjbitVec6
+~ {static} long[] jjbitVec7
+~ {static} int[] jjnextStates
+~ {static} long[] jjtoToken
+~ {static} long[] jjtoSkip
+~ {static} long[] jjtoSpecial
+~ {static} long[] jjtoMore
+~ {static} StringBuffer image
+~ {static} int jjimageLen
+~ {static} int lengthOfMatch
+~ {static} int curLexState
+~ {static} int defaultLexState
+~ {static} int jjnewStateCnt
+~ {static} int jjround
+~ {static} int jjmatchedPos
+~ {static} int jjmatchedKind
+- {static} CharStream input_stream
+- {static} int[] jjrounds
+- {static} int[] jjstateSet
++ <<Create>> JavaParserTokenManager(CharStream)
++ <<Create>> JavaParserTokenManager(CharStream,int)
++ {static} Token getNextToken()
++ {static} void ReInit(CharStream)
++ {static} void ReInit(CharStream,int)
++ {static} void SwitchTo(int)
+~ {static} void SkipLexicalActions(Token)
+~ {static} void MoreLexicalActions()
+- {static} int jjStopAtPos(int,int)
+- {static} int jjMoveStringLiteralDfa0_4()
+- {static} int jjMoveStringLiteralDfa1_4(long)
+- {static} int jjMoveStringLiteralDfa2_4(long,long)
+- {static} int jjMoveStringLiteralDfa0_3()
+- {static} int jjMoveStringLiteralDfa1_3(long)
+- {static} int jjMoveStringLiteralDfa0_2()
+- {static} int jjMoveStringLiteralDfa1_2(long)
+- {static} int jjMoveStringLiteralDfa0_1()
+- {static} void jjCheckNAdd(int)
+- {static} void jjAddStates(int,int)
+- {static} void jjCheckNAddTwoStates(int,int)
+- {static} void jjCheckNAddStates(int,int)
+- {static} void jjCheckNAddStates(int)
+- {static} int jjMoveNfa_1(int,int)
+- {static} int jjStopStringLiteralDfa_0(int,long,long)
+- {static} int jjStartNfa_0(int,long,long)
+- {static} int jjStartNfaWithStates_0(int,int,int)
+- {static} int jjMoveStringLiteralDfa0_0()
+- {static} int jjMoveStringLiteralDfa1_0(long,long)
+- {static} int jjMoveStringLiteralDfa2_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa3_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa4_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa5_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa6_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa7_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa8_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa9_0(long,long)
+- {static} int jjMoveStringLiteralDfa10_0(long,long)
+- {static} int jjMoveStringLiteralDfa11_0(long,long)
+- {static} int jjMoveNfa_0(int,int)
+- {static} void ReInitRounds()
+- {static} Token jjFillToken()
+}
+
+
+
+
+org.acm.seguin.parser.JavaParserConstants <|.. org.acm.seguin.parser.JavaParserTokenManager
+@enduml

@@ -1,0 +1,329 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.xml;
+
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.EventObject;
+import java.util.Iterator;
+import com.taursys.xml.event.RenderException;
+import com.taursys.util.MapperComponent;
+import com.taursys.xml.event.*;
+
+
+public abstract class Component implements MapperComponent {
+  private transient ArrayList parameterListeners;
+  private transient ArrayList inputListeners;
+  private transient ArrayList renderListeners;
+  private transient ArrayList recycleListeners;
+  private transient ArrayList triggerListeners;
+  
+  com.taursys.xml.Container parent;
+  private boolean visible = true;
+  private ArrayList eventTypeList = new ArrayList();
+  private boolean notifySet = false;
+
+  
+  public Component() {
+  }
+
+  
+  
+  
+
+  
+  public com.taursys.xml.Container getParent() {
+    return parent;
+  }
+
+  
+  public void setVisible(boolean visible) {
+    this.visible = visible;
+  }
+
+  
+  public boolean isVisible() {
+    return visible;
+  }
+
+  
+  
+  
+
+  
+  protected void removeEventType(String eventType) {
+    if (eventTypeList.contains(eventType)) {
+      eventTypeList.remove(eventType);
+    }
+  }
+
+  
+  protected void addEventType(String eventType) {
+    if (!eventTypeList.contains(eventType)) {
+      eventTypeList.add(eventType);
+    }
+  }
+
+  
+  public void addNotify() {
+    lazyAddNotify();
+  }
+
+  
+  public void removeNotify() {
+    lazyRemoveNotify();
+  }
+
+  
+  protected void lazyAddNotify() {
+    if (!notifySet && parent != null) {
+      
+      Iterator iter = eventTypeList.iterator();
+      while (iter.hasNext()) {
+        Dispatcher dispatcher = parent.getDispatcher((String)iter.next());
+        if (dispatcher != null) {
+          dispatcher.addNotify(this);
+        }
+      }
+      notifySet = true;
+    }
+  }
+
+  
+  protected void lazyRemoveNotify() {
+    if (notifySet && parent != null) {
+      
+      Iterator iter = eventTypeList.iterator();
+      while (iter.hasNext()) {
+        Dispatcher dispatcher = parent.getDispatcher((String)iter.next());
+        if (dispatcher != null)
+          dispatcher.removeNotify(this);
+      }
+      notifySet = false;
+    }
+  }
+
+  
+  protected boolean isNotifySet() {
+    return notifySet;
+  }
+
+  
+  
+  
+
+  
+  public void dispatchEvent(EventObject e) throws Exception {
+    processEvent(e);
+  }
+
+  
+  protected void processEvent(EventObject e) throws Exception {
+    
+    if (e instanceof InputEvent)
+      processInputEvent((InputEvent)e);
+    if (e instanceof ParameterEvent)
+      processParameterEvent((ParameterEvent)e);
+    if (e instanceof RenderEvent)
+      processRenderEvent((RenderEvent)e);
+    if (e instanceof TriggerEvent)
+      processTriggerEvent((TriggerEvent)e);
+    if (e instanceof RecycleEvent)
+      processRecycleEvent((RecycleEvent)e);
+  }
+
+  
+  
+  
+
+  
+  protected void processParameterEvent(ParameterEvent e) throws Exception {
+    fireParameterReceived(e);
+  }
+
+  
+  public void removeParameterListener(ParameterListener l) {
+    if (parameterListeners != null && parameterListeners.contains(l)) {
+      parameterListeners.remove(l);
+    }
+  }
+
+  
+  public void addParameterListener(ParameterListener l) {
+    if (parameterListeners != null) {
+      if (!parameterListeners.contains(l)) {
+        parameterListeners.add(l);
+      }
+    } else {
+      parameterListeners = new ArrayList();
+      parameterListeners.add(l);
+    }
+  }
+
+  
+  protected void fireParameterReceived(ParameterEvent e) throws Exception {
+    if (parameterListeners != null) {
+      Iterator iter = parameterListeners.iterator();
+      while (iter.hasNext()) {
+        ((ParameterListener)iter.next()).parameterReceived(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  protected void processInputEvent(InputEvent e) throws Exception {
+    fireInputReceived(e);
+  }
+
+
+  
+  public synchronized void removeInputListener(InputListener l) {
+    if (inputListeners != null && inputListeners.contains(l)) {
+      inputListeners.remove(l);
+    }
+  }
+
+  
+  public synchronized void addInputListener(InputListener l) {
+    if (inputListeners != null) {
+      if (!inputListeners.contains(l)) {
+        inputListeners.add(l);
+      }
+    } else {
+      inputListeners = new ArrayList();
+      inputListeners.add(l);
+    }
+  }
+
+  
+  protected void fireInputReceived(InputEvent e) throws Exception {
+    if (inputListeners != null) {
+      Iterator iter = inputListeners.iterator();
+      while (iter.hasNext()) {
+        ((InputListener)iter.next()).inputReceived(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  public void processRenderEvent(RenderEvent e) throws RenderException {
+    fireRender(e);
+  }
+
+  
+  public synchronized void removeRenderListener(RenderListener l) {
+    if (renderListeners != null && renderListeners.contains(l)) {
+      renderListeners.remove(l);
+    }
+  }
+
+  
+  public synchronized void addRenderListener(RenderListener l) {
+    if (renderListeners != null) {
+      if (!renderListeners.contains(l)) {
+        renderListeners.add(l);
+      }
+    } else {
+      renderListeners = new ArrayList();
+      renderListeners.add(l);
+    }
+  }
+
+  
+  protected void fireRender(RenderEvent e) throws RenderException {
+    if (renderListeners != null) {
+      Iterator iter = renderListeners.iterator();
+      while (iter.hasNext()) {
+        ((RenderListener)iter.next()).render(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  protected void processTriggerEvent(TriggerEvent e) throws Exception {
+    fireActionPerformed(e);
+  }
+
+  
+  public synchronized void removeTriggerListener(TriggerListener l) {
+    if (triggerListeners != null && triggerListeners.contains(l)) {
+      triggerListeners.remove(l);
+    }
+  }
+
+  
+  public synchronized void addTriggerListener(TriggerListener l) {
+    if (triggerListeners != null) {
+      if (!triggerListeners.contains(l)) {
+        triggerListeners.add(l);
+      }
+    } else {
+      triggerListeners = new ArrayList();
+      triggerListeners.add(l);
+    }
+  }
+
+  
+  protected void fireActionPerformed(TriggerEvent e) throws Exception {
+    if (triggerListeners != null) {
+      Iterator iter = triggerListeners.iterator();
+      while (iter.hasNext()) {
+        ((TriggerListener)iter.next()).actionPerformed(e);
+      }
+    }
+  }
+
+  
+  
+  
+
+  
+  public void processRecycleEvent(RecycleEvent e) throws RecycleException {
+    fireRecycle(e);
+  }
+
+  
+  public synchronized void removeRecycleListener(RecycleListener l) {
+    if (recycleListeners != null && recycleListeners.contains(l)) {
+      recycleListeners.remove(l);
+    }
+  }
+
+  
+  public synchronized void addRecycleListener(RecycleListener l) {
+    if (recycleListeners != null) {
+      if (!recycleListeners.contains(l)) {
+        recycleListeners.add(l);
+      }
+    } else {
+      recycleListeners = new ArrayList();
+      recycleListeners.add(l);
+    }
+  }
+
+  
+  protected void fireRecycle(RecycleEvent e) throws RecycleException {
+    if (recycleListeners != null) {
+      Iterator iter = recycleListeners.iterator();
+      while (iter.hasNext()) {
+        ((RecycleListener)iter.next()).recycle(e);
+      }
+    }
+  }
+}

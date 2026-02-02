@@ -1,0 +1,134 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
+
+public class DefaultSelectionModel extends AbstractSelectionModel {
+
+  
+  private ArrayList selectionList = new ArrayList();
+ 
+  
+  public boolean contains(Figure f) {
+    return selectionList.contains(f);
+  }
+
+  public boolean contains(Link l) { return false; }
+
+   
+  public void add(Figure f) {
+    add(f, false);
+  }
+
+  
+  public void add(Figure f, boolean reset) {
+
+    if(reset)
+      clear();
+
+    selectionList.add(f);
+    fireFigureAdded(f);
+
+  }
+
+  
+  public void remove(Figure f) {
+
+    selectionList.remove(f);
+    fireFigureRemoved(f);
+
+  }
+
+
+  
+  public void clear() {
+
+    
+    while(!selectionList.isEmpty() )
+      remove((Figure)selectionList.get(selectionList.size()-1));
+
+  }
+
+  
+  public int size() {
+    return selectionList.size();
+  }
+
+  
+  public Iterator iterator() {
+    return new ValueIterator();
+
+  }
+
+
+  
+  public Object[] toArray(Object[] a) {
+
+    Class itemClass = (a == null) ? Object.class : a.getClass().getComponentType();
+    if(itemClass == Object.class)
+      return selectionList.toArray(a);
+
+    
+    int len = selectionList.size();
+    if(a.length < len) 
+      a = (Object[])java.lang.reflect.Array.newInstance(itemClass, len);
+    
+    
+    int n = 0;
+    for(int i=0; i < len; i++) {
+      
+      Object o = selectionList.get(i);
+      Class c = o.getClass();
+      
+      if(c == itemClass || itemClass.isAssignableFrom(c))
+        a[n++] = o;
+
+    }
+    
+    
+    if(n < a.length) 
+      java.util.Arrays.fill(a, n, a.length, null);
+    
+    return a;
+
+  }
+
+
+  
+  protected class ValueIterator implements Iterator {
+
+    int n = 0;
+    
+    public boolean hasNext() {
+      
+      if(n++ < selectionList.size())
+        return true;
+
+      
+      reset();
+
+      return false;
+
+    }
+
+    public Object next() {
+      return selectionList.get(n);
+    }
+
+    public void remove() { }
+
+    public void reset() {
+      n = 0;
+    }
+
+  }
+
+}

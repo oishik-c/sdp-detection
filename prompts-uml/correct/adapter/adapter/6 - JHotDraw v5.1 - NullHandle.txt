@@ -1,0 +1,17 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.standard.NullHandle {
+# Locator fLocator
++ <<Create>> NullHandle(Figure,Locator)
++ void draw(Graphics)
+}
+
+
+
+
+CH.ifa.draw.standard.LocatorHandle <|-- CH.ifa.draw.standard.NullHandle
+@enduml

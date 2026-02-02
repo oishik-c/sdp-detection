@@ -1,0 +1,45 @@
+Given the following uml code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.nutch.io.UTF8 {
+- {static} Logger LOG
+- {static} DataOutputBuffer OBUF
+- {static} DataInputBuffer IBUF
+- byte[] bytes
+- int length
++ <<Create>> UTF8()
++ <<Create>> UTF8(String)
++ <<Create>> UTF8(UTF8)
++ byte[] getBytes()
++ int getLength()
++ void set(String)
++ void set(UTF8)
++ void readFields(DataInput)
++ {static} void skip(DataInput)
++ void write(DataOutput)
++ int compareTo(Object)
++ String toString()
++ boolean equals(Object)
++ {static} byte[] getBytes(String)
++ {static} String readString(DataInput)
+- {static} void readChars(DataInput,StringBuffer,int)
++ {static} int writeString(DataOutput,String)
+- {static} int utf8Length(String)
+- {static} void writeChars(DataOutput,String,int,int)
+}
+
+
+class net.nutch.io.UTF8$Comparator {
++ <<Create>> Comparator()
++ int compare(byte[],int,int,byte[],int,int)
+}
+
+
+
+net.nutch.io.WritableComparable <|.. net.nutch.io.UTF8
+net.nutch.io.UTF8 +.. net.nutch.io.UTF8$Comparator
+net.nutch.io.WritableComparator <|-- net.nutch.io.UTF8$Comparator
+@enduml

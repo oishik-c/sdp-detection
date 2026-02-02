@@ -1,0 +1,69 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.model.AbstractListValueHolder {
+- int position
+- Vector listSelectionListeners
+- boolean ignoreReset
+- Comparator comparator
++ <<Create>> AbstractListValueHolder(ObjectValueHolder)
++ <<Create>> AbstractListValueHolder(ObjectValueHolder,List)
++ boolean hasNext()
++ boolean hasPrior()
++ boolean hasAny()
++ int getPosition()
++ int getRowCount()
++ void moveTo(int)
++ void first()
++ void next()
++ void prior()
++ void last()
++ void reset()
++ int indexOf(String[],Object[])
+- boolean isMatchAll(Object[],Object[])
+- boolean isMatch(Object,Object)
++ Object[] getPropertyValues(String[],int)
++ Object getPropertyValue(String,int)
++ void setPropertyValues(String[],Object[],int)
++ void setObject(Object)
++ void setCollection(Collection)
++ void setList(java.util.List)
++ java.util.List getList()
++ void setComparator(Comparator)
++ Comparator getComparator()
++ void sort()
+- void listContentsPositionChange()
++ void removeListSelectionListener(ListSelectionListener)
++ void addListSelectionListener(ListSelectionListener)
+# void fireValueChanged()
+# void fireValueChanged(ListSelectionEvent)
+- void reposition()
+- void reposition(Object)
++ Object remove()
++ Object remove(int)
++ boolean remove(Object)
++ boolean removeAll(Collection)
++ boolean retainAll(Collection)
++ void clear()
++ boolean add(Object)
++ void add(int,Object)
++ boolean addAll(Collection)
++ boolean addAll(int,Collection)
++ Object set(int,Object)
++ Object get(int)
++ int indexOf(Object)
++ int lastIndexOf(Object)
++ ListIterator listIterator()
++ ListIterator listIterator(int)
++ List subList(int,int)
+}
+
+
+
+
+com.taursys.model.ListValueHolder <|.. com.taursys.model.AbstractListValueHolder
+com.taursys.model.AbstractCollectionValueHolder <|-- com.taursys.model.AbstractListValueHolder
+@enduml

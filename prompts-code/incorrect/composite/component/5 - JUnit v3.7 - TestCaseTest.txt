@@ -1,0 +1,134 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package junit.tests;
+
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+
+
+public class TestCaseTest extends TestCase {
+	
+	static class TornDown extends TestCase {
+		boolean fTornDown= false;
+		
+		TornDown(String name) {
+			super(name);
+		}
+		protected void tearDown() {
+			fTornDown= true;
+		}
+		protected void runTest() {
+			throw new Error();
+		}
+	}
+
+	public TestCaseTest(String name) {
+		super(name);
+	}
+	public void testCaseToString() {
+		
+		
+		
+		assertEquals("testCaseToString(junit.tests.TestCaseTest)", toString());
+	}
+	public void testError() {
+		TestCase error= new TestCase("error") {
+			protected void runTest() {
+				throw new Error();
+			}
+		};
+		verifyError(error);
+	}
+	public void testRunAndTearDownFails() {
+		TornDown fails= new TornDown("fails") {
+			protected void tearDown() {
+				super.tearDown();
+				throw new Error();
+			}
+			protected void runTest() {
+				throw new Error();
+			}
+		};
+		verifyError(fails);
+		assertTrue(fails.fTornDown);
+	}
+	public void testSetupFails() {
+		TestCase fails= new TestCase("success") {
+			protected void setUp() {
+				throw new Error();
+			}
+			protected void runTest() {
+			}
+		};
+		verifyError(fails);
+	}
+	public void testSuccess() {
+		TestCase success= new TestCase("success") {
+			protected void runTest() {
+			}
+		};
+		verifySuccess(success);
+	}
+	public void testFailure() {
+		TestCase failure= new TestCase("failure") {
+			protected void runTest() {
+				fail();
+			}
+		};
+		verifyFailure(failure);
+	}
+
+	public void testTearDownAfterError() {
+		TornDown fails= new TornDown("fails");
+		verifyError(fails);
+		assertTrue(fails.fTornDown);
+	}
+	
+	public void testTearDownFails() {
+		TestCase fails= new TestCase("success") {
+			protected void tearDown() {
+				throw new Error();
+			}
+			protected void runTest() {
+			}
+		};
+		verifyError(fails);
+	}
+	public void testTearDownSetupFails() {
+		TornDown fails= new TornDown("fails") {
+			protected void setUp() {
+				throw new Error();
+			}
+		};
+		verifyError(fails);
+		assertTrue(!fails.fTornDown);
+	}
+	public void testWasRun() {
+		WasRun test= new WasRun("");
+		test.run();
+		assertTrue(test.fWasRun);
+	}
+	void verifyError(TestCase test) {
+		TestResult result= test.run();
+		assertTrue(result.runCount() == 1);
+		assertTrue(result.failureCount() == 0);
+		assertTrue(result.errorCount() == 1);
+	}
+	void verifyFailure(TestCase test) {
+		TestResult result= test.run();
+		assertTrue(result.runCount() == 1);
+		assertTrue(result.failureCount() == 1);
+		assertTrue(result.errorCount() == 0);
+	}
+	void verifySuccess(TestCase test) {
+		TestResult result= test.run();
+		assertTrue(result.runCount() == 1);
+		assertTrue(result.failureCount() == 0);
+		assertTrue(result.errorCount() == 0);
+	}
+
+
+}

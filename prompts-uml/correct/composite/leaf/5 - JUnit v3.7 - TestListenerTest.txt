@@ -1,0 +1,29 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.tests.TestListenerTest {
+- TestResult fResult
+- int fStartCount
+- int fEndCount
+- int fFailureCount
+- int fErrorCount
++ <<Create>> TestListenerTest(String)
++ void addError(Test,Throwable)
++ void addFailure(Test,AssertionFailedError)
++ void endTest(Test)
+# void setUp()
++ void startTest(Test)
++ void testError()
++ void testFailure()
++ void testStartStop()
+}
+
+
+
+
+junit.framework.TestListener <|.. junit.tests.TestListenerTest
+junit.framework.TestCase <|-- junit.tests.TestListenerTest
+@enduml

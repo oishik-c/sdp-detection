@@ -1,0 +1,83 @@
+Given the following uml code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.nutch.db.DistributedWebDBReader {
+~ {static} Page[] PAGE_RECORDS
+~ {static} Link[] LINK_RECORDS
+~ {static} String PAGES_BY_URL
+~ {static} String PAGES_BY_MD5
+~ {static} String LINKS_BY_URL
+~ {static} String LINKS_BY_MD5
+~ {static} String STATS_FILE
+~ {static} String META_FILE
+~ {static} EnumCall PAGE_ENUMS
+~ {static} EnumCall PAGE_MD5_ENUMS
+~ {static} EnumCall LINK_ENUMS
+~ {static} DBSectionReader[] STATIC_SR_ARRAY
+~ NutchFile dbDir
+~ NutchFile globalWriteLock
+~ DBSectionReader[] pagesByURL
+~ long totalPages
+~ int numMachines
++ <<Create>> DistributedWebDBReader(NutchFileSystem,String)
++ void close()
++ int numMachines()
++ long numPages()
++ long numLinks()
++ Page getPage(String)
++ Page[] getPages(MD5Hash)
++ boolean pageExists(MD5Hash)
++ Enumeration pages()
++ Enumeration pagesByMD5()
++ Link[] getLinks(UTF8)
++ Link[] getLinks(MD5Hash)
++ Enumeration links()
++ {static} void main(String[])
+}
+
+
+abstract class net.nutch.db.DistributedWebDBReader$EnumCall {
++ <<Create>> EnumCall()
++ {abstract}Enumeration getEnumeration(DBSectionReader)
+}
+
+class net.nutch.db.DistributedWebDBReader$PageEnumCall {
++ <<Create>> PageEnumCall()
++ Enumeration getEnumeration(DBSectionReader)
+}
+
+class net.nutch.db.DistributedWebDBReader$PageByMD5EnumCall {
++ <<Create>> PageByMD5EnumCall()
++ Enumeration getEnumeration(DBSectionReader)
+}
+
+class net.nutch.db.DistributedWebDBReader$LinkEnumCall {
++ <<Create>> LinkEnumCall()
++ Enumeration getEnumeration(DBSectionReader)
+}
+
+class net.nutch.db.DistributedWebDBReader$MetaEnumerator {
+~ Enumeration[] enumerations
+~ int curEnum
++ <<Create>> MetaEnumerator(DBSectionReader[],EnumCall)
++ boolean hasMoreElements()
++ Object nextElement()
+}
+
+
+
+
+net.nutch.db.IWebDBReader <|.. net.nutch.db.DistributedWebDBReader
+net.nutch.db.DistributedWebDBReader +.. net.nutch.db.DistributedWebDBReader$EnumCall
+net.nutch.db.DistributedWebDBReader +.. net.nutch.db.DistributedWebDBReader$PageEnumCall
+net.nutch.db.EnumCall <|-- net.nutch.db.DistributedWebDBReader$PageEnumCall
+net.nutch.db.DistributedWebDBReader +.. net.nutch.db.DistributedWebDBReader$PageByMD5EnumCall
+net.nutch.db.EnumCall <|-- net.nutch.db.DistributedWebDBReader$PageByMD5EnumCall
+net.nutch.db.DistributedWebDBReader +.. net.nutch.db.DistributedWebDBReader$LinkEnumCall
+net.nutch.db.EnumCall <|-- net.nutch.db.DistributedWebDBReader$LinkEnumCall
+net.nutch.db.DistributedWebDBReader +.. net.nutch.db.DistributedWebDBReader$MetaEnumerator
+net.nutch.db.Enumeration <|.. net.nutch.db.DistributedWebDBReader$MetaEnumerator
+@enduml

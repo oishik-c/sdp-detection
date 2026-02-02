@@ -1,0 +1,31 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.vcs.cmdline.commands.CvsModuleSelectorDialog {
+- String[] modules
+- boolean validSelection
+~ {static} long serialVersionUID
+- javax.swing.JLabel statusLabel
+- javax.swing.JScrollPane listScrollPane
+- javax.swing.JList moduleList
+- javax.swing.JButton okButton
+- javax.swing.JButton cancelButton
++ <<Create>> CvsModuleSelectorDialog(java.awt.Frame,boolean)
+- void initComponents()
+- void cancelButtonActionPerformed(java.awt.event.ActionEvent)
+- void okButtonActionPerformed(java.awt.event.ActionEvent)
+- void closeDialog(java.awt.event.WindowEvent)
++ boolean showDialog()
++ void waitingForModules()
++ void setModules(String[])
++ String getSelection()
+}
+
+
+
+
+org.netbeans.modules.vcs.cmdline.commands.JDialog <|-- org.netbeans.modules.vcs.cmdline.commands.CvsModuleSelectorDialog
+@enduml

@@ -1,0 +1,69 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.standard;
+
+import java.util.Vector;
+
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.Handle;
+
+
+
+ 
+
+public class BoxHandleKit {
+
+	
+	static public void addCornerHandles(Figure f, Vector handles) {
+		handles.addElement(southEast(f));
+		handles.addElement(southWest(f));
+		handles.addElement(northEast(f));
+		handles.addElement(northWest(f));
+	}
+
+	
+	static public void addHandles(Figure f, Vector handles) {
+		addCornerHandles(f, handles);
+		handles.addElement(south(f));
+		handles.addElement(north(f));
+		handles.addElement(east(f));
+		handles.addElement(west(f));
+	}
+
+	static public Handle south(Figure owner) {
+		return new SouthHandle(owner);
+	}
+
+	static public Handle southEast(Figure owner) {
+		return new SouthEastHandle(owner);
+	}
+
+	static public Handle southWest(Figure owner) {
+		return new SouthWestHandle(owner);
+	}
+
+	static public Handle north(Figure owner) {
+		return new NorthHandle(owner);
+	}
+
+	static public Handle northEast(Figure owner) {
+		return new NorthEastHandle(owner);
+	}
+
+	static public Handle northWest(Figure owner) {
+		return new NorthWestHandle(owner);
+	}
+
+	static public Handle east(Figure owner) {
+		return new EastHandle(owner);
+	}
+	static public Handle west(Figure owner) {
+		return new WestHandle(owner);
+	}
+}
+

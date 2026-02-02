@@ -1,0 +1,177 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.form.palette;
+
+import org.openide.cookies.InstanceCookie;
+import org.openide.loaders.InstanceDataObject;
+import org.netbeans.modules.form.compat2.layouts.DesignLayout;
+import org.netbeans.modules.form.compat2.border.DesignBorder;
+import org.netbeans.modules.form.compat2.border.BorderInfo;
+
+import java.lang.ref.WeakReference;
+
+
+public class PaletteItem implements java.io.Serializable {
+    
+    
+
+    public final static String ATTR_IS_CONTAINER = "isContainer"; 
+    
+    
+
+    
+    private WeakReference sharedReference = null;
+
+    
+    private Class beanClass;
+
+    private InstanceCookie instanceCookie;
+    private InstanceDataObject instanceDO;
+
+    private Boolean expliciteIsContainer;
+
+    
+    
+
+    
+    public PaletteItem (InstanceCookie instanceCookie) throws ClassNotFoundException, java.io.IOException {
+        this.instanceCookie = instanceCookie;
+        this.beanClass = instanceCookie.instanceClass ();
+    }
+
+    static final long serialVersionUID =6553170650531136255L;
+    
+    public PaletteItem (InstanceDataObject ido) throws ClassNotFoundException, java.io.IOException {
+        this.beanClass = ido.instanceClass ();
+        this.instanceCookie = ido;
+        this.instanceDO = ido;
+    }
+
+    
+    public PaletteItem (String beanName) throws ClassNotFoundException {
+        this (Class.forName (beanName));
+    }
+
+    
+    public PaletteItem (Class beanClass) {
+        this (beanClass, java.awt.Container.class.isAssignableFrom (beanClass));
+    }
+
+    
+    public PaletteItem (Class beanClass, boolean isContainer) {
+        this.beanClass = beanClass;
+        this.expliciteIsContainer = new Boolean (isContainer);
+    }
+
+    
+    
+
+    public String getName () {
+        String name;
+        if (instanceDO != null)
+            name = instanceDO.instanceName();
+        else if (instanceCookie != null)
+            name = instanceCookie.instanceName();
+        else
+            name = beanClass.getName();
+        int i = name.lastIndexOf('.');
+        if (i >= 0)
+            name = name.substring(i+1);
+        return name;
+        
+    }
+
+    public String getDisplayName () {
+        String name = getName ();
+        if (name.endsWith ("BorderInfo")) { 
+            return name.substring (0, name.length () - 4); 
+        } else if (name.endsWith ("Layout") && name.startsWith ("Design")) { 
+            return name.substring (6); 
+        }
+        return name;
+    }
+
+    public Object getSharedInstance () throws InstantiationException, IllegalAccessException {
+        Object sharedObject;
+        if ((sharedReference == null) || ((sharedObject = sharedReference.get ()) == null)) {
+            sharedObject = createInstance ();
+            sharedReference = new WeakReference (sharedObject);
+        }
+
+        return sharedObject;
+    }
+
+    public Object createInstance () throws InstantiationException, IllegalAccessException {
+        if (beanClass == null) return null;
+        try {
+            if (instanceDO != null) {
+                return instanceDO.instanceCreate();
+            }
+
+            if (instanceCookie != null) {
+                return instanceCookie.instanceCreate ();
+            }
+
+            return beanClass.newInstance ();
+        }catch (ClassNotFoundException e) {
+            throw new InstantiationException (e.getMessage ());
+        } catch (java.io.IOException e) {
+            throw new InstantiationException (e.getMessage ());
+        }
+    }
+
+    public Class getItemClass () {
+        return beanClass;
+    }
+
+    public java.beans.BeanInfo getBeanInfo () {
+        try {
+            return java.beans.Introspector.getBeanInfo (beanClass);
+        } catch (java.beans.IntrospectionException e) {
+            return null;
+        }
+    }
+
+    public DesignBorder createBorder () throws InstantiationException, IllegalAccessException {
+        return new DesignBorder ((BorderInfo)createInstance ());
+    }
+
+    public boolean isBorder () {
+        return BorderInfo.class.isAssignableFrom (beanClass);
+    }
+
+    public boolean isVisual () {
+        return java.awt.Component.class.isAssignableFrom (beanClass);
+    }
+
+    public boolean isDesignLayout () {
+        return DesignLayout.class.isAssignableFrom (beanClass);
+    }
+
+    public boolean isContainer () {
+        if (expliciteIsContainer != null) return expliciteIsContainer.booleanValue (); 
+
+        boolean isContainer = java.awt.Container.class.isAssignableFrom (beanClass);
+        if (instanceDO != null) {
+            Object attr = instanceDO.getPrimaryFile ().getAttribute (ATTR_IS_CONTAINER);
+            if ((attr != null) && (attr.equals (Boolean.FALSE))) {
+                isContainer = false;
+            }
+        }
+        return isContainer;
+    }
+
+    public boolean isMenu () {
+        return java.awt.MenuBar.class.isAssignableFrom (beanClass) ||
+               java.awt.PopupMenu.class.isAssignableFrom (beanClass) ||
+               javax.swing.JMenuBar.class.isAssignableFrom (beanClass) ||
+               javax.swing.JPopupMenu.class.isAssignableFrom (beanClass);
+    }
+}
+
+

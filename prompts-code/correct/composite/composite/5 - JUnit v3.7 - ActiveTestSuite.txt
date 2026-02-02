@@ -1,0 +1,49 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package junit.extensions;
+
+import junit.framework.*;
+
+ 
+public class ActiveTestSuite extends TestSuite {
+	private volatile int fActiveTestDeathCount;
+	
+	public void run(TestResult result) {
+		fActiveTestDeathCount= 0;
+		super.run(result);
+		waitUntilFinished();
+	}
+	
+	public void runTest(final Test test, final TestResult result) {
+		Thread t= new Thread() {
+			public void run() {
+				try {
+					
+					
+					test.run(result);
+				} finally {
+					ActiveTestSuite.this.runFinished(test);
+				}
+			}
+		};
+		t.start();
+	}
+
+	synchronized void waitUntilFinished() {
+		while (fActiveTestDeathCount < testCount()) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				return; 
+			}
+		}
+	}
+	
+	synchronized public void runFinished(Test test) {
+		fActiveTestDeathCount++;
+		notifyAll();
+	}
+}

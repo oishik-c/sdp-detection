@@ -1,0 +1,55 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.figures.PolyLineFigure {
++ {static} int ARROW_TIP_NONE
++ {static} int ARROW_TIP_START
++ {static} int ARROW_TIP_END
++ {static} int ARROW_TIP_BOTH
+# Vector fPoints
+# LineDecoration fStartDecoration
+# LineDecoration fEndDecoration
+# Color fFrameColor
+- {static} long serialVersionUID
+- int polyLineFigureSerializedDataVersion
++ <<Create>> PolyLineFigure()
++ <<Create>> PolyLineFigure(int)
++ <<Create>> PolyLineFigure(int,int)
++ Rectangle displayBox()
++ boolean isEmpty()
++ Vector handles()
++ void basicDisplayBox(Point,Point)
++ void addPoint(int,int)
++ Enumeration points()
++ int pointCount()
+# void basicMoveBy(int,int)
++ void setPointAt(Point,int)
++ void insertPointAt(Point,int)
++ void removePointAt(int)
++ int splitSegment(int,int)
++ Point pointAt(int)
++ boolean joinSegments(int,int)
++ Connector connectorAt(int,int)
++ void setStartDecoration(LineDecoration)
++ void setEndDecoration(LineDecoration)
++ void draw(Graphics)
++ boolean containsPoint(int,int)
++ int findSegment(int,int)
+- void decorate(Graphics)
++ Object getAttribute(String)
++ void setAttribute(String,Object)
++ void write(StorableOutput)
++ void read(StorableInput)
++ {static} Locator locator(int)
+# Color getFrameColor()
+# void setFrameColor(Color)
+}
+
+
+
+
+CH.ifa.draw.standard.AbstractFigure <|-- CH.ifa.draw.figures.PolyLineFigure
+@enduml

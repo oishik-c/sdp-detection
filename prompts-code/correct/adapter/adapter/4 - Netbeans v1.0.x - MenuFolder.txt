@@ -1,0 +1,270 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.awt;
+
+import java.awt.event.*;
+import java.io.*;
+import java.util.Iterator;
+import java.text.MessageFormat;
+import javax.swing.*;
+
+import org.openide.TopManager;
+import org.openide.NotifyDescriptor;
+import org.openide.loaders.*;
+import org.openide.cookies.InstanceCookie;
+import org.openide.nodes.*;
+import org.openide.util.actions.Presenter;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.WeakListener;
+
+
+public class MenuBar extends JMenuBar implements Externalizable {
+
+    
+    private MenuBarFolder menuBarFolder;
+
+    static final long serialVersionUID =-4721949937356581268L;
+    
+    public MenuBar() {
+        super();
+    }
+
+    
+    public MenuBar(DataFolder folder) {
+        super();
+        
+        startLoading((folder == null)
+                     ? TopManager.getDefault().getPlaces().folders().menus()
+                     : folder);
+    }
+
+    
+    public void waitFinished () {
+        menuBarFolder.instanceFinished();
+    }
+
+    
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeObject(menuBarFolder.getFolder());
+    }
+
+    
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        startLoading((DataFolder)in.readObject());
+    }
+
+    
+    void startLoading (final DataFolder folder) {
+        menuBarFolder = new MenuBarFolder(folder, this);
+    }
+
+    
+    static final class MenuBarFolder extends FolderInstance {
+        
+        MenuBar menuBar;
+
+        
+        public MenuBarFolder (final DataFolder folder, final MenuBar menuBar) {
+            super(folder);
+            this.menuBar = menuBar;
+            recreate ();
+        }
+
+        
+        public String instanceName () {
+            return menuBar.getClass().getName();
+        }
+
+        
+        public Class instanceClass ()
+        throws java.io.IOException, ClassNotFoundException {
+            return MenuBar.class;
+        }
+
+        
+        protected InstanceCookie acceptCookie (InstanceCookie cookie)
+        throws java.io.IOException,
+            ClassNotFoundException {
+            return MenuBar.class.isAssignableFrom(cookie.instanceClass())
+                   ? cookie : null;
+        }
+
+        
+        protected InstanceCookie acceptFolder (DataFolder df) {
+            return new MenuFolder(df);
+        }
+
+        
+        protected Object createInstance (InstanceCookie[] cookies)
+        throws java.io.IOException, ClassNotFoundException {
+            
+            
+            menuBar.removeAll();
+            
+            for (int i = 0; i < cookies.length; i++) {
+                try {
+                    Object obj = cookies[i].instanceCreate();
+                    if (obj instanceof JMenu) {
+                        menuBar.add((JMenu)obj);
+                    }
+                } catch (Exception exc) {
+                    TopManager.getDefault().notifyException(exc);
+                    
+                }
+            }
+            final MenuBar menuBarRef = menuBar;
+            SwingUtilities.invokeLater(new Runnable() {
+                                           public void run () {
+                                               menuBarRef.validate();
+                                               menuBarRef.repaint();
+                                           }
+                                       });
+            return menuBar;
+        }
+
+        
+        DataFolder getFolder () {
+            return folder;
+        }
+
+    }
+
+    
+    static final class MenuFolder extends FolderInstance
+        implements NodeListener {
+
+        
+        private JMenu menu;
+
+        
+        public MenuFolder (final DataFolder folder) {
+            super(folder);
+            recreate ();
+        }
+
+        
+        public final JMenu getMenu() {
+            if (menu == null) {
+                menu = new org.openide.awt.JMenuPlus(
+                           folder.getNodeDelegate ().getDisplayName ()
+                       );
+                folder.getNodeDelegate ().addNodeListener (
+                    WeakListener.node (this, folder.getNodeDelegate ())
+                );
+            }
+            return menu;
+        }
+
+        
+        public void propertyChange (java.beans.PropertyChangeEvent ev) {
+            if (
+                Node.PROP_DISPLAY_NAME.equals (ev.getPropertyName ()) ||
+                Node.PROP_NAME.equals (ev.getPropertyName ())
+            ) {
+                String name = folder.getNodeDelegate ().getDisplayName ();
+                getMenu ().setText (name);
+            }
+        }
+
+        
+        public void childrenAdded (NodeMemberEvent ev) {
+        }
+
+        
+        public void childrenRemoved (NodeMemberEvent ev) {
+        }
+
+        
+        public void childrenReordered(NodeReorderEvent ev) {
+        }
+
+        
+        public void nodeDestroyed (NodeEvent ev) {
+        }
+
+        
+        public String instanceName () {
+            return getMenu().getClass().getName();
+        }
+
+        
+        public Class instanceClass ()
+        throws java.io.IOException, ClassNotFoundException {
+            return JMenu.class;
+        }
+
+        
+        protected InstanceCookie acceptDataObject (DataObject dob) {
+            InstanceCookie ic = super.acceptDataObject (dob);
+            if (ic == null) {
+                return new InstanceSupport.Instance (ExecBridge.createMenuItem (dob));
+            } else {
+                return ic;
+            }
+        }
+
+        
+        protected InstanceCookie acceptCookie(InstanceCookie cookie)
+        throws java.io.IOException,
+            ClassNotFoundException {
+            Class c = cookie.instanceClass();
+            return ((Presenter.Menu.class.isAssignableFrom(c)) ||
+                    (JMenuItem.class.isAssignableFrom(c)) ||
+                    (JSeparator.class.isAssignableFrom(c))) ? cookie : null;
+        }
+
+        
+        protected InstanceCookie acceptFolder(DataFolder df) {
+            return new MenuFolder(df);
+        }
+
+        
+        protected Object createInstance(InstanceCookie[] cookies)
+        throws java.io.IOException, ClassNotFoundException {
+            
+            getMenu().removeAll();
+            for (int i = 0; i < cookies.length; i++) {
+                try {
+                    Object obj = cookies[i].instanceCreate();
+                    if (obj instanceof Presenter.Menu) {
+                        obj = ((Presenter.Menu)obj).getMenuPresenter();
+                    }
+                    if (obj instanceof JMenuItem) {
+                        menu.add((JMenuItem)obj);
+                    } else {
+                        if (obj instanceof JSeparator) {
+                            menu.addSeparator();
+                        }
+                    }
+                } catch (Exception exc) {
+                    TopManager.getDefault().notifyException(exc
+
+                                                            
+                                                           );
+                }
+            }
+            menu.setEnabled((cookies.length == 0) ? false : true);
+
+            
+            if (cookies.length > 0) {
+                JPopupMenu popup = menu.getPopupMenu();
+                popup.pack();
+                popup.repaint();
+            }
+
+            
+            
+            HelpCtx.setHelpIDString (menu, MenuFolder.class.getName () + "." + menu.getText ()); 
+            return menu;
+        }
+    }
+
+}
+
+

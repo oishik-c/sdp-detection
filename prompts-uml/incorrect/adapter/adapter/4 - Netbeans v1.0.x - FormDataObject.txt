@@ -1,0 +1,31 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.form.FormDataObject {
+- {static} java.util.ResourceBundle formBundle
+- {static} Object OPEN_FORM_LOCK
+- boolean templateInit
+- boolean modifiedInit
+- boolean componentRefRegistered
+- FormEditorSupport formEditor
+~ FileEntry formEntry
+~ {static} long serialVersionUID
++ <<Create>> FormDataObject(FileObject,FileObject,FormDataLoader)
+- void init()
++ FileObject getFormFile()
+# JavaEditor createJavaEditor()
++ FormEditorSupport getFormEditor()
+~ FileEntry getFormEntry()
++ org.openide.util.HelpCtx getHelpCtx()
+# Node createNodeDelegate()
+- void readObject(java.io.ObjectInputStream)
+}
+
+
+
+
+org.netbeans.modules.java.JavaDataObject <|-- org.netbeans.modules.form.FormDataObject
+@enduml

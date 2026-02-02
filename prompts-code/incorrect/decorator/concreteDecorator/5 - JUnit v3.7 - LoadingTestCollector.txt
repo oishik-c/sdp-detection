@@ -1,0 +1,73 @@
+Given the following java code, determine whether it contains an instance of the decorator design pattern playing the role of concreteDecorator.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package junit.runner;
+
+import java.lang.reflect.Modifier;
+
+import junit.framework.Test;
+
+
+public class LoadingTestCollector extends ClassPathTestCollector {
+
+	TestCaseClassLoader fLoader;
+
+	public LoadingTestCollector() {
+		fLoader = new TestCaseClassLoader();
+	}
+
+	protected boolean isTestClass(String classFileName) {
+		try {
+			if (classFileName.endsWith(".class")) {
+				Class testClass = classFromFile(classFileName);
+				return (testClass != null) && isTestClass(testClass);
+			}
+		}
+		catch (ClassNotFoundException expected) {
+		}
+		catch (NoClassDefFoundError notFatal) {
+		}
+		return false;
+	}
+
+	Class classFromFile(String classFileName) throws ClassNotFoundException {
+		String className = classNameFromFile(classFileName);
+		if (!fLoader.isExcluded(className))
+			return fLoader.loadClass(className, false);
+		return null;
+	}
+
+	boolean isTestClass(Class testClass) {
+		if (hasSuiteMethod(testClass))
+			return true;
+		if (Test.class.isAssignableFrom(testClass)
+			&& Modifier.isPublic(testClass.getModifiers())
+			&& hasPublicConstructor(testClass))
+			return true;
+		return false;
+	}
+
+	boolean hasSuiteMethod(Class testClass) {
+		try {
+			testClass.getMethod(BaseTestRunner.SUITE_METHODNAME, new Class[0]);
+		}
+		catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+
+	boolean hasPublicConstructor(Class testClass) {
+		Class[] args = { String.class };
+		try {
+			testClass.getConstructor(args);
+		}
+		catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+
+}

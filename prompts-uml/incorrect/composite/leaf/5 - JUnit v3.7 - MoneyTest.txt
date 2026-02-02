@@ -1,0 +1,44 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.samples.money.MoneyTest {
+- Money f12CHF
+- Money f14CHF
+- Money f7USD
+- Money f21USD
+- MoneyBag fMB1
+- MoneyBag fMB2
++ <<Create>> MoneyTest(String)
++ {static} void main(String[])
+# void setUp()
++ void testBagMultiply()
++ void testBagNegate()
++ void testBagSimpleAdd()
++ void testBagSubtract()
++ void testBagSumAdd()
++ void testIsZero()
++ void testMixedSimpleAdd()
++ void testMoneyBagEquals()
++ void testMoneyBagHash()
++ void testMoneyEquals()
++ void testMoneyHash()
++ void testNormalize()
++ void testNormalize2()
++ void testNormalize3()
++ void testNormalize4()
++ void testPrint()
++ void testSimpleAdd()
++ void testSimpleBagAdd()
++ void testSimpleMultiply()
++ void testSimpleNegate()
++ void testSimpleSubtract()
+}
+
+
+
+
+junit.framework.TestCase <|-- junit.samples.money.MoneyTest
+@enduml

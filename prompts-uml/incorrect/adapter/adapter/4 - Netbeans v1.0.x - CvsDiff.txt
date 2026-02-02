@@ -1,0 +1,84 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.vcs.cmdline.commands.CvsDiff {
+- Debug E
+- Debug D
+- String TMP_ROOT
+- File tmpDir
+- File tmpDir2
+- String tmpDirName
+- String tmpDir2Name
+~ Hashtable vars
+- String rootDir
+- String rootDirWroot
+- String dir
+- String file
+- String diffDataRegex
+- NoRegexListener stdoutNRListener
+- NoRegexListener stderrNRListener
+- RegexListener stdoutListener
+- RegexListener stderrListener
+- String dataRegex
+- String errorRegex
+- String checkoutCmd
+- String diffCmd
+- StringBuffer diffBuffer
+- Vector diffActions
+- CvsDiffFrame diffFrame
+- {static} int currentDiffLine
+- {static} java.awt.Color colorMissing
+- {static} java.awt.Color colorAdded
+- {static} java.awt.Color colorChanged
++ <<Create>> CvsDiff()
+- File createTMP()
+- boolean checkOut(Hashtable,String,String,String)
+- boolean performDiff(String,String)
+- boolean openEditors(String,String,String,String)
+- void insertEmptyLines()
+- void setDiffHighlight(boolean)
++ boolean exec(Hashtable,String[],NoRegexListener,NoRegexListener,RegexListener,String,RegexListener,String)
++ int getNextDiffLine()
++ int getPrevDiffLine()
++ void close()
+- boolean checkEmpty(String,String)
++ void match(String[])
+- String g(String)
+- String g(String,Object)
+}
+
+
+class org.netbeans.modules.vcs.cmdline.commands.CvsDiff$DiffAction {
++ {static} int DELETE
++ {static} int CHANGE
++ {static} int ADD
+- int action
+- int f1Line1
+- int f1Line2
+- int f2Line1
+- int f2Line2
++ <<Create>> DiffAction()
++ void setDeleteAction(int,int,int)
++ void setAddAction(int,int,int)
++ void setChangeAction(int,int,int,int)
++ int getAction()
++ int getF1Line1()
++ void setF1Line1(int)
++ int getF1Line2()
++ void setF1Line2(int)
++ int getF2Line1()
++ void setF2Line1(int)
++ int getF2Line2()
++ void setF2Line2(int)
+}
+
+
+
+
+org.netbeans.modules.vcs.cmdline.commands.RegexListener <|.. org.netbeans.modules.vcs.cmdline.commands.CvsDiff
+org.netbeans.modules.vcs.cmdline.commands.VcsAdditionalCommand <|-- org.netbeans.modules.vcs.cmdline.commands.CvsDiff
+org.netbeans.modules.vcs.cmdline.commands.CvsDiff +.. org.netbeans.modules.vcs.cmdline.commands.CvsDiff$DiffAction
+@enduml

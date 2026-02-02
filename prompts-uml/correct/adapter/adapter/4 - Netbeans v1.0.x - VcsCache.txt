@@ -1,0 +1,73 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.vcs.VcsCache {
+- Debug E
+- Debug D
+- Hashtable dirsByName
+- VcsFileSystem fileSystem
+- String cacheDir
++ String localStatusStr
+- boolean localFilesAdd
+- int numRefreshThreads
+- boolean lastCanceled
+- Vector pathsQueue
++ <<Create>> VcsCache(VcsFileSystem,String)
++ void fileSystemAdded(org.openide.filesystems.RepositoryEvent)
++ void fileSystemPoolReordered(org.openide.filesystems.RepositoryReorderedEvent)
++ void fileSystemRemoved(org.openide.filesystems.RepositoryEvent)
+- boolean deleteDir(File)
++ void setLocalFilesAdd(boolean)
++ boolean isLocalFilesAdd()
+- String arrayToLine(String[])
+- void writeDirToDiskCache(String,Vector)
+- void writeDirToDiskCacheRecursive(VcsDir,VcsDirContainer)
+- void renameDirInDiskCache(String,String)
++ void addFolder(String)
++ void rename(String,String)
+- void registerInMemoryCache(String,VcsDir)
+- void registerInMemoryCacheRecursive(String,VcsDir)
+- void unregisterFromMemoryCache(String)
+- void unregisterFromMemoryCacheRecursive(VcsDir)
+- String[] lineToStringArray(String)
+- void deleteDirFromDiskCache(String)
+- VcsDir readDirFromDiskCache(String)
+- void heyDoRefreshDir(String)
+- void heyDoRefreshDirRecursive(VcsDir)
+- void refreshLocalFiles(VcsDir,String)
+- void refreshLocalFilesRecursively(VcsDir,String)
+- void runDirReaderFromQueue()
+- void readDir(String,boolean)
++ void readDirFinished(VcsDir,Vector,boolean)
++ void readDirFinishedRecursive(VcsDir,VcsDirContainer,boolean)
++ void refreshDir(String)
++ void refreshDirRecursive(String)
++ String[] getFilesAndSubdirs(String)
++ String[] getLocalFilesAndSubdirs(String)
++ String[] dirsFirst(String,String[])
++ String getStatus(Vector)
++ void setFileStatus(String,String)
++ String getFileStatus(String)
++ String getFileLocker(String)
++ String getLocker(Vector)
++ VcsDir getDir(String)
++ VcsFile getFile(String)
++ boolean isFile(String)
++ boolean isDir(String)
++ void addFile(String)
++ void removeFile(String)
+~ String g(String)
+~ String g(String,Object)
+~ String g(String,Object,Object)
+~ String g(String,Object,Object,Object)
+}
+
+
+
+
+org.netbeans.modules.vcs.DirReaderListener <|.. org.netbeans.modules.vcs.VcsCache
+org.openide.filesystems.RepositoryListener <|.. org.netbeans.modules.vcs.VcsCache
+@enduml

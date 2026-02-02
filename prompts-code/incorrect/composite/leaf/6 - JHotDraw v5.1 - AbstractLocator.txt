@@ -1,0 +1,42 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.standard;
+
+import java.io.IOException;
+
+import CH.ifa.draw.framework.Locator;
+import CH.ifa.draw.util.Storable;
+import CH.ifa.draw.util.StorableInput;
+import CH.ifa.draw.util.StorableOutput;
+
+
+
+public abstract class AbstractLocator
+				implements Locator, Storable, Cloneable {
+
+	protected AbstractLocator() {
+	}
+
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+	        throw new InternalError();
+		}
+	}
+
+	
+	public void write(StorableOutput dw) {
+	}
+
+	
+	public void read(StorableInput dr) throws IOException {
+	}
+}
+
+

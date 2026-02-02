@@ -1,0 +1,51 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class CH.ifa.draw.standard.CompositeFigure {
+# Vector fFigures
+- {static} long serialVersionUID
+- int compositeFigureSerializedDataVersion
+# <<Create>> CompositeFigure()
++ Figure add(Figure)
++ void addAll(Vector)
++ Figure remove(Figure)
++ void removeAll(Vector)
++ void removeAll()
++ Figure orphan(Figure)
++ void orphanAll(Vector)
++ void replace(Figure,Figure)
++ void sendToBack(Figure)
++ void bringToFront(Figure)
++ void draw(Graphics)
++ Figure figureAt(int)
++ FigureEnumeration figures()
++ int figureCount()
++ FigureEnumeration figuresReverse()
++ Figure findFigure(int,int)
++ Figure findFigure(Rectangle)
++ Figure findFigureWithout(int,int,Figure)
++ Figure findFigure(Rectangle,Figure)
++ Figure findFigureInside(int,int)
++ Figure findFigureInsideWithout(int,int,Figure)
++ boolean includes(Figure)
+# void basicMoveBy(int,int)
++ void release()
++ void figureInvalidated(FigureChangeEvent)
++ void figureRequestRemove(FigureChangeEvent)
++ void figureRequestUpdate(FigureChangeEvent)
++ void figureChanged(FigureChangeEvent)
++ void figureRemoved(FigureChangeEvent)
++ void write(StorableOutput)
++ void read(StorableInput)
+- void readObject(ObjectInputStream)
+}
+
+
+
+
+CH.ifa.draw.standard.FigureChangeListener <|.. CH.ifa.draw.standard.CompositeFigure
+CH.ifa.draw.standard.AbstractFigure <|-- CH.ifa.draw.standard.CompositeFigure
+@enduml

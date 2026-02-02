@@ -1,0 +1,51 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.servlet.test.TestHttpServletRequest {
+- String contentType
+- BufferedReader reader
+- ServletInputStream inputStream
++ <<Create>> TestHttpServletRequest()
++ String getContentType()
++ ServletInputStream getInputStream()
++ void setContentType(String)
++ void setReader(BufferedReader)
++ void setInputStream(ServletInputStream)
++ BufferedReader getReader()
++ String getAuthType()
++ Cookie[] getCookies()
++ long getDateHeader(String)
++ String getHeader(String)
++ Enumeration getHeaders(String)
++ Enumeration getHeaderNames()
++ int getIntHeader(String)
++ String getMethod()
++ String getPathInfo()
++ String getPathTranslated()
++ String getContextPath()
++ String getQueryString()
++ String getRemoteUser()
++ boolean isUserInRole(String)
++ Principal getUserPrincipal()
++ String getRequestedSessionId()
++ String getRequestURI()
++ String getServletPath()
++ HttpSession getSession(boolean)
++ HttpSession getSession()
++ boolean isRequestedSessionIdValid()
++ boolean isRequestedSessionIdFromCookie()
++ boolean isRequestedSessionIdFromURL()
++ boolean isRequestedSessionIdFromUrl()
++ StringBuffer getRequestURL()
++ void setCharacterEncoding(String)
+}
+
+
+
+
+javax.servlet.http.HttpServletRequest <|.. com.taursys.servlet.test.TestHttpServletRequest
+com.taursys.servlet.test.TestServletRequest <|-- com.taursys.servlet.test.TestHttpServletRequest
+@enduml

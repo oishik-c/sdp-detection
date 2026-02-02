@@ -1,0 +1,50 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.nutch.util.SoftHashMap {
+~ Map hashMap
+~ ArrayList keysToDelete
++ <<Create>> SoftHashMap()
++ void clear()
+# void queueKeyForDeletion(Object)
+# void purgeQueuedKeys()
++ boolean containsKey(Object)
++ boolean containsValue(Object)
++ Set entrySet()
++ Object get(Object)
++ boolean isEmpty()
++ Set keySet()
++ Object put(Object,Object)
++ Object remove(Object)
++ int size()
++ Collection values()
+}
+
+
+interface net.nutch.util.SoftHashMap$FinalizationListener {
++ void finalizationOccurring()
+}
+
+interface net.nutch.util.SoftHashMap$FinalizationNotifier {
++ void addFinalizationListener(FinalizationListener)
+}
+
+class net.nutch.util.SoftHashMap$MyFinalizationListener {
+~ Object key
+~ <<Create>> MyFinalizationListener(Object,FinalizationNotifier)
++ void finalizationOccurring()
+}
+
+
+
+
+java.util.Map <|.. net.nutch.util.SoftHashMap
+java.util.AbstractMap <|-- net.nutch.util.SoftHashMap
+net.nutch.util.SoftHashMap +.. net.nutch.util.SoftHashMap$FinalizationListener
+net.nutch.util.SoftHashMap +.. net.nutch.util.SoftHashMap$FinalizationNotifier
+net.nutch.util.SoftHashMap +.. net.nutch.util.SoftHashMap$MyFinalizationListener
+net.nutch.util.FinalizationListener <|.. net.nutch.util.SoftHashMap$MyFinalizationListener
+@enduml

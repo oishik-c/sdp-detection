@@ -1,0 +1,173 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.src;
+
+import java.io.*;
+
+
+public final class InitializerElement extends Element implements Cloneable {
+    
+    private ClassElement declaringClass;
+
+    static final long serialVersionUID =5768667690932077280L;
+    
+    public InitializerElement() {
+        this(new InitializerElement.Memory(), null);
+    }
+
+    
+    public InitializerElement(InitializerElement.Impl impl, ClassElement declaringClass) {
+        super(impl);
+        this.declaringClass = declaringClass;
+    }
+
+    
+    InitializerElement.Impl getInitializerImpl() {
+        return (InitializerElement.Impl)impl;
+    }
+
+    
+    public Object clone () {
+        return new InitializerElement (new Memory (this), null);
+    }
+
+    
+    public void setStatic(boolean stat) throws SourceException {
+        getInitializerImpl().setStatic(stat);
+    }
+
+    
+    public boolean isStatic() {
+        return getInitializerImpl().isStatic();
+    }
+
+    
+    public void setBody (String s) throws SourceException {
+        getInitializerImpl ().setBody (s);
+    }
+
+    
+    public String getBody () {
+        return getInitializerImpl ().getBody ();
+    }
+
+    
+    public JavaDoc getJavaDoc() {
+        return getInitializerImpl ().getJavaDoc ();
+    }
+
+    
+    
+    
+    
+    public final ClassElement getDeclaringClass () {
+        return declaringClass;
+    }
+
+    
+    public void print(ElementPrinter printer) throws ElementPrinterInterruptException {
+        printer.markInitializer(this, printer.ELEMENT_BEGIN);
+
+        JavaDoc doc = getJavaDoc();
+        if ((doc != null) && !doc.isEmpty()) {
+            printer.markInitializer(this, printer.JAVADOC_BEGIN); 
+            printJavaDoc(doc, printer);
+            printer.markInitializer(this, printer.JAVADOC_END); 
+            printer.println(""); 
+        }
+
+        if (isStatic()) {
+            printer.markInitializer(this, printer.HEADER_BEGIN);
+            printer.print("static "); 
+            printer.markInitializer(this, printer.HEADER_END);
+        }
+        printer.print("{"); 
+        printer.markInitializer(this, printer.BODY_BEGIN);
+        printer.print(getBody());
+        printer.markInitializer(this, printer.BODY_END);
+        printer.print("}"); 
+        printer.markInitializer(this, printer.ELEMENT_END);
+    }
+
+    
+    public interface Impl extends Element.Impl {
+        static final long serialVersionUID =-3742940543185945549L;
+        
+        public void setStatic(boolean stat) throws SourceException;
+
+        
+        public boolean isStatic();
+
+        
+        public void setBody (String s) throws SourceException;
+
+        
+        public String getBody ();
+
+        
+        public JavaDoc getJavaDoc ();
+    }
+
+    
+    static class Memory extends Element.Memory implements InitializerElement.Impl {
+        
+        private boolean stat;
+        
+        private String body;
+        
+	private JavaDoc javadoc;
+
+        static final long serialVersionUID =1956692952966906280L;
+        Memory() {
+            stat = false;
+            body = ""; 
+        }
+
+        
+        Memory(InitializerElement el) {
+            stat = el.isStatic ();
+            body = el.getBody ();
+	    javadoc = el.getJavaDoc().isEmpty() ? JavaDocSupport.createJavaDoc(null) :
+            JavaDocSupport.createJavaDoc(el.getJavaDoc().getRawText());
+        }
+        
+        public void setStatic(boolean stat) {
+            boolean old = stat;
+            this.stat = stat;
+            firePropertyChange (PROP_STATIC, new Boolean (old), new Boolean (stat));
+        }
+
+        
+        public boolean isStatic() {
+            return stat;
+        }
+
+        
+        public void setBody (String s) throws SourceException {
+            String old = body;
+            body = s;
+            firePropertyChange (PROP_BODY, old, body);
+        }
+
+        
+        public String getBody () {
+            return body;
+        }
+
+        
+        public JavaDoc getJavaDoc () {
+            return javadoc;
+        }
+
+        public Object readResolve() {
+            return new InitializerElement(this, null);
+        }
+    }
+}
+
+

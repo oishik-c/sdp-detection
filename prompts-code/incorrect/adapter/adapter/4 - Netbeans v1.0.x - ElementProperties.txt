@@ -1,0 +1,76 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.src;
+
+
+public interface ElementProperties {
+    
+    public static final String PROP_TYPE = "type"; 
+
+    
+    public static final String PROP_INIT_VALUE = "initValue"; 
+
+    
+    public static final String PROP_PARAMETERS = "parameters"; 
+
+    
+    public static final String PROP_EXCEPTIONS = "exceptions"; 
+
+    
+    public static final String PROP_STATIC = "static"; 
+
+    
+    public static final String PROP_BODY = "body"; 
+
+    
+    public static final String PROP_MODIFIERS = "modifiers"; 
+
+    
+    public static final String PROP_NAME = "name"; 
+
+    
+    public static final String PROP_RETURN = "return"; 
+
+    
+    public static final String PROP_PACKAGE = "package"; 
+
+    
+    public static final String PROP_IMPORTS = "imports"; 
+
+    
+    public static final String PROP_CLASSES = "classes"; 
+
+    
+    public static final String PROP_ALL_CLASSES = "allClasses"; 
+
+    
+    public static final String PROP_INITIALIZERS = "initializers"; 
+
+    
+    public static final String PROP_METHODS = "methods"; 
+
+    
+    public static final String PROP_FIELDS = "fields"; 
+
+    
+    public static final String PROP_CONSTRUCTORS = "constructors"; 
+
+    
+    public static final String PROP_SUPERCLASS = "superclass"; 
+
+    
+    public static final String PROP_INTERFACES = "interfaces"; 
+
+    
+    public static final String PROP_STATUS = "status"; 
+
+    
+    public static final String PROP_CLASS_OR_INTERFACE = "classOrInterface"; 
+}
+
+

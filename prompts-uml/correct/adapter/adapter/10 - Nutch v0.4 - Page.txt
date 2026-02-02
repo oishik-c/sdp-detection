@@ -1,0 +1,70 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.nutch.db.Page {
+- {static} byte CUR_VERSION
+- {static} byte DEFAULT_INTERVAL
+- UTF8 url
+- MD5Hash md5
+- long nextFetch
+- byte retries
+- byte fetchInterval
+- int numOutlinks
+- float score
+- float nextScore
++ <<Create>> Page()
++ <<Create>> Page(String,MD5Hash)
++ <<Create>> Page(String,float,float,long)
++ <<Create>> Page(String,float,float)
++ void readFields(DataInput)
++ void set(Page)
++ void write(DataOutput)
++ int compareTo(Object)
++ {static} Page read(DataInput)
++ UTF8 getURL()
++ void setURL(String)
++ MD5Hash getMD5()
++ void setMD5(MD5Hash)
++ long getNextFetchTime()
++ void setNextFetchTime(long)
++ byte getRetriesSinceFetch()
++ void setRetriesSinceFetch(int)
++ byte getFetchInterval()
++ void setFetchInterval(byte)
++ int getNumOutlinks()
++ void setNumOutlinks(int)
++ float getScore()
++ float getNextScore()
++ void setScore(float,float)
++ long computeDomainID()
++ String toString()
++ String toTabbedString()
++ boolean equals(Object)
++ int hashCode()
++ Object clone()
+}
+
+
+class net.nutch.db.Page$Comparator {
++ <<Create>> Comparator()
++ int compare(byte[],int,int,byte[],int,int)
+}
+
+class net.nutch.db.Page$UrlComparator {
++ <<Create>> UrlComparator()
++ int compare(WritableComparable,WritableComparable)
++ int compare(byte[],int,int,byte[],int,int)
+}
+
+
+
+net.nutch.db.WritableComparable <|.. net.nutch.db.Page
+net.nutch.db.Cloneable <|.. net.nutch.db.Page
+net.nutch.db.Page +.. net.nutch.db.Page$Comparator
+net.nutch.db.WritableComparator <|-- net.nutch.db.Page$Comparator
+net.nutch.db.Page +.. net.nutch.db.Page$UrlComparator
+net.nutch.db.WritableComparator <|-- net.nutch.db.Page$UrlComparator
+@enduml

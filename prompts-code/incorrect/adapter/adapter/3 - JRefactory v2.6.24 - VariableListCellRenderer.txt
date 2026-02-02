@@ -1,0 +1,38 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package org.acm.seguin.uml.refactor;
+
+import java.awt.Color;
+import java.awt.Component;
+
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.ListCellRenderer;
+
+import org.acm.seguin.summary.VariableSummary;
+
+class VariableListCellRenderer extends JLabel implements ListCellRenderer {
+     public VariableListCellRenderer() {
+         setOpaque(true);
+     }
+     public Component getListCellRendererComponent(
+         JList list,
+         Object value,
+         int index,
+         boolean isSelected,
+         boolean cellHasFocus)
+     {
+     	if (value instanceof VariableSummary) {
+     		VariableSummary varSummary = (VariableSummary) value;
+     		setText(varSummary.getName() + " (" + varSummary.getType() + ")");
+     	}
+     	else {
+         setText(value.toString());
+     	}
+         setBackground(isSelected ? Color.red : Color.white);
+         setForeground(isSelected ? Color.white : Color.black);
+         return this;
+     }}

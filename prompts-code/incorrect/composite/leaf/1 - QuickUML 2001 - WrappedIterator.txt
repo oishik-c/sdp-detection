@@ -1,0 +1,64 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package util;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+
+public class WrappedIterator implements Iterator {
+
+  private Iterator iter;
+  private boolean readOnly;
+
+  public WrappedIterator(Iterator iter) {
+    this(iter, false);
+  }
+
+  public WrappedIterator(Iterator iter, boolean readOnly) {
+    setIterator(iter);
+    setReadOnly(readOnly);
+  }
+
+  public boolean hasNext() {
+    return iter != null && iter.hasNext();
+  }
+
+  public Object next() {
+
+    if(iter != null)
+      return iter.next();
+
+    throw new NoSuchElementException();
+
+  }
+
+  public void remove() {
+
+    if(!readOnly && iter != null)
+      iter.remove();
+
+  }
+
+  protected void setReadOnly(boolean readOnly) {
+    this.readOnly = readOnly;
+  }
+
+  protected boolean isReadOnly() {
+    return readOnly;
+  }
+
+  protected Iterator getIterator() {
+    return iter;
+  }
+
+  protected void setIterator(Iterator iter) {
+    this.iter = iter;
+  }
+
+}

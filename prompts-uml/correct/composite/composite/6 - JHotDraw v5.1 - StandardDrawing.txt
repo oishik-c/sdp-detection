@@ -1,0 +1,33 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.standard.StandardDrawing {
+- Vector fListeners
+- Thread fDrawingLockHolder
+- {static} long serialVersionUID
+- int drawingSerializedDataVersion
++ <<Create>> StandardDrawing()
++ void addDrawingChangeListener(DrawingChangeListener)
++ void removeDrawingChangeListener(DrawingChangeListener)
++ Enumeration drawingChangeListeners()
++ Figure remove(Figure)
++ void figureRequestRemove(FigureChangeEvent)
++ void figureInvalidated(FigureChangeEvent)
++ void figureRequestUpdate(FigureChangeEvent)
++ Vector handles()
++ Rectangle displayBox()
++ void basicDisplayBox(Point,Point)
++ void lock()
++ void unlock()
+- void readObject(ObjectInputStream)
+}
+
+
+
+
+CH.ifa.draw.framework.Drawing <|.. CH.ifa.draw.standard.StandardDrawing
+CH.ifa.draw.standard.CompositeFigure <|-- CH.ifa.draw.standard.StandardDrawing
+@enduml

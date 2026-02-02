@@ -1,0 +1,66 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.sourceforge.pmd.cpd.cppast.CPPParserTokenManager {
++ {static} java.io.PrintStream debugStream
+~ {static} long[] jjbitVec0
+~ {static} int[] jjnextStates
++ {static} String[] jjstrLiteralImages
++ {static} String[] lexStateNames
++ {static} int[] jjnewLexState
+~ {static} long[] jjtoToken
+~ {static} long[] jjtoSkip
+~ {static} long[] jjtoMore
+# {static} SimpleCharStream input_stream
+- {static} int[] jjrounds
+- {static} int[] jjstateSet
+# {static} char curChar
+~ {static} int curLexState
+~ {static} int defaultLexState
+~ {static} int jjnewStateCnt
+~ {static} int jjround
+~ {static} int jjmatchedPos
+~ {static} int jjmatchedKind
++ <<Create>> CPPParserTokenManager(SimpleCharStream)
++ <<Create>> CPPParserTokenManager(SimpleCharStream,int)
++ {static} void setDebugStream(java.io.PrintStream)
+- {static} int jjStopStringLiteralDfa_0(int,long,long,long)
+- {static} int jjStartNfa_0(int,long,long,long)
+- {static} int jjStopAtPos(int,int)
+- {static} int jjStartNfaWithStates_0(int,int,int)
+- {static} int jjMoveStringLiteralDfa0_0()
+- {static} int jjMoveStringLiteralDfa1_0(long,long,long)
+- {static} int jjMoveStringLiteralDfa2_0(long,long,long,long,long,long)
+- {static} int jjMoveStringLiteralDfa3_0(long,long,long,long,long,long)
+- {static} int jjMoveStringLiteralDfa4_0(long,long,long,long,long,long)
+- {static} int jjMoveStringLiteralDfa5_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa6_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa7_0(long,long,long,long)
+- {static} int jjMoveStringLiteralDfa8_0(long,long)
+- {static} int jjMoveStringLiteralDfa9_0(long,long)
+- {static} void jjCheckNAdd(int)
+- {static} void jjAddStates(int,int)
+- {static} void jjCheckNAddTwoStates(int,int)
+- {static} void jjCheckNAddStates(int,int)
+- {static} void jjCheckNAddStates(int)
+- {static} int jjMoveNfa_0(int,int)
+- {static} int jjMoveStringLiteralDfa0_1()
+- {static} int jjMoveStringLiteralDfa0_3()
+- {static} int jjMoveStringLiteralDfa0_2()
+- {static} int jjMoveStringLiteralDfa1_2(long)
++ {static} void ReInit(SimpleCharStream)
+- {static} void ReInitRounds()
++ {static} void ReInit(SimpleCharStream,int)
++ {static} void SwitchTo(int)
+# {static} Token jjFillToken()
++ {static} Token getNextToken()
+}
+
+
+
+
+net.sourceforge.pmd.cpd.cppast.CPPParserConstants <|.. net.sourceforge.pmd.cpd.cppast.CPPParserTokenManager
+@enduml

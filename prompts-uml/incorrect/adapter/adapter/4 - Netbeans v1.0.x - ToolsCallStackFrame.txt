@@ -1,0 +1,23 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.debugger.debug.ToolsCallStackFrame {
+- RemoteStackFrame stackFrame
+- ToolsDebugger debugger
+~ HashMap oldLocales
+~ <<Create>> ToolsCallStackFrame(ToolsDebugger,RemoteStackFrame)
++ int getLineNumber()
++ String getMethodName()
++ String getClassName()
++ AbstractVariable[] getLocales()
++ String getSourceName()
+}
+
+
+
+
+org.netbeans.modules.debugger.support.CallStackFrame <|-- org.netbeans.modules.debugger.debug.ToolsCallStackFrame
+@enduml

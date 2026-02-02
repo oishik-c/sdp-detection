@@ -1,0 +1,54 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.sourceforge.pmd.ast.SimpleCharStream {
++ {static} boolean staticFlag
+~ int bufsize
+~ int available
+~ int tokenBegin
++ int bufpos
+# int[] bufline
+# int[] bufcolumn
+# int column
+# int line
+# boolean prevCharIsCR
+# boolean prevCharIsLF
+# java.io.Reader inputStream
+# char[] buffer
+# int maxNextCharInd
+# int inBuf
++ <<Create>> SimpleCharStream(java.io.Reader,int,int,int)
++ <<Create>> SimpleCharStream(java.io.Reader,int,int)
++ <<Create>> SimpleCharStream(java.io.Reader)
++ <<Create>> SimpleCharStream(java.io.InputStream,int,int,int)
++ <<Create>> SimpleCharStream(java.io.InputStream,int,int)
++ <<Create>> SimpleCharStream(java.io.InputStream)
+# void ExpandBuff(boolean)
+# void FillBuff()
++ char BeginToken()
+# void UpdateLineColumn(char)
++ char readChar()
++ int getColumn()
++ int getLine()
++ int getEndColumn()
++ int getEndLine()
++ int getBeginColumn()
++ int getBeginLine()
++ void backup(int)
++ void ReInit(java.io.Reader,int,int,int)
++ void ReInit(java.io.Reader,int,int)
++ void ReInit(java.io.Reader)
++ void ReInit(java.io.InputStream,int,int,int)
++ void ReInit(java.io.InputStream)
++ void ReInit(java.io.InputStream,int,int)
++ String GetImage()
++ char[] GetSuffix(int)
++ void Done()
++ void adjustBeginLineColumn(int,int)
+}
+
+
+@enduml

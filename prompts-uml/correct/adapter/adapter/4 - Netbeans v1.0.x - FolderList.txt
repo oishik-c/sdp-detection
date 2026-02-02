@@ -1,0 +1,55 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.loaders.FolderList {
+~ {static} long serialVersionUID
+- {static} int LATER_PRIORITY
+- {static} RequestProcessor PROCESSOR
+# DataFolder folder
+- long time
+- RequestProcessor.Task refreshTask
+- HashMap primaryFiles
+- List order
++ <<Create>> FolderList(DataFolder,boolean)
+~ void reassign(DataFolder)
++ DataObject[] getChildren()
++ ArrayList getChildrenList()
++ RequestProcessor.Task computeChildrenList(FolderListListener)
+- ListTask getChildrenList(FolderListListener)
++ void changeComparator()
++ void refresh()
+- RequestProcessor.Task doRefreshIfNotDone()
+- void refresh(long)
++ void fileChanged(FileEvent)
++ void fileDeleted(FileEvent)
++ void fileDataCreated(FileEvent)
++ void fileFolderCreated(FileEvent)
++ void fileRenamed(FileRenameEvent)
++ void fileAttributeChanged(FileAttributeEvent)
+- ArrayList getObjects(FolderListListener)
+- {static} ArrayList createOrder(ArrayList)
+- {static} ArrayList createObjects(Collection,Map,FolderListListener)
+- ArrayList createBoth(FolderListListener,boolean)
+- void fireChildrenChange(ArrayList,ArrayList)
+}
+
+
+class org.openide.loaders.FolderList$ListTask {
+- FolderListListener filter
++ ArrayList result
++ RequestProcessor.Task task
++ <<Create>> ListTask(FolderListListener)
++ void run()
+}
+
+
+
+
+org.openide.loaders.FileChangeListener <|.. org.openide.loaders.FolderList
+org.openide.loaders.Object <|-- org.openide.loaders.FolderList
+org.openide.loaders.FolderList +.. org.openide.loaders.FolderList$ListTask
+org.openide.loaders.Runnable <|.. org.openide.loaders.FolderList$ListTask
+@enduml

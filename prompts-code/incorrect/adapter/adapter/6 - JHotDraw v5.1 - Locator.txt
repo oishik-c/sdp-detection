@@ -1,0 +1,22 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package CH.ifa.draw.framework;
+
+import java.awt.Point;
+import java.io.Serializable;
+
+import CH.ifa.draw.util.Storable;
+
+
+
+public interface Locator extends Storable, Serializable, Cloneable {
+
+	
+	public Point locate(Figure owner);
+}
+

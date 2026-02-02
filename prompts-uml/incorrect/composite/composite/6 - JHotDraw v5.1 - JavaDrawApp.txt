@@ -1,0 +1,33 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.samples.javadraw.JavaDrawApp {
+- Animator fAnimator
+- {static} String fgSampleImagesPath
+- {static} String fgSampleImagesResourcePath
++ <<Create>> JavaDrawApp()
++ <<Create>> JavaDrawApp(String)
++ void open()
++ void destroy()
+# void createTools(Panel)
+# Tool createSelectionTool()
+# void createMenus(MenuBar)
+# Menu createAnimationMenu()
+# Menu createWindowMenu()
+# Menu createImagesMenu()
+# Drawing createDrawing()
+# Dimension defaultSize()
++ void startAnimation()
++ void endAnimation()
++ void openView()
++ {static} void main(String[])
+}
+
+
+
+
+CH.ifa.draw.application.DrawApplication <|-- CH.ifa.draw.samples.javadraw.JavaDrawApp
+@enduml

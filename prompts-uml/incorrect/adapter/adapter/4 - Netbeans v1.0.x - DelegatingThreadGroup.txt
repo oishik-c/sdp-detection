@@ -1,0 +1,38 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.debugger.delegator.DelegatingThreadGroup {
+- AbstractThreadGroup threadGroup
+- Delegator delegator
+~ <<Create>> DelegatingThreadGroup()
++ String getName()
++ AbstractThread[] getThreads()
++ AbstractThreadGroup[] getThreadGroups()
++ void setSuspended(boolean)
+~ void setRemoteThreadGroup(AbstractThreadGroup)
+- void updateContent()
+~ void firePropertyChangeHelper(PropertyChangeEvent)
+~ void fireThreadCreatedHelper(AbstractThread)
+~ void fireThreadDeathHelper(AbstractThread)
+~ void fireThreadGroupCreatedHelper(AbstractThreadGroup)
+~ void fireThreadGroupDeathHelper(AbstractThreadGroup)
+}
+
+
+class org.netbeans.modules.debugger.delegator.DelegatingThreadGroup$Delegator {
++ void propertyChange(PropertyChangeEvent)
++ void threadCreated(AbstractThread)
++ void threadDeath(AbstractThread)
++ void threadGroupCreated(AbstractThreadGroup)
++ void threadGroupDeath(AbstractThreadGroup)
+}
+
+
+
+org.netbeans.modules.debugger.support.AbstractThreadGroup <|-- org.netbeans.modules.debugger.delegator.DelegatingThreadGroup
+org.netbeans.modules.debugger.delegator.DelegatingThreadGroup +.. org.netbeans.modules.debugger.delegator.DelegatingThreadGroup$Delegator
+org.netbeans.modules.debugger.delegator.ThreadGroupListener <|.. org.netbeans.modules.debugger.delegator.DelegatingThreadGroup$Delegator
+@enduml

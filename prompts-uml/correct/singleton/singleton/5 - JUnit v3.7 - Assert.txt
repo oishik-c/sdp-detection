@@ -1,0 +1,41 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.framework.Assert {
+# <<Create>> Assert()
++ {static} void assertTrue(String,boolean)
++ {static} void assertTrue(boolean)
++ {static} void fail(String)
++ {static} void fail()
++ {static} void assertEquals(String,Object,Object)
++ {static} void assertEquals(Object,Object)
++ {static} void assertEquals(String,double,double,double)
++ {static} void assertEquals(double,double,double)
++ {static} void assertEquals(String,float,float,float)
++ {static} void assertEquals(float,float,float)
++ {static} void assertEquals(String,long,long)
++ {static} void assertEquals(long,long)
++ {static} void assertEquals(String,boolean,boolean)
++ {static} void assertEquals(boolean,boolean)
++ {static} void assertEquals(String,byte,byte)
++ {static} void assertEquals(byte,byte)
++ {static} void assertEquals(String,char,char)
++ {static} void assertEquals(char,char)
++ {static} void assertEquals(String,short,short)
++ {static} void assertEquals(short,short)
++ {static} void assertEquals(String,int,int)
++ {static} void assertEquals(int,int)
++ {static} void assertNotNull(Object)
++ {static} void assertNotNull(String,Object)
++ {static} void assertNull(Object)
++ {static} void assertNull(String,Object)
++ {static} void assertSame(String,Object,Object)
++ {static} void assertSame(Object,Object)
+- {static} void failNotEquals(String,Object,Object)
+- {static} void failNotSame(String,Object,Object)
+}
+
+@enduml

@@ -1,0 +1,49 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package junit.tests;
+
+import java.lang.reflect.Method;
+import java.net.URL;
+
+import junit.framework.TestCase;
+import junit.runner.TestCaseClassLoader;
+
+ 
+public class TestCaseClassLoaderTest extends TestCase {
+
+	public TestCaseClassLoaderTest(String name) {
+		super(name);
+	}
+	public void testClassLoading() throws Exception {
+		TestCaseClassLoader loader= new TestCaseClassLoader();
+		Class loadedClass= loader.loadClass("junit.tests.ClassLoaderTest", true);
+		Object o= loadedClass.newInstance();			
+		
+		
+		
+		
+		
+		
+		Method method= loadedClass.getDeclaredMethod("verify", new Class[0]);
+		method.invoke(o, new Class[0]);
+	}
+
+	public void testJarClassLoading() throws Exception {
+		URL url= getClass().getResource("test.jar");
+		String path= url.getFile();
+		TestCaseClassLoader loader= new TestCaseClassLoader(path);
+		Class loadedClass= loader.loadClass("junit.tests.LoadedFromJar", true);
+		Object o= loadedClass.newInstance();			
+		
+		
+		
+		
+		
+		
+		Method method= loadedClass.getDeclaredMethod("verify", new Class[0]);
+		method.invoke(o, new Class[0]);
+	}
+}

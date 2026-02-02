@@ -1,0 +1,48 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.examples.modules.multifs.ConfigCustomEditor {
+~ ConfigEditor ed
+- javax.swing.JComboBox read1
+- javax.swing.JComboBox read2
+- javax.swing.JComboBox defwr
+- javax.swing.JComboBox wr1
+- javax.swing.JComboBox wr2
+- javax.swing.JLabel jLabel1
+- javax.swing.JLabel jLabel2
+- javax.swing.JLabel jLabel3
+- javax.swing.JLabel jLabel4
+- javax.swing.JLabel jLabel5
+- javax.swing.JTextField crit1
+- javax.swing.JTextField crit2
+- javax.swing.JRadioButton ext1
+- javax.swing.JRadioButton mime1
+- javax.swing.JRadioButton ext2
+- javax.swing.JRadioButton mime2
+- javax.swing.JLabel valid
++ <<Create>> ConfigCustomEditor(ConfigEditor)
+~ void checkValid()
+~ void updateEd()
+~ void loadValues()
+- void initComponents()
+- void mime2ActionPerformed(java.awt.event.ActionEvent)
+- void ext2ActionPerformed(java.awt.event.ActionEvent)
+- void mime1ActionPerformed(java.awt.event.ActionEvent)
+- void ext1ActionPerformed(java.awt.event.ActionEvent)
+- void crit2ActionPerformed(java.awt.event.ActionEvent)
+- void crit1ActionPerformed(java.awt.event.ActionEvent)
+- void wr2ActionPerformed(java.awt.event.ActionEvent)
+- void wr1ActionPerformed(java.awt.event.ActionEvent)
+- void defwrActionPerformed(java.awt.event.ActionEvent)
+- void read2ActionPerformed(java.awt.event.ActionEvent)
+- void read1ActionPerformed(java.awt.event.ActionEvent)
+}
+
+
+
+
+org.netbeans.examples.modules.multifs.JPanel <|-- org.netbeans.examples.modules.multifs.ConfigCustomEditor
+@enduml

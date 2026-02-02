@@ -1,0 +1,18 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class uml.diagram.ClassFigure {
+- int lastDividerLocation
++ <<Create>> ClassFigure()
++ int getDividerLocation()
++ void setDividerLocation(int)
+}
+
+
+
+
+diagram.figures.RectangularFigure <|-- uml.diagram.ClassFigure
+@enduml

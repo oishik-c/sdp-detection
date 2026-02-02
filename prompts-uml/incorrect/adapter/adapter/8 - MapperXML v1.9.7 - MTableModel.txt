@@ -1,0 +1,42 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.swing.MTableModel {
+- ListSelectionBinder listSelectionBinder
+- ListValueHolder listValueHolder
+- ArrayList columns
+- javax.swing.ListSelectionModel listSelectionModel
++ <<Create>> MTableModel()
+# ListValueHolder createDefaultListValueHolder()
++ void setValueObjectClass(Class)
++ Class getValueObjectClass()
++ void setList(List)
++ List getList()
++ boolean isCellEditable(int,int)
++ int getColumnCount()
++ String getColumnName(int)
++ int findColumn(String)
++ Object getValueAt(int,int)
++ int getRowCount()
++ Class getColumnClass(int)
++ void setListValueHolder(com.taursys.model.ListValueHolder)
++ com.taursys.model.ListValueHolder getListValueHolder()
++ void setListSelectionModel(javax.swing.ListSelectionModel)
++ javax.swing.ListSelectionModel getListSelectionModel()
++ void setColumnNames(String[])
++ String[] getColumnNames()
++ int getColumnIndex(String)
++ void addColumn(String)
++ void removeColumn(String)
++ void stateChanged(ChangeEvent)
+}
+
+
+
+
+com.taursys.swing.ChangeListener <|.. com.taursys.swing.MTableModel
+com.taursys.swing.AbstractTableModel <|-- com.taursys.swing.MTableModel
+@enduml

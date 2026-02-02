@@ -1,0 +1,86 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.loaders.DataShadow {
+~ {static} long serialVersionUID
+- DataObject original
+~ {static} String SHADOW_EXTENSION
+# <<Create>> DataShadow(FileObject,DataObject,DataLoader)
+- <<Create>> DataShadow(FileObject,DataObject)
++ {static} DataShadow create(DataFolder,DataObject)
++ {static} DataShadow create(DataFolder,String,DataObject)
+- {static} FileObject writeOriginal(FileObject,DataObject)
+~ {static} DataShadow deserialize(FileObject)
++ DataObject getOriginal()
+# Node createNodeDelegate()
++ boolean isDeleteAllowed()
++ boolean isCopyAllowed()
++ boolean isMoveAllowed()
++ boolean isRenameAllowed()
++ HelpCtx getHelpCtx()
+# DataObject handleCopy(DataFolder)
+# void handleDelete()
+# FileObject handleRename(String)
+# FileObject handleMove(DataFolder)
+# DataShadow handleCreateShadow(DataFolder)
+# DataObject handleCreateFromTemplate(DataFolder,String)
++ Node.Cookie getCookie(Class)
+}
+
+
+class org.openide.loaders.DataShadow$ShadowNode {
+- {static} MessageFormat format
+- {static} MessageFormat descriptionFormat
+- DataShadow obj
+- Sheet sheet
++ <<Create>> ShadowNode(DataShadow)
+- <<Create>> ShadowNode(DataShadow,Node)
++ Node cloneNode()
++ void setName(String)
++ String getName()
++ String getDisplayName()
+- Object[] createArguments()
+- {static} String systemNameOrFileName(FileObject)
++ String getShortDescription()
++ boolean canDestroy()
++ void destroy()
++ boolean canRename()
++ boolean canCopy()
++ boolean canCut()
++ Node.Cookie getCookie(Class)
++ PropertySet[] getPropertySets()
++ Transferable clipboardCopy()
++ Transferable clipboardCut()
++ Transferable drag()
+# org.openide.nodes.NodeListener createNodeListener()
++ boolean equals(Object)
++ int hashCode()
+- Sheet cloneSheet()
+- void modifySheetSet(Sheet.Set)
+}
+
+
+class org.openide.loaders.DataShadow$ShadowNode$Name {
++ <<Create>> Name()
++ Object getValue()
++ void setValue(Object)
++ boolean canWrite()
+}
+
+class org.openide.loaders.DataShadow$ShadowNode$PropL {
++ <<Create>> PropL(ShadowNode)
+}
+
+
+
+org.openide.loaders.DataObject <|-- org.openide.loaders.DataShadow
+org.openide.loaders.DataShadow +.. org.openide.loaders.DataShadow$ShadowNode
+org.openide.loaders.FilterNode <|-- org.openide.loaders.DataShadow$ShadowNode
+org.openide.loaders.DataShadow$ShadowNode +.. org.openide.loaders.DataShadow$ShadowNode$Name
+org.openide.loaders.ReadWrite <|-- org.openide.loaders.DataShadow$ShadowNode$Name
+org.openide.loaders.DataShadow$ShadowNode +.. org.openide.loaders.DataShadow$ShadowNode$PropL
+org.openide.loaders.NodeAdapter <|-- org.openide.loaders.DataShadow$ShadowNode$PropL
+@enduml

@@ -1,0 +1,22 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.ide.jbuilder.UMLNodeViewerFactory {
+- MultipleDirClassDiagramReloader reloader
+- {static} UMLNodeViewerFactory factory
+- <<Create>> UMLNodeViewerFactory()
++ MultipleDirClassDiagramReloader getReloader()
++ boolean canDisplayNode(Node)
++ NodeViewer createNodeViewer(Context)
++ NodeViewer createNodeViewer(PackageSummary)
++ {static} UMLNodeViewerFactory getFactory()
+}
+
+
+
+
+com.borland.primetime.ide.NodeViewerFactory <|.. org.acm.seguin.ide.jbuilder.UMLNodeViewerFactory
+@enduml

@@ -1,0 +1,31 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class com.taursys.xml.Container {
+- ArrayList components
+- HashMap dispatchers
++ <<Create>> Container()
++ void add(Component)
++ void remove(Component)
++ boolean contains(Component)
++ DocumentComponent get(String)
++ Component[] getComponents()
++ DocumentAdapter getDocumentAdapter()
++ void addDispatcher(String,Dispatcher)
++ void removeDispatcher(String)
++ Dispatcher getDispatcher(String)
++ Dispatcher getParameterDispatcher()
++ Dispatcher getInputDispatcher()
++ Dispatcher getTriggerDispatcher()
++ RenderDispatcher getRenderDispatcher()
++ RecycleDispatcher getRecycleDispatcher()
+}
+
+
+
+
+com.taursys.xml.Component <|-- com.taursys.xml.Container
+@enduml

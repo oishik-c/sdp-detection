@@ -1,0 +1,171 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.xml;
+
+import java.text.ParseException;
+import com.taursys.model.TextModel;
+import com.taursys.model.DefaultTextModel;
+import com.taursys.model.ModelException;
+import com.taursys.util.UnsupportedDataTypeException;
+import com.taursys.xml.event.ParameterEvent;
+import com.taursys.xml.event.Dispatcher;
+
+
+public class Parameter extends Component {
+  private String parameter;
+  private TextModel model;
+  private com.taursys.model.ValueHolder valueHolder;
+  private String defaultValue;
+
+  
+  
+  
+
+  
+  public Parameter() {
+    addEventType(ParameterEvent.class.getName());
+    model = createDefaultModel();
+  }
+
+  
+  public Parameter(int javaDataType) {
+    addEventType(ParameterEvent.class.getName());
+    model = createDefaultModel(javaDataType);
+  }
+
+  
+  
+  
+
+  
+  public TextModel getModel() {
+    return model;
+  }
+
+  
+  public void setModel(TextModel newModel) {
+    if (newModel.getFormat() == null) {
+      newModel.setFormat(model.getFormat());
+      newModel.setFormatPattern(model.getFormatPattern());
+    }
+    model = newModel;
+  }
+
+  
+  protected TextModel createDefaultModel() {
+    return new DefaultTextModel();
+  }
+
+  
+  protected TextModel createDefaultModel(int javaDataType) {
+    return new DefaultTextModel(javaDataType);
+  }
+
+  
+  
+  
+
+  
+  public String getText() throws ModelException {
+    return model.getText();
+  }
+
+  
+  public void setText(String text) throws ModelException {
+    model.setText(text);
+  }
+
+  
+  public Object getValue() throws ModelException {
+    return model.getValueHolder().getPropertyValue(model.getPropertyName());
+  }
+
+  
+  public void setValue(Object value) throws ModelException {
+    model.getValueHolder().setPropertyValue(model.getPropertyName(), value);
+  }
+
+  
+  
+  
+
+  
+  protected void processParameterEvent(ParameterEvent e) throws Exception {
+    if (parameter != null && parameter.equals(e.getName())) {
+      model.setText(e.getValue());
+      fireParameterReceived(e);
+    }
+  }
+
+  
+  
+  
+
+  
+  public void setParameter(String newParameter) {
+    parameter = newParameter;
+  }
+
+  
+  public String getParameter() {
+    return parameter;
+  }
+
+  
+  
+  
+
+  
+  public void setFormat(java.text.Format format) {
+    model.setFormat(format);
+  }
+
+  
+  public java.text.Format getFormat() {
+    return model.getFormat();
+  }
+
+  
+  public void setFormatPattern(String newPattern) {
+    model.setFormatPattern(newPattern);
+  }
+
+  
+  public String getFormatPattern() {
+    return model.getFormatPattern();
+  }
+
+  
+  public void setValueHolder(com.taursys.model.ValueHolder newValueHolder) {
+    model.setValueHolder(newValueHolder);
+  }
+
+  
+  public com.taursys.model.ValueHolder getValueHolder() {
+    return model.getValueHolder();
+  }
+
+  
+  public void setPropertyName(String newPropertyName) {
+    model.setPropertyName(newPropertyName);
+  }
+
+  
+  public String getPropertyName() {
+    return model.getPropertyName();
+  }
+
+  
+  public void setDefaultValue(String newDefaultValue) {
+    defaultValue = newDefaultValue;
+  }
+
+  
+  public String getDefaultValue() {
+    return defaultValue;
+  }
+}

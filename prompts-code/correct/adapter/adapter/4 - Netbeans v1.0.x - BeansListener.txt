@@ -1,0 +1,1108 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.explorer.propertysheet;
+
+import java.awt.*;
+import java.awt.datatransfer.*;
+import java.awt.event.*;
+import java.beans.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ResourceBundle;
+import java.util.Vector;
+
+import javax.swing.*;
+import javax.swing.event.*;
+
+import org.openide.awt.SplittedPanel;
+import org.openide.awt.Toolbar;
+import org.openide.awt.ToolbarButton;
+import org.openide.awt.ToolbarToggleButton;
+import org.openide.awt.MouseUtils;
+import org.openide.awt.JPopupMenuPlus;
+import org.openide.util.datatransfer.PasteType;
+import org.openide.NotifyDescriptor;
+import org.openide.TopManager;
+import org.openide.actions.*;
+import org.openide.util.RequestProcessor;
+import org.openide.util.Utilities;
+import org.openide.util.actions.ActionPerformer;
+import org.openide.util.actions.SystemAction;
+import org.openide.util.NbBundle;
+import org.openide.nodes.Node;
+import org.openide.nodes.NodeAdapter;
+import org.openide.actions.CopyAction;
+import org.openide.actions.PasteAction;
+
+
+public class PropertySheet extends JPanel {
+    
+    static final long serialVersionUID = -7698351033045864945L;
+
+
+    
+
+    
+    public static final String    PROPERTY_SORTING_MODE = "sortingMode"; 
+    
+    public static final String    PROPERTY_VALUE_COLOR = "valueColor"; 
+    
+    public static final String    PROPERTY_DISABLED_PROPERTY_COLOR = "disabledPropertyColor"; 
+    
+    public static final String    PROPERTY_CURRENT_PAGE = "currentPage"; 
+     
+    public static final String    PROPERTY_PLASTIC = "plastic"; 
+    
+    public static final String    PROPERTY_PROPERTY_PAINTING_STYLE = "propertyPaintingStyle"; 
+    
+    public static final String    PROPERTY_DISPLAY_WRITABLE_ONLY = "displayWritableOnly"; 
+
+    
+    public static final int       ALWAYS_AS_STRING = 1;
+    
+    public static final int       STRING_PREFERRED = 2;
+    
+    public static final int       PAINTING_PREFERRED = 3;
+
+    
+    public static final int       UNSORTED = 0;
+    
+    public static final int       SORTED_BY_NAMES = 1;
+    
+    public static final int       SORTED_BY_TYPES = 2;
+
+    
+    static protected Icon         iNoSort;
+    static protected Icon         iAlphaSort;
+    static protected Icon         iTypeSort;
+    static protected Icon         iDisplayWritableOnly;
+    static protected Icon         iCustomize;
+     
+    private static String         text;
+
+    
+    static java.util.ResourceBundle bundle = NbBundle.getBundle (
+                PropertySheet.class
+            );
+
+    static {
+        iNoSort = new ImageIcon (PropertySheet.class.getResource ("/org/openide/resources/propertysheet/unsorted.gif")); 
+        iAlphaSort = new ImageIcon (PropertySheet.class.getResource ("/org/openide/resources/propertysheet/sortedByNames.gif")); 
+        iTypeSort = new ImageIcon (PropertySheet.class.getResource ("/org/openide/resources/propertysheet/sortedByTypes.gif")); 
+        iDisplayWritableOnly = new ImageIcon (PropertySheet.class.getResource ("/org/openide/resources/propertysheet/showWritableOnly.gif")); 
+        iCustomize = new ImageIcon (PropertySheet.class.getResource ("/org/openide/resources/propertysheet/customize.gif")); 
+
+        text = getString ("CTL_NoProperties");
+    }
+
+    static String getString (String str) {
+        return bundle.getString (str);
+    }
+
+    
+    static String getDescription (PropertyDetails propertyDetails) {
+        StringBuffer sb = new StringBuffer ();
+        String shortDescription = propertyDetails.getShortDescription ();
+        if (shortDescription == null) shortDescription = ""; 
+        
+        if (shortDescription.startsWith ("<html>")) { 
+            shortDescription = shortDescription.substring (6);
+            sb.append ("<html>"); 
+        }
+        if (propertyDetails.getPropertyEditor () == null)
+            sb.append (getString ("CTL_NoPropertyEditor")).append (' ');
+        else {
+            
+            try {
+                sb.append (propertyDetails.canRead () ? "(r/" : "(-/"); 
+            } catch (Exception e) {
+                sb.append ("(?/"); 
+            }
+            try {
+                sb.append (propertyDetails.canWrite () ? "w) " : "-) "); 
+            } catch (Exception e) {
+                sb.append ("?) "); 
+            }
+        }
+        sb.append (shortDescription);
+        return new String (sb);
+    }
+
+    
+    static String getValueDescription (PropertyDetails propertyDetails) {
+        return Utilities.getClassName (propertyDetails.getValueType ());
+    }
+
+    
+    private final static java.util.Comparator SORTER_TYPE = new java.util.Comparator () {
+                public int compare (Object l, Object r) {
+                    String s1 = ((PropertyDetails)l).getValueType().getName();
+                    String s2 = ((PropertyDetails)r).getValueType().getName();
+                    int s = s1.compareToIgnoreCase (s2);
+                    if (s != 0) return s;
+
+                    s1 = ((PropertyDetails)l).getName();
+                    s2 = ((PropertyDetails)r).getName();
+                    return s1.compareToIgnoreCase(s2);
+                }
+            };
+
+    
+    private final static java.util.Comparator SORTER_NAME = new java.util.Comparator () {
+                public int compare (Object l, Object r) {
+                    String s1 = ((PropertyDetails)l).getName();
+                    String s2 = ((PropertyDetails)r).getName();
+                    return String.CASE_INSENSITIVE_ORDER.compare(s1, s2);
+                }
+            };
+
+
+    
+
+    
+    private int                             propertyPaintingStyle = PropertySheetSettings.propertyPaintingStyle;
+
+    
+    private boolean                         plastic = PropertySheetSettings.plastic;
+
+    
+    private boolean                         displayWritableOnly = PropertySheetSettings.displayWritableOnly;
+
+    private java.util.Comparator            sorter = null;
+
+    private int                             sortingMode = PropertySheetSettings.sortingMode;
+
+    
+    private Color                           valueColor = PropertySheetSettings.valueColor;
+
+    
+    private Color                           disabledPropertyColor = PropertySheetSettings.disabledColor;
+
+    
+
+    
+    private transient BeansDetails          beansDetails;
+
+    
+    private transient String[]              tab;
+
+    
+    private transient String[]              hints;
+
+    
+    private transient PropertyDisplayer[][] propertyDisplayer;
+
+    
+    private transient PropertyDetails[][]   propertyDetails;
+
+    
+    private transient PropertyValue[][]     propertyValue;
+
+    
+    private int                             pageIndex = -1;
+
+    
+    private String                          selectedTabName = null;
+
+    
+    private transient Integer               lock = new Integer (0);
+
+    private transient PropertyDisplayer     lastSelectedLine;
+
+    private transient boolean               ignorePropertyChanges = false;
+
+
+    
+
+    private transient JTabbedPane           pages;
+    private transient EmptyPanel            emptyPanel;
+    private transient NamesPanel[]          namesPanel = new NamesPanel [0];
+    private transient NamesPanel[]          valuesPanel = new NamesPanel [0];
+    private transient ToolbarToggleButton   bNoSort, bAlphaSort, bTypeSort, bDisplayWritableOnly;
+    private transient ToolbarButton         customizer;
+
+    private transient PropertyChangeListener settingsListener;
+    private transient BeansListener         beansListener = new BeansListener ();
+    private transient ChangeListener        tabListener =
+        new ChangeListener () {
+            public void stateChanged (ChangeEvent e) {
+                int index = pages.getSelectedIndex ();
+                setCurrentPage (index);
+            }
+        };
+
+    private transient JPopupMenu popupMenu;
+
+    {
+        popupMenu = new JPopupMenuPlus ();
+        
+        
+        
+        popupMenu.add (new SetDefaultValueAction ().getPopupPresenter ());
+    }
+
+
+    
+
+    
+    
+    public PropertySheet() {
+        propertyDetails = new PropertyDetails [0][];
+        propertyDisplayer = new PropertyDisplayer [0][];
+        tab = new String [0];
+
+        
+        setLayout (new BorderLayout ());
+
+        pages = new JTabbedPane ();
+        emptyPanel = new EmptyPanel (text);
+        pages.setTabPlacement (JTabbedPane.BOTTOM);
+        add ("Center", emptyPanel); 
+
+        
+        JPanel p = new JPanel (new FlowLayout (FlowLayout.LEFT, 0, 0));
+        p.add (bNoSort = new ToolbarToggleButton (iNoSort));
+        bNoSort.setToolTipText (getString ("CTL_NoSort"));
+        bNoSort.setSelected (true);
+        bNoSort.addActionListener (new ActionListener () {
+                                       public void actionPerformed (ActionEvent e) {
+                                           sortingMode = UNSORTED;
+                                           sorter = null;
+                                           bNoSort.setSelected (true);
+                                           bAlphaSort.setSelected (false);
+                                           bTypeSort.setSelected (false);
+                                           if (pageIndex != -1)
+                                               resort (pageIndex);
+                                       }
+                                   });
+
+        p.add (bAlphaSort = new ToolbarToggleButton (iAlphaSort));
+        bAlphaSort.setToolTipText (getString ("CTL_AlphaSort"));
+        bAlphaSort.addActionListener (new ActionListener () {
+                                          public void actionPerformed (ActionEvent e) {
+                                              sortingMode = SORTED_BY_NAMES;
+                                              sorter = SORTER_NAME;
+                                              bNoSort.setSelected (false);
+                                              bAlphaSort.setSelected (true);
+                                              bTypeSort.setSelected (false);
+                                              if (pageIndex != -1)
+                                                  resort (pageIndex);
+                                          }
+                                      });
+
+        p.add (bTypeSort = new ToolbarToggleButton (iTypeSort));
+        bTypeSort.setToolTipText (getString ("CTL_TypeSort"));
+        bTypeSort.addActionListener (new ActionListener () {
+                                         public void actionPerformed (ActionEvent e) {
+                                             sortingMode = SORTED_BY_TYPES;
+                                             sorter = SORTER_TYPE;
+                                             bNoSort.setSelected (false);
+                                             bAlphaSort.setSelected (false);
+                                             bTypeSort.setSelected (true);
+                                             if (pageIndex != -1)
+                                                 resort (pageIndex);
+                                         }
+                                     });
+        try {
+            setSortingMode (sortingMode);
+        } catch (PropertyVetoException e) {
+            try {
+                setSortingMode (UNSORTED);
+            } catch (PropertyVetoException ee) {
+            }
+        }
+
+        Toolbar.Separator ts = new Toolbar.Separator ();
+        p.add (ts);
+        ts.updateUI ();
+
+        bDisplayWritableOnly = new ToolbarToggleButton (
+                                   iDisplayWritableOnly,
+                                   displayWritableOnly
+                               );
+        bDisplayWritableOnly.setToolTipText (getString ("CTL_VisibleWritableOnly"));
+        bDisplayWritableOnly.addItemListener (new ItemListener() {
+                                                  public void itemStateChanged (ItemEvent e) {
+                                                      setDisplayWritableOnly (bDisplayWritableOnly.isSelected ());
+                                                  }
+                                              });
+        p.add(bDisplayWritableOnly);
+
+        ts = new Toolbar.Separator ();
+        p.add (ts);
+        ts.updateUI ();
+
+        p.add (customizer = new ToolbarButton (iCustomize));
+        customizer.setToolTipText (getString ("CTL_Customize"));
+        customizer.setEnabled (false);
+        customizer.addActionListener (new ActionListener () {
+                                          public void actionPerformed (ActionEvent e) {
+                                              invokeCustomization ();
+                                          }
+                                      });
+        add ("North", p); 
+
+        
+        registerKeyboardAction (new ActionListener () {
+                                    public void actionPerformed (ActionEvent e) {
+                                        if (pageIndex >= 0) removeInputComponent (pageIndex);
+                                    }
+                                }, KeyStroke.getKeyStroke (java.awt.event.KeyEvent.VK_ESCAPE, 0),
+                                WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        PropertySheetSettings.getDefault ().addPropertyChangeListener (settingsListener =
+                    new PropertyChangeListener () {
+                        public void propertyChange (PropertyChangeEvent e) {
+                            String name = e.getPropertyName ();
+
+                            if (name == null) return;
+
+                            if (name.equals (PROPERTY_VALUE_COLOR)) {
+                                setValueColor ((Color)e.getNewValue ());
+                            } else
+                                if (name.equals (PROPERTY_DISABLED_PROPERTY_COLOR)) {
+                                    setDisabledPropertyColor ((Color)e.getNewValue ());
+                                } else
+                                    if (name.equals (PROPERTY_SORTING_MODE)) {
+                                        try {
+                                            setSortingMode (((Integer)e.getNewValue ()).intValue ());
+                                        } catch (PropertyVetoException ee) {
+                                        }
+                                    } else
+                                        if (name.equals (PROPERTY_PLASTIC)) {
+                                            setPlastic (((Boolean)e.getNewValue ()).booleanValue ());
+                                        } else
+                                            if (name.equals (PROPERTY_PROPERTY_PAINTING_STYLE)) {
+                                                setPropertyPaintingStyle (((Integer)e.getNewValue ()).intValue ());
+                                            } else
+                                                if (name.equals (PROPERTY_DISPLAY_WRITABLE_ONLY)) {
+                                                    setDisplayWritableOnly (((Boolean)e.getNewValue ()).booleanValue ());
+                                                }
+                        }
+                    }
+                                                                      );
+
+        setNodes (new Node [0]);
+    }
+
+
+    
+
+    
+    public void setNodes (Node[] node) {
+        postSetNodes (node);
+    }
+
+    
+    public void setPropertyPaintingStyle (int style) {
+        propertyPaintingStyle = style;
+        if (pageIndex != -1) resort (pageIndex);
+    }
+
+    
+    public int getPropertyPaintingStyle () {
+        return propertyPaintingStyle;
+    }
+
+    
+    public void setSortingMode (int sortingMode) throws PropertyVetoException {
+
+        switch (sortingMode) {
+        case UNSORTED:
+            sorter = null;
+            break;
+        case SORTED_BY_NAMES:
+            sorter = SORTER_NAME;
+            break;
+        case SORTED_BY_TYPES:
+            sorter = SORTER_TYPE;
+            break;
+        default:
+            throw new PropertyVetoException (bundle.getString ("EXC_Unknown_sorting_mode"),
+                                             new PropertyChangeEvent (this, PROPERTY_SORTING_MODE,
+                                                                      new Integer (this.sortingMode), new Integer (sortingMode)));
+        }
+
+        this.sortingMode = sortingMode;
+        bNoSort.setSelected (sortingMode == UNSORTED);
+        bAlphaSort.setSelected (sortingMode == SORTED_BY_NAMES);
+        bTypeSort.setSelected (sortingMode == SORTED_BY_TYPES);
+        if (pageIndex != -1) resort (pageIndex);
+    }
+
+    
+    public int getSortingMode () {
+        return sortingMode;
+    }
+
+    
+    public void setCurrentPage (int index) {
+        if (pageIndex == index) return;
+        if (pageIndex >= 0) removeInputComponent (pageIndex);
+        pageIndex = index;
+        if (index < 0) return;
+        if (propertyDetails [index] == null) refreshTab (index);
+        else updateTab (index);
+        if (index != pages.getSelectedIndex ()) pages.setSelectedIndex (index);
+        selectedTabName = pages.getTitleAt (index);
+    }
+
+    
+    public boolean setCurrentPage (String str) {
+        int index = pages.indexOfTab (str);
+        if (index < 0) return false;
+        setCurrentPage (index);
+        return true;
+    }
+
+    
+    public int getCurrentPage () {
+        return pages.getSelectedIndex ();
+    }
+
+    
+    public void setPlastic (boolean plastic) {
+        this.plastic = plastic;
+        if (pageIndex != -1) resort (pageIndex);
+    }
+
+    
+    public boolean getPlastic () {
+        return plastic;
+    }
+
+    
+    public void setValueColor (Color color) {
+        this.valueColor = color;
+        if (pageIndex != -1) resort (pageIndex);
+    }
+
+    
+    public Color getValueColor () {
+        return valueColor;
+    }
+
+    
+    public void setDisabledPropertyColor (Color color) {
+        disabledPropertyColor = color;
+        if (pageIndex != -1) resort (pageIndex);
+    }
+
+    
+    public Color getDisabledPropertyColor () {
+        return disabledPropertyColor;
+    }
+
+    
+    public void setDisplayWritableOnly (boolean b) {
+        if (displayWritableOnly == b) return;
+        displayWritableOnly = b;
+        if (pageIndex != -1) resort (pageIndex);
+        bDisplayWritableOnly.setSelected (displayWritableOnly);
+    }
+
+    
+    public boolean getDisplayWritableOnly () {
+        return displayWritableOnly;
+    }
+
+
+    
+
+    
+    private synchronized void refreshPropertySheet() {
+        pages.removeChangeListener (tabListener);
+
+        int i, k = pages.getTabCount ();
+
+        ignorePropertyChanges = true;
+        tab = beansDetails.getPropertySetDisplayNames ();
+        hints = beansDetails.getPropertySetHints ();
+        ignorePropertyChanges = false;
+
+        int l = tab.length;
+        int t = Math.min (k, l);
+        int tt = Math.max (k, l);
+
+        if (l != k) {
+            NamesPanel[] oldNames = namesPanel;
+            NamesPanel[] oldValues = valuesPanel;
+            namesPanel = new NamesPanel [l];
+            valuesPanel = new NamesPanel [l];
+            System.arraycopy (oldNames, 0, namesPanel, 0, t);
+            System.arraycopy (oldValues, 0, valuesPanel, 0, t);
+        }
+
+        propertyValue = new PropertyValue [l][];
+        propertyDisplayer = new PropertyDisplayer [l][];
+        propertyDetails = new PropertyDetails [l][];
+
+        for (i = 0; i < t; i++) {
+            propertyValue [i] = null;
+            propertyDisplayer [i] = null;
+            propertyDetails [i] = null;
+            pages.setTitleAt (i, tab [i]);
+        }
+        for (i = k; i < l; i++) {
+            propertyValue [i] = null;
+            propertyDisplayer [i] = null;
+            propertyDetails [i] = null;
+            createTab (i);
+        }
+        for (i = k - 1; i >= l; i--) {
+            pages.removeTabAt (i);
+        }
+
+        
+        if (k != l)
+            if (l == 0) {
+                remove (pages);
+                add (emptyPanel, "Center"); 
+            } else {
+                remove (emptyPanel);
+                add (pages, "Center"); 
+            }
+
+        pageIndex = -1;
+        if (l > 0) {
+            if (!setCurrentPage (selectedTabName))
+                setCurrentPage (0);
+        }
+
+        pages.invalidate ();
+        invalidate ();
+        Component f = getParent ();
+        if (f != null) f.validate ();
+        else validate ();
+        pages.repaint ();
+        repaint ();
+
+        pages.addChangeListener (tabListener);
+    }
+
+    void resort (int index) {
+        int i, k = propertyDetails.length;
+        refreshTab (index);
+        pages.invalidate ();
+        Component f = getParent ();
+        if (f != null) f.validate ();
+        else validate ();
+        pages.repaint ();
+    }
+
+    
+    private void createTab (int index) {
+        JPanel p = new JPanel ();
+        p.setLayout (new BorderLayout ());
+        p.add (new EmptyPanel (text), "Center"); 
+        pages.addTab (tab [index], null, p, hints [index]);
+    }
+
+    
+    private void createPane (int index, boolean empty) {
+        JPanel p = (JPanel) pages.getComponentAt (index);
+        Component c = p.getComponent (0);
+        if (empty) {
+            if ((c != null) && (c instanceof EmptyPanel))
+                return;
+            p.removeAll ();
+            p.add (new EmptyPanel (text), "Center"); 
+            return;
+        }
+
+        if (namesPanel [index] == null) {
+            namesPanel [index] = new NamesPanel ();
+            valuesPanel [index] = new NamesPanel (namesPanel [index]);
+        } else {
+            namesPanel [index].removeAll ();
+            valuesPanel [index].removeAll ();
+        }
+        if ((c == null) || !(c instanceof JScrollPane)) {
+            p.removeAll ();
+            JScrollPane scrollPane = new JScrollPane ();
+            SplittedPanel splittedPanel = new ScrollableSplittedPanel (scrollPane, namesPanel [index]);
+            splittedPanel.add (namesPanel [index], SplittedPanel.ADD_LEFT);
+            splittedPanel.add (valuesPanel [index], SplittedPanel.ADD_RIGHT);
+
+            scrollPane.setViewportView (splittedPanel);
+            scrollPane.setHorizontalScrollBarPolicy (JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            scrollPane.getVerticalScrollBar ().setUnitIncrement (25);
+            p.add (scrollPane, "Center"); 
+        }
+    }
+
+
+    
+    private void refreshTab (int index) {
+        SheetButton sheetButton;
+        ignorePropertyChanges = true;
+
+        propertyDetails [index]   = beansDetails.getPropertyDetails (index);
+        int i, k = propertyDetails [index].length;
+        if (displayWritableOnly) {
+            Vector v =  new Vector (k);
+            for (i = 0; i < k; i++)
+                if (propertyDetails [index][i].canWrite ()) v.addElement (propertyDetails [index][i]);
+            propertyDetails [index] = new PropertyDetails [k = v.size ()];
+            v.copyInto (propertyDetails [index]);
+        }
+        if (sorter != null) java.util.Arrays.sort (propertyDetails [index], sorter);
+
+        createPane (index, k == 0);
+
+        propertyValue [index]     = new PropertyValue [k];
+        propertyDisplayer [index] = new PropertyDisplayer [k];
+
+        for (i = 0; i < k; i++) {
+            sheetButton = new SheetButton (
+                              propertyDetails [index][i].getName (),
+                              plastic,
+                              plastic
+                          );
+
+            final PropertyDetails pd = propertyDetails [index][i];
+            sheetButton.setFocusTransferable (true);
+            sheetButton.addMouseListener (
+                new MouseUtils.PopupMouseAdapter () {
+                    public void showPopup (MouseEvent ev) {
+                        if (MouseUtils.isRightMouseButton (ev)) {
+                            keepFocus = true;
+                            setActions (pd);
+                            popupMenu.show ((java.awt.Component) ev.getSource (), ev.getX(), ev.getY ());
+                        }
+                    }
+                }
+            );
+            sheetButton.addFocusListener (new FocusListener () {
+                                              public void focusGained (FocusEvent fe) {
+                                                  JComponent jc = (JComponent)fe.getComponent ();
+                                                  jc.scrollRectToVisible (new Rectangle (jc.getSize ()));
+                                              }
+                                              public void focusLost (FocusEvent fe) {
+                                                  removeActions (pd);
+                                              }
+                                          });
+
+            propertyValue [index][i] = new PropertyValue (propertyDetails [index][i]);
+
+            sheetButton.setToolTipText (getDescription (propertyDetails [index][i]));
+
+            propertyDisplayer [index][i] = new PropertyDisplayer (
+                                               propertyDetails [index][i],
+                                               propertyValue [index][i],
+                                               propertyPaintingStyle,
+                                               lock,
+                                               valueColor,
+                                               disabledPropertyColor,
+                                               plastic
+                                           );
+            propertyDisplayer [index][i].setToolTipText (
+                getValueDescription (propertyDetails [index][i])
+            );
+            propertyDisplayer [index][i].addPropertyChangeListener (beansListener);
+
+            SheetListener sheetListener = new SheetListener (
+                                              sheetButton, propertyDisplayer [index][i]);
+            sheetButton.addSheetButtonListener (sheetListener);
+            propertyDisplayer [index][i].addSheetButtonListener (sheetListener);
+
+            if (!displayWritableOnly) {
+                sheetButton.setEnabled (propertyDetails [index][i].canWrite ());
+                propertyDisplayer [index][i].setEnabled (propertyDetails [index][i].canEdit ());
+            }
+            sheetButton.setInactiveForeground (disabledPropertyColor);
+
+            namesPanel [index].add (sheetButton);
+            valuesPanel [index].add (propertyDisplayer [index][i]);
+        }
+        if (k > 0) {
+            namesPanel [index].repaint ();
+            valuesPanel [index].repaint ();
+        }
+        repaint ();
+        ignorePropertyChanges = false;
+    }
+
+    
+    void updateTab (int index) {
+        ignorePropertyChanges = true;
+        int i, k = propertyDetails [index].length;
+        PropertyValue newValue;
+
+        for (i = 0; i < k; i++) {
+            if ((newValue = new PropertyValue (propertyDetails [index][i])).
+                    equals (propertyValue [index][i]))
+                continue;
+
+             
+
+            propertyValue [index][i] = newValue;
+            boolean editable = propertyDetails [index][i].canEdit ();
+
+            propertyDisplayer [index][i].setValue (newValue);
+            propertyDisplayer [index][i].setEnabled (editable);
+            propertyDisplayer [index][i].validate ();
+        }
+        ignorePropertyChanges = false;
+    }
+
+    
+    void invokeCustomization () {
+        beansDetails.customize ();
+    }
+
+    
+    void setInputComponent (PropertyDisplayer dis) {
+        if (lastSelectedLine == dis) {
+            long t = System.currentTimeMillis () - dis.getLastDeselectTime ();
+            if (t < 400) return;
+        }
+        boolean open = dis.getInputState (); 
+        removeInputComponent (pageIndex);
+        if (!open) {
+            dis.setInputState (true);
+            lastSelectedLine = dis;
+        }
+    }
+
+    
+    void removeInputComponent (int index) {
+        if (lastSelectedLine != null) {
+            lastSelectedLine.setReadState ();
+            lastSelectedLine = null;
+        }
+    }
+
+
+    PasteType[]           oldPaste;
+    CopyAction            copy = new CopyAction ();
+    PasteAction           paste = new PasteAction ();
+    ActionPerformer       oldCopy;
+    boolean               keepFocus;
+    SetDefaultValueAction setDefault = new SetDefaultValueAction ();
+    {
+        setDefault.setSurviveFocusChange (false);
+    }
+
+    void setActions (final PropertyDetails pd) {
+
+        
+        
+        
+        try {
+            if (pd.supportsDefaultValue () && pd.canWrite ())
+                setDefault.setActionPerformer (
+                    new ActionPerformer () {
+                    public void performAction (SystemAction a) {
+                        pd.restoreDefaultValue ();
+                    }
+                });
+            else
+                setDefault.setActionPerformer (null);
+        } catch (Exception e) {
+            setDefault.setActionPerformer (null);
+        }
+
+        
+        
+    }
+
+    void removeActions (PropertyDetails pd) {
+
+        if (keepFocus) {
+            keepFocus = false;
+            return;
+        }
+        paste.setPasteTypes (oldPaste);
+        oldPaste = null;
+        setDefault.setActionPerformer (null);
+        copy.setActionPerformer (oldCopy);
+        oldCopy = null;
+    }
+
+    public void addNotify () {
+        PropertySheetSettings.getDefault ().addPropertyChangeListener (
+            settingsListener
+        );
+        super.addNotify ();
+    }
+
+    public void removeNotify () {
+        if (beansDetails != null) {
+            beansDetails.removePropertyChangeListener (beansListener);
+            beansDetails.removeNodeListener (beansListener);
+        }
+        PropertySheetSettings.getDefault ().removePropertyChangeListener (
+            settingsListener
+        );
+        super.removeNotify ();
+    }
+
+    public Dimension getPreferredSize () {
+        return new Dimension (200, 300);
+    }
+
+
+    
+
+    
+    private class BeansListener extends NodeAdapter {
+        
+        public void propertyChange (PropertyChangeEvent evt) {
+            if (ignorePropertyChanges) return;
+            if (pageIndex != -1) {
+                final String n = evt.getPropertyName ();
+                final int thisPageIndex = pageIndex;
+                javax.swing.SwingUtilities.invokeLater ( new Runnable() {
+                    public void run() {
+                        if ((n != null) && n.equals (Node.PROP_PROPERTY_SETS)) {
+                            beansDetails.refresh ();
+                            refreshPropertySheet ();
+                        } else {
+                            updateTab (thisPageIndex);
+                        }
+                    }
+                } );
+            }
+        }
+    }
+
+    
+    class ScrollableSplittedPanel extends SplittedPanel implements Scrollable {
+
+        static final long serialVersionUID = -623600999659692948L;
+
+        Component scroll;
+        Container element;
+
+        ScrollableSplittedPanel (Component scroll, Container element) {
+            this.scroll = scroll;
+            this.element = element;
+        }
+
+        
+        public Dimension getPreferredScrollableViewportSize () {
+            return super.getPreferredSize ();
+        }
+
+        
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            Component[] c = element.getComponents ();
+            if (c.length < 1) return 1;
+            Dimension d = c [0].getSize ();
+            if (orientation == SwingConstants.VERTICAL) return d.height;
+            else return d.width;
+        }
+
+        
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            if (orientation == SwingConstants.VERTICAL) return scroll.getSize ().height;
+            else return scroll.getSize ().width;
+        }
+
+
+        
+        public boolean getScrollableTracksViewportWidth () {
+            return true;
+        }
+
+        
+        public boolean getScrollableTracksViewportHeight () {
+            return false;
+        }
+    }
+
+    
+    class SheetListener implements SheetButtonListener {
+
+        private SheetButton            nameComponent;
+        private PropertyDisplayer      valueComponent;
+
+        SheetListener (
+            SheetButton          nameComponent,
+            PropertyDisplayer    valueComponent
+        ) {
+            this.nameComponent =     nameComponent;
+            this.valueComponent =    valueComponent;
+        }
+
+        public void sheetButtonEntered (ActionEvent e) {
+            if (e.getSource () == nameComponent) valueComponent.setPressed (true);
+            else nameComponent.setPressed (true);
+        }
+
+        public void sheetButtonExited (ActionEvent e) {
+            if (e.getSource () == nameComponent) valueComponent.setPressed (false);
+            else nameComponent.setPressed (false);
+        }
+
+        public void sheetButtonClicked (ActionEvent e) {
+            if ((e.getID () == ActionEvent.ACTION_FIRST) && valueComponent.rolling (true)) return;
+            if (e.getSource () == nameComponent) {
+                setInputComponent (valueComponent);
+            } else {
+                removeInputComponent (0);
+                lastSelectedLine = valueComponent;
+                if (!lastSelectedLine.getInputState ()) {
+                    lastSelectedLine.setInputState (true);
+                }
+            }
+        }
+    }
+
+    
+    private transient RunNodes runNodes;
+
+    
+    void postSetNodes (Node[] nodes) {
+        if (runNodes == null) {
+            runNodes = new RunNodes ();
+        }
+        runNodes.postNodes (nodes);
+    }
+
+    
+    class RunNodes implements Runnable {
+        
+        private RequestProcessor.Task runTask;
+
+        
+        private Node[] nodes;
+
+        public void postNodes (Node[] nodes) {
+            this.nodes = nodes;
+
+            if (runTask == null) {
+                runTask = RequestProcessor.createRequest (this);
+            }
+
+            runTask.schedule (250);
+        }
+
+        
+        public void run () {
+            Node[] n = nodes;
+            if (n != null) {
+                synchronized (lock) {
+                    try {
+                        if (beansDetails != null) {
+                            beansDetails.removePropertyChangeListener (beansListener);
+                            beansDetails.removeNodeListener (beansListener);
+                        }
+                        try {
+                            customizer.setEnabled (false);
+                            beansDetails = new BeansDetails (n);
+                        } catch (IntrospectionException e) {
+                            
+                            beansDetails = new BeansDetails ();
+                        }
+                        beansDetails.addPropertyChangeListener (beansListener);
+                        beansDetails.addNodeListener (beansListener);
+                        customizer.setEnabled (beansDetails.hasCustomizer ());
+                        SwingUtilities.invokeLater (new Runnable () {
+                                                        public void run () {
+                                                            refreshPropertySheet ();
+                                                        }
+                                                    });
+                    } catch (Throwable e) {
+                        if (e instanceof ThreadDeath)
+                            throw (ThreadDeath)e;
+                        TopManager.getDefault().notifyException(e);
+                    }
+                }
+            }
+        }
+    }
+
+    
+    private class BeanPasteType extends PasteType {
+        PropertyDetails details;
+        Transferable transferable;
+        DataFlavor flavor;
+
+        
+        public BeanPasteType (PropertyDetails details, Transferable transferable, DataFlavor flavor) {
+            this.details = details;
+            this.transferable = transferable;
+            this.flavor = flavor;
+        }
+
+        
+        public String getName() {
+            return PropertySheet.this.bundle.getString ("CTL_Paste");
+        }
+
+        
+        public org.openide.util.HelpCtx getHelpCtx() {
+            return new org.openide.util.HelpCtx (BeanPasteType.class);
+        }
+
+        
+        public Transferable paste () throws IOException {
+
+            String data;
+            try {
+                Object o = transferable.getTransferData (flavor);
+                if (o instanceof String)
+                    o = java.beans.Beans.instantiate (
+                            TopManager.getDefault ().currentClassLoader (),
+                            (String) o
+                        );
+                details.setPropertyValue (o);
+                beansListener.propertyChange (
+                    new PropertyChangeEvent (this, null, null, null)
+                );
+            }
+            catch (java.awt.datatransfer.UnsupportedFlavorException e) {
+                throw new InternalError();
+            }
+            catch (ClassCastException e) {
+                throw new IOException (e.getMessage ());
+            }
+            catch (ClassNotFoundException e) {
+                throw new IOException (e.getMessage ());
+            }
+            return null;
+        }
+    }
+
+    class BeanTransferableOwner implements Transferable {
+
+        
+        private Object object;
+
+        private DataFlavor flavor;
+
+        
+        public BeanTransferableOwner (Object object) {
+            this.object = object;
+            
+        }
+
+        
+        public DataFlavor[] getTransferDataFlavors () {
+            return new DataFlavor[] {flavor};
+        }
+
+        
+        public boolean isDataFlavorSupported (DataFlavor flavor) {
+            return false; 
+        }
+
+        
+        public Object getTransferData (DataFlavor flavor) throws
+            UnsupportedFlavorException, IOException {
+            if (isDataFlavorSupported (flavor)) return object;
+            throw new UnsupportedFlavorException (flavor);
+        }
+    }
+}
+
+

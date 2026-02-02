@@ -1,0 +1,19 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.uml.refactor.MoveMethodListener {
+- UMLPackage current
+- TypeSummary typeSummary
+- MethodSummary methodSummary
++ <<Create>> MoveMethodListener(UMLPackage,TypeSummary,MethodSummary,JPopupMenu,JMenuItem)
+# JDialog createDialog()
+}
+
+
+
+
+org.acm.seguin.uml.refactor.DialogViewListener <|-- org.acm.seguin.uml.refactor.MoveMethodListener
+@enduml

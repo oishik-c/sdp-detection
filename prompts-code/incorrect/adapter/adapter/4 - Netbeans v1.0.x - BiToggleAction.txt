@@ -1,0 +1,67 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.beans.beaninfo;
+
+import org.openide.nodes.Node;
+import org.openide.util.NbBundle;
+import org.openide.util.HelpCtx;
+import org.openide.util.actions.NodeAction;
+
+
+public class BiToggleAction extends NodeAction  {
+
+    static final long serialVersionUID =3773842179168178798L;
+    
+    
+
+    
+
+
+
+    
+    public String getName () {
+        return NbBundle.getBundle (GenerateBeanInfoAction.class).getString ("CTL_TOGGLE_MenuItem");
+    }
+
+
+    
+    
+    protected String iconResource () {
+        return null;
+        
+    }
+
+    
+
+    
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (BiToggleAction.class);
+    }
+
+    protected boolean enable( Node[] activatedNodes ) {
+        return true;
+    }
+
+
+    
+    public void performAction ( Node[] nodes ) {
+
+        nodes = BiPanel.getSelectedNodes();
+
+        if ( nodes.length < 1 )
+            return;
+
+        for(int i = 0; i < nodes.length; i++ ) {
+            ((BiFeatureNode)nodes[i].getCookie( BiFeatureNode.class )).toggleSelection();
+        }
+
+    }
+
+}
+
+

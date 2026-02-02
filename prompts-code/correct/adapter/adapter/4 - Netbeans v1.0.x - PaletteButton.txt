@@ -1,0 +1,112 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.form.palette;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import org.openide.awt.ToolbarToggleButton;
+import org.openide.cookies.InstanceCookie;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.InstanceSupport;
+import org.openide.nodes.*;
+import org.openide.util.HelpCtx;
+
+import org.netbeans.modules.form.*;
+
+
+final class PaletteButton extends ToolbarToggleButton
+    implements InstanceCookie, NodeListener, Runnable {
+    
+    private Node itemNode;
+    
+    private PaletteItem palItem;
+    static final long serialVersionUID =-8524018463476326691L;
+    
+    public PaletteButton (Node itemNode, PaletteItem palItem) {
+        super (
+            new ImageIcon (itemNode.getIcon(java.beans.BeanInfo.ICON_COLOR_16x16)),
+            false
+        );
+
+        this.itemNode = itemNode;
+        this.palItem = palItem;
+
+
+        setMargin (new Insets (1, 1, 0, 1));
+        setToolTipText (palItem.getDisplayName ());
+
+        
+        itemNode.addNodeListener (org.openide.util.WeakListener.node (this, itemNode));
+
+        org.openide.util.RequestProcessor.postRequest (this);
+    }
+
+    
+    public void run () {
+        
+
+        
+        
+        HelpCtx hc = InstanceSupport.findHelp (this);
+
+        String help = null;
+        if (hc != null) {
+            help = hc.getHelpID ();
+        }
+        if (help == null) {
+            help = ComponentPalette.class.getName () + ".paletteItem"; 
+        }
+
+        HelpCtx.setHelpIDString (this, help);
+    }
+
+    public Class instanceClass () {
+        return palItem.getItemClass ();
+    }
+
+    public String instanceName () {
+        
+        return "dummy"; 
+    }
+
+    public Object instanceCreate () {
+        return null;
+    }
+
+    
+    public void childrenAdded(NodeMemberEvent ev) {
+    }
+    
+    public void childrenRemoved(NodeMemberEvent ev) {
+    }
+    
+    public void childrenReordered(NodeReorderEvent ev) {
+    }
+
+    
+    public void nodeDestroyed(NodeEvent ev) {
+    }
+
+
+    public void propertyChange(final java.beans.PropertyChangeEvent ev) {
+        if (Node.PROP_ICON.equals (ev.getPropertyName ())) {
+            this.setIcon (
+                new ImageIcon (itemNode.getIcon(java.beans.BeanInfo.ICON_COLOR_16x16))
+            );
+        }
+    }
+}
+

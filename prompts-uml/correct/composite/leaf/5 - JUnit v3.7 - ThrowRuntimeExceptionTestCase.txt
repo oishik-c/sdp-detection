@@ -1,0 +1,40 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.tests.ExceptionTestCaseTest {
++ <<Create>> ExceptionTestCaseTest(String)
++ void testExceptionSubclass()
++ void testExceptionTest()
++ void testFailure()
++ void testNoException()
++ void testWrongException()
+}
+
+class junit.tests.ExceptionTestCaseTest$ThrowExceptionTestCase {
++ <<Create>> ThrowExceptionTestCase(String,Class)
++ void test()
+}
+
+class junit.tests.ExceptionTestCaseTest$ThrowRuntimeExceptionTestCase {
++ <<Create>> ThrowRuntimeExceptionTestCase(String,Class)
++ void test()
+}
+
+class junit.tests.ExceptionTestCaseTest$ThrowNoExceptionTestCase {
++ <<Create>> ThrowNoExceptionTestCase(String,Class)
++ void test()
+}
+
+
+
+junit.tests.TestCase <|-- junit.tests.ExceptionTestCaseTest
+junit.tests.ExceptionTestCaseTest +.. junit.tests.ExceptionTestCaseTest$ThrowExceptionTestCase
+junit.tests.ExceptionTestCase <|-- junit.tests.ExceptionTestCaseTest$ThrowExceptionTestCase
+junit.tests.ExceptionTestCaseTest +.. junit.tests.ExceptionTestCaseTest$ThrowRuntimeExceptionTestCase
+junit.tests.ExceptionTestCase <|-- junit.tests.ExceptionTestCaseTest$ThrowRuntimeExceptionTestCase
+junit.tests.ExceptionTestCaseTest +.. junit.tests.ExceptionTestCaseTest$ThrowNoExceptionTestCase
+junit.tests.ExceptionTestCase <|-- junit.tests.ExceptionTestCaseTest$ThrowNoExceptionTestCase
+@enduml

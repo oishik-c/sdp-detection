@@ -1,0 +1,22 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.tools.CodeGenerator {
+- {static} CodeGenerator singleton
+- boolean initialized
+- VelocityEngine velocity
+- Properties properties
++ {static} String TEMPLATES_PATH
+- <<Create>> CodeGenerator()
++ void setProperties(Properties)
++ {static} CodeGenerator getInstance()
++ void initialize()
++ void generateCode(String,Context,String,String,String)
+- File createFile(String,String,String)
+}
+
+
+@enduml

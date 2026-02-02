@@ -1,0 +1,45 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.xml.SelectField {
+- SelectFieldRenderer renderer
++ <<Create>> SelectField()
++ <<Create>> SelectField(int)
++ <<Create>> SelectField(Object[])
++ <<Create>> SelectField(int,Object[])
+# TextModel createDefaultModel()
+# TextModel createDefaultModel(int)
++ void setModel(TextModel)
+# SelectModel getSelectModel()
+# SelectFieldRenderer createDefaultRenderer()
++ void setRenderer(SelectFieldRenderer)
++ SelectFieldRenderer getRenderer()
++ String getText()
++ void setText(String)
++ Object getSelection()
++ void setSelection(Object)
++ void processRenderEvent(RenderEvent)
++ void setList(com.taursys.model.CollectionValueHolder)
++ com.taursys.model.CollectionValueHolder getList()
++ void setDisplayPropertyName(String)
++ String getDisplayPropertyName()
++ void setListPropertyNames(String[])
++ String[] getListPropertyNames()
++ void setPropertyNames(String[])
++ String[] getPropertyNames()
++ void setPropertyName(String)
++ String getPropertyName()
++ void setNullAllowed(boolean)
++ boolean isNullAllowed()
++ void setNullDisplay(String)
++ String getNullDisplay()
+}
+
+
+
+
+com.taursys.xml.AbstractField <|-- com.taursys.xml.SelectField
+@enduml

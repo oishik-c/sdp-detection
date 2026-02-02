@@ -1,0 +1,96 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.core;
+
+import java.net.URL;
+import java.net.MalformedURLException;
+
+import org.openide.util.HelpCtx;
+
+
+public class NetworkOptions extends org.openide.options.SystemOption {
+
+    
+    public final static String PROP_HOME_URL = "homeURL"; 
+    
+    private final static String DEFAULT_HOME =
+        org.openide.util.NbBundle.getBundle (NetworkOptions.class).getString ("URL_default_home_page");
+
+     
+    private static URL homeURL;
+
+    static final long serialVersionUID =-4392395920331209408L;
+    
+    public NetworkOptions() {
+    }
+
+    
+    public String getHomeURL() {
+        return getStaticHomeURL().toString();
+    }
+
+    
+    public void setHomeURL(String value) {
+        if (homeURL == null) initializeHomeURL();
+        if (value == null || value.equals("") || 
+                value.equals(homeURL.toString())) return;
+        URL u = null;
+        try {
+            u = new URL(value);
+        } catch (MalformedURLException ex) {
+            return;
+        }
+        String oldValue = homeURL.toString();
+        homeURL = u;
+        
+        firePropertyChange(PROP_HOME_URL, oldValue, homeURL.toString());
+    }
+
+    
+    public String getSmtpServer() {
+        return System.getProperty("mail.host", "");
+    }
+
+    
+    public void setSmtpServer(String value) {
+        if (value == null) return;
+        System.getProperties().put("mail.host", value); 
+    }
+
+    
+    public String displayName() {
+        return org.openide.util.NbBundle.getBundle(NetworkOptions.class).
+               getString("CTL_Network_opt_name");
+    }
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (NetworkOptions.class);
+    }
+
+    
+    static URL getStaticHomeURL () {
+        if (homeURL != null) return homeURL;
+        initializeHomeURL();
+        return homeURL;
+    }
+
+    private static void initializeHomeURL () {
+        try {
+            homeURL = new URL (DEFAULT_HOME);
+        } catch (MalformedURLException e) {
+            try {
+                homeURL = new URL ("http://"); 
+            } catch (MalformedURLException e2) {
+                throw new InternalError ("Error initializing Home URL"); 
+            }
+        }
+    }
+
+}
+
+

@@ -1,0 +1,165 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.tool;
+
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+
+import javax.swing.event.MouseInputAdapter;
+
+import diagram.Diagram;
+import diagram.DiagramUI;
+import diagram.Figure;
+
+
+public class FigureTool extends AbstractTool {
+
+  private Diagram diagram;
+  private Point2D ptPress;
+
+  private Figure fig;
+  private Figure current;
+  
+  private Rectangle2D rcBounds = new Rectangle2D.Double();
+
+  private MouseHandler mouseHandler = new MouseHandler();
+
+  
+  public FigureTool(Figure fig) {
+    this.fig = fig;
+  }
+
+
+  
+  public void install(Diagram diagram) {
+
+    diagram.addMouseListener(mouseHandler);
+    diagram.addMouseMotionListener(mouseHandler);
+
+  }
+
+  
+  public void uninstall(Diagram diagram) {
+
+    diagram.removeMouseListener(mouseHandler);
+    diagram.removeMouseMotionListener(mouseHandler);
+
+    reset();
+
+  }
+  
+
+  protected class MouseHandler extends MouseInputAdapter {
+
+    
+    public void mousePressed(MouseEvent e) {
+      
+      
+      Object o = e.getSource();
+      
+      if(!e.isConsumed() && (o instanceof Diagram)) {
+        
+        e.consume();
+        fireToolStarted();
+        
+        ptPress = e.getPoint();
+        
+        
+        current = (Figure)fig.clone();
+        
+        diagram = (Diagram)o;
+        diagram.getModel().add(current);
+      
+      }
+      
+    }
+    
+    
+    public void mouseDragged(MouseEvent e) {
+      
+      if(diagram == null)
+        return;
+      
+      updateBounds(e.getPoint(), ptPress);
+      
+      DiagramUI ui = (DiagramUI)diagram.getUI();
+      
+      
+      ui.damageFigure(current);
+      current.setBounds(rcBounds.getX(), rcBounds.getY(), rcBounds.getWidth(), rcBounds.getHeight());
+      ui.refreshFigure(current);
+      
+    }
+    
+    
+    public void mouseReleased(MouseEvent e) {
+      
+      if(diagram == null)
+        return;
+      
+      updateBounds(e.getPoint(), ptPress);
+      
+      
+      if(rcBounds.getWidth() < 20 || rcBounds.getHeight() < 20) {
+        
+        rcBounds = fig.getBounds2D(rcBounds);
+        current.setBounds(ptPress.getX(), ptPress.getY(),
+                          rcBounds.getWidth(), rcBounds.getHeight());
+        
+        
+        DiagramUI ui = (DiagramUI)diagram.getUI();
+        ui.repaintFigure(current);
+        
+      }
+      
+      reset();
+      fireToolFinished();
+
+    }
+    
+  } 
+
+  
+  protected void updateBounds(Point2D pt1, Point2D pt2) {
+    
+    double x1 = pt1.getX();
+    double x2 = pt2.getX();
+    double y1 = pt1.getY();
+    double y2 = pt2.getY();
+
+    double x, y, w, h;
+
+    
+    if(x1 < x2) {
+      x = x1;
+      w = (x2 - x1);
+    } else {
+      w = (x1 - x2);
+      x = x2;
+    }
+
+    if(y1 < y2) {
+      y = y1; 
+      h = (y2 - y1);
+    } else {
+      h = (y1 - y2);
+      y = y2;
+    }
+
+    rcBounds.setFrame(x, y, w, h);
+
+  }
+
+  
+  protected void reset() {
+    current = null;
+    diagram = null;
+  }
+
+}

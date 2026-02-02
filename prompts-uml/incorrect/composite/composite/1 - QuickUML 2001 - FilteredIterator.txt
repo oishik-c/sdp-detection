@@ -1,0 +1,21 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class util.FilteredIterator {
+- Comparable filter
+- Object nextValue
++ <<Create>> FilteredIterator(Iterator,Class)
++ <<Create>> FilteredIterator(Iterator,Comparable)
++ <<Create>> FilteredIterator(Iterator,Comparable,boolean)
++ boolean hasNext()
++ Object next()
+}
+
+
+
+
+util.WrappedIterator <|-- util.FilteredIterator
+@enduml

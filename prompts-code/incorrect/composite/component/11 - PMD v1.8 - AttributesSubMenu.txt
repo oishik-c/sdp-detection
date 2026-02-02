@@ -1,0 +1,55 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package net.sourceforge.pmd.util.viewer.gui.menu;
+
+import net.sourceforge.pmd.ast.SimpleNode;
+import net.sourceforge.pmd.jaxen.Attribute;
+import net.sourceforge.pmd.jaxen.AttributeAxisIterator;
+import net.sourceforge.pmd.util.viewer.model.AttributeToolkit;
+import net.sourceforge.pmd.util.viewer.model.ViewerModel;
+import net.sourceforge.pmd.util.viewer.util.NLS;
+
+import javax.swing.*;
+import java.text.MessageFormat;
+
+
+
+public class AttributesSubMenu
+  extends JMenu
+{
+  private ViewerModel model;
+  private SimpleNode  node;
+
+  public AttributesSubMenu( ViewerModel model, SimpleNode node )
+  {
+    super(
+      MessageFormat.format(
+        NLS.nls( "AST.MENU.ATTRIBUTES" ), new Object[] { node.toString(  ) } ) );
+
+    this.model   = model;
+    this.node    = node;
+
+    init(  );
+  }
+
+  private void init(  )
+  {
+    AttributeAxisIterator i = new AttributeAxisIterator( node );
+
+    while (i.hasNext())
+    {
+      Attribute attribute = (Attribute)i.next(  );
+
+      add(
+        new XPathFragmentAddingItem(
+          attribute.getName(  ) + " = " + attribute.getValue(  ), model,
+          AttributeToolkit.constructPredicate( attribute ) ) );
+    }
+  }
+}
+
+
+

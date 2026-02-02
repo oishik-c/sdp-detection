@@ -1,0 +1,43 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+
+package net.nutch.net;
+
+import net.nutch.util.*;
+import java.util.logging.*;
+
+
+public class URLFilterFactory {
+  private static final Logger LOG =
+    LogFormatter.getLogger("net.nutch.net.URLFilterFactory");
+
+  private static final String URLFILTER_CLASS =
+    NutchConf.get("urlfilter.class");
+
+  private URLFilterFactory() {}                   
+
+  private static URLFilter filter;
+
+  
+  public static URLFilter getFilter() {
+
+    if (filter == null) {
+      try {
+        LOG.info("Using URL filter: " + URLFILTER_CLASS);
+        Class filterClass = Class.forName(URLFILTER_CLASS);
+        filter = (URLFilter)filterClass.newInstance();
+      } catch (Exception e) {
+        throw new RuntimeException("Couldn't create "+URLFILTER_CLASS, e);
+      }
+    }
+
+    return filter;
+
+  }
+
+}

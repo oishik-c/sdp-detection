@@ -1,0 +1,65 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.awtui.TestRunner {
+# Frame fFrame
+# Vector fExceptions
+# Vector fFailedTests
+# Thread fRunner
+# TestResult fTestResult
+# TextArea fTraceArea
+# TextField fSuiteField
+# Button fRun
+# ProgressBar fProgressIndicator
+# List fFailureList
+# Logo fLogo
+# Label fNumberOfErrors
+# Label fNumberOfFailures
+# Label fNumberOfRuns
+# Button fQuitButton
+# Button fRerunButton
+# TextField fStatusLine
+# Checkbox fUseLoadingRunner
+# {static} Font PLAIN_FONT
+- {static} int GAP
++ <<Create>> TestRunner()
+- void about()
++ void addError(Test,Throwable)
++ void addFailure(Test,AssertionFailedError)
+# void addGrid(Panel,Component,int,int,int,int,double,int)
+- void appendFailure(String,Test,Throwable)
+# Menu createJUnitMenu()
+# void createMenus(MenuBar)
+# TestResult createTestResult()
+# Frame createUI(String)
++ void failureSelected()
++ void endTest(Test)
+- boolean isErrorSelected()
+- Image loadFrameIcon()
++ Thread getRunner()
++ {static} void main(String[])
++ {static} void run(Class)
++ void rerun()
+# void reset()
++ void run()
+# void runFailed(String)
++ void runSuite()
+- boolean shouldReload()
+- void setLabelValue(Label,int)
++ void setSuiteName(String)
+- void showErrorTrace()
+- void showInfo(String)
+# void clearStatus()
+- void showStatus(String)
++ void start(String[])
++ void startTest(Test)
+}
+
+
+
+
+junit.runner.BaseTestRunner <|-- junit.awtui.TestRunner
+@enduml

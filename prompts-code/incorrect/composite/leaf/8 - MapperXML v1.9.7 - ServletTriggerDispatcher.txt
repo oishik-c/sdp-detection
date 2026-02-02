@@ -1,0 +1,67 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.servlet;
+
+import com.taursys.xml.event.Dispatcher;
+import com.taursys.xml.Trigger;
+import com.taursys.xml.Component;
+import com.taursys.xml.DocumentElement;
+import com.taursys.xml.event.TriggerEvent;
+import javax.servlet.ServletRequest;
+import java.util.Iterator;
+import com.taursys.debug.Debug;
+
+
+public class ServletTriggerDispatcher extends Dispatcher {
+  private ServletRequest request;
+
+  
+  public ServletTriggerDispatcher() {
+  }
+
+  
+  public void dispatchToComponent(Component c) throws Exception {
+    if (request != null) {
+      if (c instanceof Trigger) {
+        dispatchToTrigger((Trigger)c);
+      } else if (c instanceof DocumentElement) {
+        c.dispatchEvent(new TriggerEvent(c, null, null));
+      }
+    } else {
+      Debug.error(
+          "ServletTriggerDispatcher.dispatchToComponent: request is null");
+    }
+  }
+
+  private void dispatchToTrigger(Trigger button) throws Exception {
+    
+    String pname = button.getParameter();
+    if (pname != null && pname.length()>0) {
+      
+      String value = request.getParameter(pname);
+      
+      if (value == null && button.isDefaultTrigger()) {
+        value = button.getText();
+        TriggerEvent e = new TriggerEvent(button, button.getParameter(), value);
+        button.dispatchEvent(e);
+      } else if (value != null && value.equals(button.getText())) {
+        TriggerEvent e = new TriggerEvent(button, button.getParameter(), value);
+        button.dispatchEvent(e);
+      }
+    }
+  }
+
+  
+  public void dispatch(ServletRequest request) throws Exception {
+    this.request = request;
+    
+    Iterator iter = components.iterator();
+    while (iter.hasNext()) {
+      dispatchToComponent((Component)iter.next());
+    }
+  }
+}

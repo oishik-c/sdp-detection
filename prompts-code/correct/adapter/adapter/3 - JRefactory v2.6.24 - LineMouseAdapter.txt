@@ -1,0 +1,62 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.uml.line;
+
+import java.awt.Point;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+
+
+public class LineMouseAdapter implements MouseListener, MouseMotionListener {
+	private LinedPanel panel;
+
+
+	
+	public LineMouseAdapter(LinedPanel init) {
+		panel = init;
+	}
+
+
+	
+	public void mouseClicked(MouseEvent mevt) {
+	}
+
+
+	
+	public void mouseEntered(MouseEvent mevt) {
+	}
+
+
+	
+	public void mouseExited(MouseEvent mevt) {
+	}
+
+
+	
+	public void mousePressed(MouseEvent mevt) {
+		Point result = mevt.getPoint();
+		panel.hit(result);
+	}
+
+
+	
+	public void mouseReleased(MouseEvent mevt) {
+		panel.drop();
+	}
+
+
+	
+	public void mouseDragged(MouseEvent mevt) {
+		panel.drag(mevt.getPoint());
+	}
+
+
+	
+	public void mouseMoved(MouseEvent mevt) {
+	}
+}

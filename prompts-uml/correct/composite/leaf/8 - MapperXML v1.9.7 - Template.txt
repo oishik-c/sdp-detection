@@ -1,0 +1,21 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.xml.Template {
+- CollectionValueHolder collectionValueHolder
++ <<Create>> Template()
+# InputDispatcher createInputDispatcher()
+# TriggerDispatcher createTriggerDispatcher()
+# DocumentElementRenderer createDefaultRenderer()
++ void setCollectionValueHolder(CollectionValueHolder)
++ CollectionValueHolder getCollectionValueHolder()
+}
+
+
+
+
+com.taursys.xml.DocumentElement <|-- com.taursys.xml.Template
+@enduml

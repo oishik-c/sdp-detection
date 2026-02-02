@@ -1,0 +1,43 @@
+Given the following java code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package net.nutch.analysis;
+
+
+
+class Token {
+
+  
+  public int kind;
+
+  
+  public int beginLine, beginColumn, endLine, endColumn;
+
+  
+  public String image;
+
+  
+  public Token next;
+
+  
+  public Token specialToken;
+
+  
+  public final String toString()
+  {
+     return image;
+  }
+
+  
+  public static final Token newToken(int ofKind)
+  {
+     switch(ofKind)
+     {
+       default : return new Token();
+     }
+  }
+
+}

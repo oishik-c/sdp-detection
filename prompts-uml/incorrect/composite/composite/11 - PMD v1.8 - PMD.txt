@@ -1,0 +1,24 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of composite.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class net.sourceforge.pmd.PMD {
++ {static} String EOL
+- TargetJDKVersion targetJDKVersion
++ <<Create>> PMD()
++ <<Create>> PMD(TargetJDKVersion)
++ void processFile(Reader,RuleSet,RuleContext)
++ void processFile(InputStream,String,RuleSet,RuleContext)
++ void processFile(InputStream,RuleSet,RuleContext)
++ {static} void main(String[])
+- {static} String glomName(boolean,String,File)
+- {static} String trimAnyPathSep(String)
+- {static} List collectFilesFromOneName(String)
+- {static} List collectFromCommaDelimitedString(String)
+- {static} List collect(String)
+}
+
+
+@enduml

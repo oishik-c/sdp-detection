@@ -1,0 +1,96 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.html.render;
+
+import com.taursys.xml.render.SelectFieldRenderer;
+import com.taursys.xml.event.RenderException;
+import com.taursys.xml.SelectField;
+import com.taursys.model.ModelException;
+import com.taursys.model.*;
+import com.taursys.xml.DocumentComponent;
+import com.taursys.dom.DocumentAdapter;
+import org.w3c.dom.*;
+import org.w3c.dom.html.*;
+import java.util.Collection;
+import java.util.Iterator;
+
+
+public class HTMLSelectFieldRenderer extends SelectFieldRenderer {
+
+  
+  public HTMLSelectFieldRenderer() {
+    super(null);
+  }
+
+  
+  public HTMLSelectFieldRenderer(SelectField c) {
+    super(c);
+  }
+
+  
+  public void render(SelectField field) throws RenderException {
+    try {
+      DocumentAdapter da = field.getParent().getDocumentAdapter();
+      Element element = (Element)da.getElementById(field.getId());
+      SelectModel model = (SelectModel)field.getModel();
+      
+      while(element.hasChildNodes())
+        element.removeChild(element.getFirstChild());
+      
+      Collection c = model.getDisplayOptionList();
+      Iterator iter = c.iterator();
+      while (iter.hasNext()) {
+        SelectModelOption option = (SelectModelOption)iter.next();
+        addOPTION(element, option.getOptionText(), option.isSelected());
+      }
+    } catch (ModelException ex) {
+      throw new RenderException(RenderException.REASON_MODEL_EXCEPTION, ex);
+    }
+  }
+
+  
+  public void render() throws RenderException {
+    init();
+    if (getComponent().isVisible()) {
+      restoreSelf();
+      try {
+        DocumentAdapter da = getComponent().getParent().getDocumentAdapter();
+        Element element = (Element)da.getElementById(((DocumentComponent)getComponent()).getId());
+        if (element != null) {
+          SelectModel model = (SelectModel)((SelectField)getComponent()).getModel();
+          
+          while(element.hasChildNodes())
+            element.removeChild(element.getFirstChild());
+          
+          Collection c = model.getDisplayOptionList();
+          Iterator iter = c.iterator();
+          while (iter.hasNext()) {
+            SelectModelOption option = (SelectModelOption)iter.next();
+            addOPTION(element, option.getOptionText(), option.isSelected());
+          }
+        }
+      } catch (ModelException ex) {
+        throw new RenderException(RenderException.REASON_MODEL_EXCEPTION, ex);
+      }
+    } else {
+      removeSelf();
+    }
+  }
+
+  
+  private void addOPTION(Element element, String value, boolean selected) {
+    
+    Element option = element.getOwnerDocument().createElement("OPTION");
+    
+    option.appendChild(element.getOwnerDocument().createTextNode(value));
+    
+    if (selected)
+      option.setAttribute("Selected","Selected");
+    
+    element.appendChild(option);
+  }
+}

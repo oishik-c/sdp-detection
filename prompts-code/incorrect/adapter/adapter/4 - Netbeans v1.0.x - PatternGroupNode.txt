@@ -1,0 +1,337 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.beans;
+
+import java.awt.Dialog;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.ResourceBundle;
+import java.util.Collection;
+import java.util.Iterator;
+import java.beans.Introspector;
+
+import org.openide.src.SourceException;
+import org.openide.src.Type;
+import org.openide.nodes.Node;
+import org.openide.nodes.AbstractNode;
+import org.openide.nodes.Children;
+import org.openide.nodes.CookieSet;
+import org.openide.util.datatransfer.NewType;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.SystemAction;
+import org.openide.actions.NewAction;
+import org.openide.actions.PropertiesAction;
+import org.openide.actions.ToolsAction;
+import org.openide.NotifyDescriptor;
+import org.openide.DialogDescriptor;
+import org.openide.TopManager;
+
+import org.netbeans.modules.beans.beaninfo.GenerateBeanInfoAction;
+
+
+public class  PatternGroupNode extends AbstractNode {
+
+    
+    private static final String MENU_CREATE_PROPERTY;
+    private static final String MENU_CREATE_IDXPROPERTY;
+    private static final String MENU_CREATE_UNICASTSE;
+    private static final String MENU_CREATE_MULTICASTSE;
+
+    
+    static final int PATTERN_KIND_PROPERTY = 0;
+    static final int PATTERN_KIND_IDX_PROPERTY = 1;
+    static final int PATTERN_KIND_UC_EVENT_SET = 2;
+    static final int PATTERN_KIND_MC_EVENT_SET = 3;
+
+    
+    private PropertyPatternPanel newPropertyPanel = null;
+    private static DialogDescriptor newPropertyDialog = null;
+
+    
+    private IdxPropertyPatternPanel newIdxPropertyPanel = null;
+    private static DialogDescriptor newIdxPropertyDialog = null;
+
+    
+    private EventSetPatternPanel newMcEventSetPanel = null;
+    private static DialogDescriptor newMcEventSetDialog = null;
+
+    
+    private boolean wri = true;
+
+    
+    private static final SystemAction[] DEFAULT_ACTIONS = new SystemAction[] {
+                SystemAction.get(GenerateBeanInfoAction.class),
+                null,
+                SystemAction.get(NewAction.class),
+                null,
+                SystemAction.get(ToolsAction.class),
+                SystemAction.get(PropertiesAction.class),
+            };
+
+    
+    private static final SystemAction[] DEFAULT_ACTIONS_NON_WRITEABLE = new SystemAction[] {
+                SystemAction.get(GenerateBeanInfoAction.class),
+                null,
+                SystemAction.get(ToolsAction.class),
+                SystemAction.get(PropertiesAction.class),
+            };
+
+
+    static {
+        ResourceBundle bundle = PatternNode.bundle;
+        MENU_CREATE_PROPERTY = bundle.getString("MENU_CREATE_PROPERTY");
+        MENU_CREATE_IDXPROPERTY = bundle.getString("MENU_CREATE_IDXPROPERTY");
+        MENU_CREATE_UNICASTSE = bundle.getString("MENU_CREATE_UNICASTSE");
+        MENU_CREATE_MULTICASTSE = bundle.getString("MENU_CREATE_MULTICASTSE");
+    }
+
+    public static final String ICON_BASE =
+        "/org/netbeans/modules/beans/resources/patternGroup"; 
+
+    public PatternGroupNode( PatternChildren children ) {
+        super( (Children)children );
+        setName( PatternNode.bundle.getString( "Patterns" ) );
+        setShortDescription ( PatternNode.bundle.getString( "Patterns_HINT" ) );
+        setIconBase( ICON_BASE );
+        setActions(DEFAULT_ACTIONS);
+
+        CookieSet cs = getCookieSet();
+        cs.add( children.getPatternAnalyser() );
+    }
+
+    public PatternGroupNode( PatternChildren children, boolean isWriteable ) {
+        this( children );
+        wri = isWriteable;
+        if ( !wri ) {
+            setActions(DEFAULT_ACTIONS_NON_WRITEABLE);
+        }
+    }
+
+    
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (PatternGroupNode.class);
+    }
+
+    
+    public void setActions(SystemAction[] actions) {
+        systemActions = actions;
+    }
+
+    
+
+    
+    public NewType[] getNewTypes() {
+        
+        return new NewType[] {
+                   createNewType(MENU_CREATE_PROPERTY, PATTERN_KIND_PROPERTY ),
+                   createNewType(MENU_CREATE_IDXPROPERTY, PATTERN_KIND_IDX_PROPERTY ),
+                   createNewType(MENU_CREATE_UNICASTSE, PATTERN_KIND_UC_EVENT_SET ),
+                   createNewType(MENU_CREATE_MULTICASTSE, PATTERN_KIND_MC_EVENT_SET  ),
+               };
+        
+    }
+
+    
+
+    private NewType createNewType(final String name, final int kind) {
+        return new NewType() {
+                   
+                   public String getName() {
+                       return name;
+                   }
+
+                   
+                   public org.openide.util.HelpCtx getHelpCtx() {
+                       return new org.openide.util.HelpCtx (PatternGroupNode.class.getName () + "." + name); 
+                   }
+
+                   
+                   public void create () throws IOException {
+                       try {
+                           createElement(kind);
+                       }
+                       catch (SourceException e) {
+                           e.printStackTrace();
+                           throw new IOException(e.getMessage());
+                       }
+                   }
+               };
+    }
+
+    
+    private void createElement(int kind) throws SourceException {
+        DialogDescriptor dd;
+        Dialog           dialog;
+        boolean          forInterface = false;
+
+        PatternAnalyser pa = (PatternAnalyser)this.getCookie( PatternAnalyser.class );
+        if ( pa != null )
+            forInterface = pa.getClassElement() == null ? false : pa.getClassElement().isInterface();
+
+        switch (kind) {
+        case PATTERN_KIND_PROPERTY:
+            PropertyPatternPanel propertyPanel;
+
+            
+
+            dd = new DialogDescriptor( (propertyPanel = new PropertyPatternPanel()),
+                                       PatternNode.bundle.getString( "CTL_TITLE_NewProperty"),            
+                                       true,                                                 
+                                       propertyPanel );
+            dd.setHelpCtx (new HelpCtx (PatternGroupNode.class.getName () + ".dialogProperty")); 
+            dd.setClosingOptions( new Object[]{} );
+
+            dialog = TopManager.getDefault().createDialog( dd );
+            propertyPanel.setDialog( dialog );
+            propertyPanel.setForInterface( forInterface );
+            propertyPanel.setGroupNode( this );
+            dialog.show ();
+
+            if ( dd.getValue().equals( NotifyDescriptor.OK_OPTION ) ) {
+                PropertyPatternPanel.Result result = propertyPanel.getResult();
+
+                PropertyPattern.create( ((PatternChildren)getChildren()).getPatternAnalyser(),
+                                        Introspector.decapitalize( result.name ),
+                                        result.type, result.mode,
+                                        result.bound, result.constrained,
+                                        result.withField, result.withReturn, result.withSet,
+                                        result.withSupport);
+
+            }
+            return;
+        case PATTERN_KIND_IDX_PROPERTY:
+            IdxPropertyPatternPanel idxPropertyPanel;
+
+            dd = new DialogDescriptor( (idxPropertyPanel = new IdxPropertyPatternPanel()),
+                                       PatternNode.bundle.getString( "CTL_TITLE_NewIdxProperty"),     
+                                       true,                                                       
+                                       NotifyDescriptor.OK_CANCEL_OPTION,                    
+                                       NotifyDescriptor.OK_OPTION,                           
+                                       DialogDescriptor.BOTTOM_ALIGN,                        
+                                       new HelpCtx (PatternGroupNode.class.getName () + ".dialogIdxProperty"), 
+                                       idxPropertyPanel );
+            dd.setClosingOptions( new Object[]{} );
+
+            dialog = TopManager.getDefault().createDialog( dd );
+            idxPropertyPanel.setDialog( dialog );
+            idxPropertyPanel.setForInterface( forInterface );
+            idxPropertyPanel.setGroupNode( this );
+            dialog.show ();
+
+            if ( dd.getValue().equals( NotifyDescriptor.OK_OPTION ) ) {
+
+
+
+                IdxPropertyPatternPanel.Result result = idxPropertyPanel.getResult();
+                IdxPropertyPattern.create( ((PatternChildren)getChildren()).getPatternAnalyser(),
+                                           Introspector.decapitalize( result.name ),
+                                           result.type, result.mode,
+                                           result.bound, result.constrained,
+                                           result.withField, result.withReturn, result.withSet,
+                                           result.withSupport,
+                                           result.niGetter, result.niWithReturn,
+                                           result.niSetter, result.niWithSet );
+            }
+            return;
+        case PATTERN_KIND_UC_EVENT_SET:
+            UEventSetPatternPanel uEventSetPanel;
+
+            dd = new DialogDescriptor( (uEventSetPanel = new UEventSetPatternPanel()),
+                                       PatternNode.bundle.getString( "CTL_TITLE_NewUniCastES"),     
+                                       true,                                                 
+                                       NotifyDescriptor.OK_CANCEL_OPTION,                    
+                                       NotifyDescriptor.OK_OPTION,                           
+                                       DialogDescriptor.BOTTOM_ALIGN,                        
+                                       new HelpCtx (PatternGroupNode.class.getName () + ".dialogUniCastES"), 
+                                       uEventSetPanel );
+            dd.setClosingOptions( new Object[]{} );
+
+            dialog = TopManager.getDefault().createDialog( dd );
+            uEventSetPanel.setDialog( dialog );
+            uEventSetPanel.setForInterface( forInterface );
+            uEventSetPanel.setGroupNode( this );
+            dialog.show ();
+
+            if ( dd.getValue().equals( NotifyDescriptor.OK_OPTION ) ) {
+                UEventSetPatternPanel.Result result = uEventSetPanel.getResult();
+                EventSetPattern.create( ((PatternChildren)getChildren()).getPatternAnalyser(),
+                                        result.type, result.implementation, result.firing,
+                                        result.passEvent, true );
+            }
+            return;
+        case PATTERN_KIND_MC_EVENT_SET:
+            EventSetPatternPanel eventSetPanel;
+
+            dd = new DialogDescriptor( (eventSetPanel = new EventSetPatternPanel()),
+                                       PatternNode.bundle.getString( "CTL_TITLE_NewMultiCastES"),     
+                                       true,                                                 
+                                       NotifyDescriptor.OK_CANCEL_OPTION,                    
+                                       NotifyDescriptor.OK_OPTION,                           
+                                       DialogDescriptor.BOTTOM_ALIGN,                        
+                                       new HelpCtx (PatternGroupNode.class.getName () + ".dialogMultiCastES"), 
+                                       eventSetPanel );
+            dd.setClosingOptions( new Object[]{} );
+
+            dialog = TopManager.getDefault().createDialog( dd );
+            eventSetPanel.setDialog( dialog );
+            eventSetPanel.setForInterface( forInterface );
+            eventSetPanel.setGroupNode( this );
+            dialog.show ();
+
+            if ( dd.getValue().equals( NotifyDescriptor.OK_OPTION ) ) {
+                EventSetPatternPanel.Result result = eventSetPanel.getResult();
+                EventSetPattern.create( ((PatternChildren)getChildren()).getPatternAnalyser(),
+                                        result.type, result.implementation, result.firing,
+                                        result.passEvent, false );
+            }
+            
+            return;
+        }
+    }
+
+    
+    boolean propertyExists( String name  ) {
+        Collection[] patterns = new Collection[2];
+        String decapName = Introspector.decapitalize( name );
+
+        patterns[0] = ((PatternChildren)getChildren()).getPatternAnalyser().getPropertyPatterns();
+        patterns[1] = ((PatternChildren)getChildren()).getPatternAnalyser().getIdxPropertyPatterns();
+
+        for ( int i = 0; i < patterns.length && patterns[i] != null; i++ ) {
+            Iterator it = patterns[i].iterator();
+            while( it.hasNext() ) {
+                if ( ((Pattern)it.next()).getName().equals( decapName ) ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    
+    boolean eventSetExists( Type type ) {
+
+        String name = Introspector.decapitalize( type.getClassName().getName() );
+
+        Collection eventSets = ((PatternChildren)getChildren()).getPatternAnalyser().getEventSetPatterns();
+
+        Iterator it = eventSets.iterator();
+        while( it.hasNext() ) {
+            if ( ((EventSetPattern)it.next()).getName().equals( name ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+ 

@@ -1,0 +1,325 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.tool;
+
+import java.awt.event.ActionEvent;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+
+import diagram.Diagram;
+import diagram.DiagramModel;
+import diagram.DiagramUI;
+import diagram.Figure;
+import diagram.Link;
+import diagram.SelectionModel;
+
+
+public class ClipboardTool extends AbstractTool {
+
+  
+  
+  protected static ThreadLocal diagramKey = new InheritableThreadLocal();
+
+  protected Action actionCut = new CutAction();
+  protected Action actionCopy = new CopyAction();
+  protected Action actionPaste = new PasteAction();
+
+  private Figure[] figures = new Figure[4];
+  private Figure[] related = new Figure[4];
+
+  private ArrayList clipboard = new ArrayList();
+  private ArrayList copyboard = new ArrayList();
+
+  
+  public void install(Diagram diagram) {
+
+    ActionMap map = diagram.getActionMap();
+
+    map.put("cut", actionCut);
+    map.put("copy", actionCopy);
+    map.put("paste", actionPaste);
+
+    setDiagram(diagram);
+
+  }
+
+  
+  public void uninstall(Diagram diagram) {
+
+    ActionMap map = diagram.getActionMap();
+
+    map.remove("cut");
+    map.remove("copy");
+    map.remove("paste");
+
+    setDiagram(null);
+
+  }
+
+  
+  static public void setDiagram(Diagram diagram) {
+    
+    if(getDiagram() != diagram)
+      diagramKey.set(new WeakReference(diagram));
+
+  }
+
+  
+  static public Diagram getDiagram() {
+    
+    Object o = diagramKey.get();
+    if(o != null) 
+      o = ((WeakReference)o).get();
+    
+    return (Diagram)o;
+
+  }
+  
+  
+  protected boolean prepareSelection() {
+
+    
+    Diagram diagram = getDiagram();
+    if(diagram == null)
+      return false;
+
+    
+    SelectionModel selectionModel = diagram.getSelectionModel();
+    if(selectionModel == null)
+      return false;
+
+    figures = (Figure[])selectionModel.toArray(figures);
+    
+    return true;
+
+  }
+
+  
+  public void doCopy() {
+
+    if(!prepareSelection())
+      return;
+
+    synchronized(figures) {
+
+      
+      clipboard.clear();
+      for(int i=0; i<figures.length && figures[i] != null; i++) {
+        
+        Figure figure = figures[i];
+        clipboard.add(figure);
+        
+      }
+      
+    }
+    
+  }
+
+  
+  public void doCut() {
+
+    if(!prepareSelection())
+      return;
+
+    DiagramModel model = getDiagram().getModel();
+    DiagramUI ui = (DiagramUI)getDiagram().getUI();
+
+    
+    Figure figure = null;
+    for(int i=0; i<figures.length && figures[i] != null; i++) {
+      
+      figure = figures[i];
+      
+      
+      related = ui.getConnected(figure, related);
+      for(int j=0; j<related.length && related[j] != null; j++) {
+
+        model.remove(related[j]);
+        ui.damageFigure(related[j]);
+      
+      }
+
+      
+      model.remove(figure);
+      ui.damageFigure(figure);
+      
+    }
+    
+    
+    ui.refreshFigure(figure);
+      
+  }
+
+
+  
+  public void doPaste() {
+
+    
+    Diagram diagram = getDiagram();
+    if(diagram == null)
+      return;
+
+    
+    SelectionModel selectionModel = diagram.getSelectionModel();
+    if(selectionModel == null)
+      return;
+
+    if(clipboard.isEmpty())
+      return;
+    
+    DiagramModel model = getDiagram().getModel();
+    DiagramUI ui = (DiagramUI)getDiagram().getUI();
+    Figure figure = null;
+
+    
+    
+    copyboard.addAll(clipboard);
+    clipboard.clear();
+
+    
+    selectionModel.clear();
+
+    
+    for(int i=0; i<copyboard.size(); i++) {
+
+      
+      Figure f = (Figure)copyboard.get(i);
+      if(f == null)
+        continue;
+
+      
+      figure = f;
+      ui.damageFigure(figure);
+
+      if(figure instanceof Link) {
+
+        Link link = (Link)figure;
+        int index;
+
+        
+        Figure sink = link.getSink();
+        if(sink != null && (index = copyboard.indexOf(sink)) != -1) {
+
+          sink = (Figure)sink.clone();
+
+          
+          doPaste(sink, model, selectionModel, ui);
+          copyboard.set(index, null);
+
+          
+          Figure source = link.getSource();
+          if(source != null && (index = copyboard.indexOf(source)) != -1) {
+            
+            source = (Figure)source.clone();
+
+            
+            doPaste(source, model, selectionModel, ui);
+            copyboard.set(index, null);
+            
+            
+            System.err.println( link.equals(link.clone()));
+            link = (Link)link.clone();
+
+            link.setSink(sink);
+            link.setSource(source);
+            
+            doPaste(link, model, selectionModel, ui);
+
+            copyboard.set(i, null);
+            
+          }
+
+        }
+
+
+      } 
+
+    }
+
+    
+    for(int i=0; i<copyboard.size(); i++) {
+
+      
+      Figure f = (Figure)copyboard.get(i);
+      if(f != null) {
+
+        ui.damageFigure(f);
+        
+        figure = (Figure)f.clone();     
+        doPaste(figure, model, selectionModel, ui);
+                
+      }
+
+    }
+      
+    copyboard.clear();
+
+    
+    ui.refreshFigure(figure);
+    
+  
+  }
+
+  
+  private final void doPaste(Figure figure, 
+                             DiagramModel model, SelectionModel selectionModel, DiagramUI ui) {
+
+    figure.translate(10,10);   
+
+    model.add(figure);
+    selectionModel.add(figure);
+
+    clipboard.add(figure);
+    ui.damageFigure(figure);
+
+  }
+
+  
+  protected class CutAction extends AbstractAction {
+
+    public CutAction() {
+      super("Cut");
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      doCut();
+    }
+
+  }
+
+  
+  protected class CopyAction extends AbstractAction {
+
+    public CopyAction() {
+      super("Copy");
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      doCopy();
+    }
+
+  }
+
+  
+  protected class PasteAction extends AbstractAction {
+
+    public PasteAction() {
+      super("Paste");
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      doPaste();
+    }
+
+  }
+
+}

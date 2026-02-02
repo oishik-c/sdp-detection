@@ -1,0 +1,78 @@
+Given the following java code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.model;
+
+import java.util.Collection;
+import java.util.Iterator;
+
+
+public interface CollectionValueHolder extends ValueHolder, Collection {
+
+  
+  public boolean hasNext();
+
+  
+  public void next();
+
+  
+  public void reset();
+
+  
+  public Object getObject();
+
+  
+  public void setObject(Object obj);
+
+  
+  
+  
+
+  
+  public int size();
+
+  
+  public boolean isEmpty();
+
+  
+  public boolean contains(Object o);
+
+  
+  public Iterator iterator();
+
+  
+  public Object[] toArray();
+
+  
+  public Object[] toArray(Object[] a);
+
+  
+  public boolean add(Object o);
+
+  
+  public boolean remove(Object o);
+
+  
+  public boolean containsAll(Collection c);
+
+  
+  public boolean addAll(Collection c);
+
+  
+  public boolean removeAll(Collection c);
+
+  
+  public boolean retainAll(Collection c);
+
+  
+  public void clear();
+
+  
+  public boolean equals(Object o);
+
+  
+  public int hashCode();
+}

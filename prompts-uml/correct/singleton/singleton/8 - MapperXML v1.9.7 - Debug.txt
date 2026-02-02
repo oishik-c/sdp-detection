@@ -1,0 +1,38 @@
+Given the following uml code, determine whether it contains an instance of the singleton design pattern playing the role of singleton.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.debug.Debug {
+- {static} Debug singleton
+- LoggerAdapter loggerAdapter
++ {static} int DEBUG
++ {static} int INFO
++ {static} int WARN
++ {static} int ERROR
++ {static} int FATAL
++ {static} String[] LEVEL_NAMES
+- <<Create>> Debug()
++ {static} Debug getInstance()
++ {static} void setLoggerAdapter(LoggerAdapter)
++ {static} LoggerAdapter getLoggerAdapter()
++ {static} void debug(Object)
++ {static} void debug(Object,Throwable)
++ {static} void info(Object)
++ {static} void info(Object,Throwable)
++ {static} void warn(Object)
++ {static} void warn(Object,Throwable)
++ {static} void error(Object)
++ {static} void error(Object,Throwable)
++ {static} void fatal(Object)
++ {static} void fatal(Object,Throwable)
++ {static} boolean isDebugEnabled()
++ {static} boolean isInfoEnabled()
++ boolean isEnabledFor(int)
++ {static} void log(int,String)
++ {static} void log(int,String,Throwable)
+}
+
+
+@enduml

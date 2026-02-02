@@ -1,0 +1,49 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+abstract class CH.ifa.draw.standard.DecoratorFigure {
+# Figure fComponent
+- {static} long serialVersionUID
+- int decoratorFigureSerializedDataVersion
++ <<Create>> DecoratorFigure()
++ <<Create>> DecoratorFigure(Figure)
++ Insets connectionInsets()
++ boolean canConnect()
++ boolean containsPoint(int,int)
++ void decorate(Figure)
++ Figure peelDecoration()
++ Rectangle displayBox()
++ void basicDisplayBox(Point,Point)
++ void draw(Graphics)
++ Figure findFigureInside(int,int)
++ Vector handles()
++ boolean includes(Figure)
++ void moveBy(int,int)
+# void basicMoveBy(int,int)
++ void release()
++ void figureInvalidated(FigureChangeEvent)
++ void figureChanged(FigureChangeEvent)
++ void figureRemoved(FigureChangeEvent)
++ void figureRequestUpdate(FigureChangeEvent)
++ void figureRequestRemove(FigureChangeEvent)
++ FigureEnumeration figures()
++ FigureEnumeration decompose()
++ void setAttribute(String,Object)
++ Object getAttribute(String)
++ Locator connectedTextLocator(Figure)
++ Connector connectorAt(int,int)
++ void connectorVisibility(boolean)
++ void write(StorableOutput)
++ void read(StorableInput)
+- void readObject(ObjectInputStream)
+}
+
+
+
+
+CH.ifa.draw.framework.FigureChangeListener <|.. CH.ifa.draw.standard.DecoratorFigure
+CH.ifa.draw.standard.AbstractFigure <|-- CH.ifa.draw.standard.DecoratorFigure
+@enduml

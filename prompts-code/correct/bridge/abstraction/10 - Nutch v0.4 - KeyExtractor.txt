@@ -1,0 +1,197 @@
+Given the following java code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package net.nutch.db;
+
+import java.io.*;
+import java.util.*;
+
+import net.nutch.io.*;
+import net.nutch.util.*;
+
+
+public class EditSectionGroupWriter {
+    final static int CUR_VERSION = 0;
+
+    
+    public final static String GROUP_METAINFO = "group_metainfo";
+    
+    
+    
+    
+    public static int URL_KEYSPACE = 0;
+    public static int MD5_KEYSPACE = 1;
+
+    
+    public static abstract class KeyExtractor {
+        
+        public KeyExtractor() {
+        }
+
+        
+        public abstract WritableComparable extractInnerKey(WritableComparable key);
+    }
+
+    
+    public static class PageURLExtractor extends KeyExtractor {
+        public PageURLExtractor() {
+        }
+        public WritableComparable extractInnerKey(WritableComparable key) {
+            return ((DistributedWebDBWriter.PageInstruction) key).getPage().getURL();
+        }
+    }
+
+    
+    public static class PageMD5Extractor extends KeyExtractor {
+        public PageMD5Extractor() {
+        }
+        public WritableComparable extractInnerKey(WritableComparable key) {
+            return ((DistributedWebDBWriter.PageInstruction) key).getPage().getMD5();
+        }
+    }
+
+    
+    public static class LinkURLExtractor extends KeyExtractor {
+        public LinkURLExtractor() {
+        }
+        public WritableComparable extractInnerKey(WritableComparable key) {
+            return ((DistributedWebDBWriter.LinkInstruction) key).getLink().getURL();
+        }
+    }
+
+    
+    public static class LinkMD5Extractor extends KeyExtractor {
+        public LinkMD5Extractor() {
+        }
+        public WritableComparable extractInnerKey(WritableComparable key) {
+            return ((DistributedWebDBWriter.LinkInstruction) key).getLink().getFromID();
+        }
+    }
+
+    
+    public static void createEditGroup(NutchFileSystem nutchfs, String dbName, String label, int numSections, int keySpaceType) throws IOException {
+        
+        if (numSections > DBKeyDivision.MAX_SECTIONS) {
+            throw new IllegalArgumentException("Maximum number of sections is " + DBKeyDivision.MAX_SECTIONS);
+        }
+
+        
+        if ((keySpaceType != URL_KEYSPACE) && 
+            (keySpaceType != MD5_KEYSPACE)) {
+            throw new IllegalArgumentException("Unknown keyspace type: " + keySpaceType);
+        }
+
+        NutchFile metaInfoDir = new NutchFile(nutchfs, dbName, "standard", new File(GROUP_METAINFO));
+        NutchFile metaInfo = new NutchFile(metaInfoDir, label);
+        File metaInfoFile = nutchfs.getWorkingFile();
+        DataOutputStream out = new DataOutputStream(new FileOutputStream(metaInfoFile));
+        try {
+            out.write(CUR_VERSION);
+            out.writeInt(keySpaceType);
+
+            double stepSize = DBKeyDivision.MAX_SECTIONS / (1.0 * numSections);
+            if (keySpaceType == URL_KEYSPACE) {
+                UTF8 url = new UTF8();
+                for (int i = 0; i < numSections; i++) {
+                    url.set(DBKeyDivision.URL_KEYSPACE_DIVIDERS[(int) Math.round(i * stepSize)]);
+                    url.write(out);
+                }
+            } else {
+                for (int i = 0; i < numSections; i++) {
+                    DBKeyDivision.MD5_KEYSPACE_DIVIDERS[(int) Math.round(i * stepSize)].write(out);
+                }
+            }
+        } finally {
+            out.close();
+        }
+
+        nutchfs.put(metaInfo, metaInfoFile, true);
+    }
+
+
+    int machineNum = -1, totalMachines = 1;
+    KeyExtractor extractor;
+    String label;
+    WritableComparable sectionKeys[];
+    EditSectionWriter sectionWriters[];
+
+    
+    public EditSectionGroupWriter(NutchFileSystem nutchfs, String dbName, int machineNum, int totalMachines, String label, Class keyClass, Class valClass, EditSectionGroupWriter.KeyExtractor extractor) throws IOException {
+        this.machineNum = machineNum;
+        this.totalMachines = totalMachines;
+        this.extractor = extractor;
+
+        
+        if (machineNum < 0 || machineNum >= totalMachines) {
+            throw new IllegalArgumentException("machineNum is " + machineNum + ", and totalMachines is " + totalMachines);
+        }
+
+        
+        NutchFile metaInfoDir = new NutchFile(nutchfs, dbName, "standard", new File(GROUP_METAINFO));
+        NutchFile metaInfo = new NutchFile(metaInfoDir, label);
+        File metaInfoFile = nutchfs.get(metaInfo);
+        DataInputStream in = new DataInputStream(new FileInputStream(metaInfoFile));
+        try {
+            int version = in.read();
+            int keySpaceType = in.readInt();
+
+            this.sectionKeys = new WritableComparable[totalMachines];
+            for (int i = 0; i < sectionKeys.length; i++) {
+                WritableComparable key = null;
+                if (keySpaceType == URL_KEYSPACE) {
+                    key = new UTF8();
+                } else {
+                    key = new MD5Hash();
+                }
+                key.readFields(in);
+                this.sectionKeys[i] = key;
+            }
+        } finally {
+            in.close();
+        }
+
+        
+        this.sectionWriters = new EditSectionWriter[totalMachines];
+        for (int i = 0; i < sectionWriters.length; i++) {
+            this.sectionWriters[i] = new EditSectionWriter(nutchfs, dbName, label, i, machineNum, keyClass, valClass);
+        }
+        this.label = label;
+    }
+
+    
+    public void append(WritableComparable key, Writable val) throws IOException {
+        WritableComparable innerKey = extractor.extractInnerKey(key);
+
+        
+        if (sectionWriters.length == 0) {
+            return;
+        }
+
+        
+        int start = 0, end = sectionWriters.length, pivot = 0;
+
+        while (end - start > 1) {
+            pivot = (end + start) / 2;
+            int comparison = innerKey.compareTo(sectionKeys[pivot]);
+
+            if (comparison < 0) {
+                end = pivot;
+            } else if (comparison >= 0) {
+                start = pivot;
+            }
+        }
+        sectionWriters[start].append(key, val);
+    }
+
+    
+    public void close() throws IOException {
+        for (int i = 0; i < sectionWriters.length; i++) {
+            sectionWriters[i].close();
+        }
+    }
+}
+

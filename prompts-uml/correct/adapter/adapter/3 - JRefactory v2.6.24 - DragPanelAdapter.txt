@@ -1,0 +1,27 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.acm.seguin.uml.line.DragPanelAdapter {
+- EndPointPanel panel
+- LinedPanel parent
+- Point mouseStart
+- Point panelStart
++ <<Create>> DragPanelAdapter(EndPointPanel,LinedPanel)
++ void mouseClicked(MouseEvent)
++ void mouseEntered(MouseEvent)
++ void mouseExited(MouseEvent)
++ void mousePressed(MouseEvent)
++ void mouseReleased(MouseEvent)
++ void mouseDragged(MouseEvent)
++ void mouseMoved(MouseEvent)
+}
+
+
+
+
+java.awt.event.MouseListener <|.. org.acm.seguin.uml.line.DragPanelAdapter
+java.awt.event.MouseMotionListener <|.. org.acm.seguin.uml.line.DragPanelAdapter
+@enduml

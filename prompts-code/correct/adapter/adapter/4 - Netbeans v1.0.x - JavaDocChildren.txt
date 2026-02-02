@@ -1,0 +1,158 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.javadoc.search;
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.ArrayList;
+
+import org.openide.nodes.Children;
+import org.openide.nodes.Node;
+import org.openide.cookies.FilterCookie;
+import org.openide.src.*;
+import org.openide.TopManager;
+import org.openide.filesystems.*;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataFilter;
+import org.openide.util.WeakListener;
+
+
+public class JavaDocChildren extends Children.Keys implements RepositoryListener {
+
+    private PropertyChangeListener fsPCL = new fsChangeListener();
+    
+    private PropertyChangeListener wFsPCL = WeakListener.propertyChange( fsPCL, null );
+
+    private PropertyChangeListener capabilityPCL = new capChangeListener();
+    
+    private PropertyChangeListener wCapabilityPCL = WeakListener.propertyChange( capabilityPCL, null );
+
+    
+
+     
+
+    public JavaDocChildren () {
+        super();
+        Repository repository = TopManager.getDefault().getRepository();
+
+        
+        repository.addRepositoryListener( WeakListener.repository( this, repository ) );
+
+        
+        Enumeration fsEnum = repository.getFileSystems();
+        while( fsEnum.hasMoreElements() ) {
+            FileSystem fs = (FileSystem)fsEnum.nextElement();
+            fs.addPropertyChangeListener( wFsPCL );
+            fs.getCapability().addPropertyChangeListener( wCapabilityPCL );
+        }
+    }
+
+    
+    protected void addNotify() {
+        setKeys ( getDocFileSystems() );
+    }
+
+    
+    protected void removeNotify() {
+        setKeys( java.util.Collections.EMPTY_SET );
+    }
+
+    
+
+    
+    protected Node[] createNodes( final Object key ) {
+
+        
+        Node newNode;
+
+        try {
+            newNode = new JavaDocFSNode( key, getFSChildren( (FileSystem)key ) );
+            return new Node[] { newNode };
+        }
+        catch ( java.beans.IntrospectionException e ) {
+            
+        }
+
+        return new Node[0];
+    }
+
+    
+
+    private Collection getDocFileSystems() {
+
+        
+        
+
+        Enumeration dfsEnum = FileSystemCapability.DOC.fileSystems();
+        ArrayList docFileSystems = new ArrayList();
+
+        while( dfsEnum.hasMoreElements() ) {
+            FileSystem fs = (FileSystem) dfsEnum.nextElement();
+            
+            docFileSystems.add( fs );
+        }
+
+        return docFileSystems;
+    }
+
+    void refreshFs( Object fs ) {
+        
+        refreshKey( fs );
+    }
+
+    private Children getFSChildren( FileSystem fs ) {
+        DataFolder df = DataFolder.findFolder( fs.getRoot() );
+        return df.createNodeChildren( DataFilter.ALL );
+    }
+
+
+    
+
+    public void	fileSystemAdded(RepositoryEvent ev) {
+        FileSystem fs = ev.getFileSystem();
+        fs.addPropertyChangeListener( wFsPCL );
+        fs.getCapability().addPropertyChangeListener( wCapabilityPCL );
+        setKeys ( getDocFileSystems() );
+    }
+
+    public void	fileSystemPoolReordered(RepositoryReorderedEvent ev) {
+        setKeys ( getDocFileSystems() );
+    }
+
+    public void	fileSystemRemoved(RepositoryEvent ev) {
+        FileSystem fs = ev.getFileSystem();
+        fs.removePropertyChangeListener( wFsPCL );
+        fs.getCapability().removePropertyChangeListener( wCapabilityPCL );
+        setKeys ( getDocFileSystems() );
+    }
+
+
+    void refreshAll( ) {
+        setKeys ( getDocFileSystems() );
+    }
+
+    
+
+    class fsChangeListener implements  PropertyChangeListener {
+        public void propertyChange( PropertyChangeEvent evt ) {
+            if ( evt.getPropertyName().equals( FileSystem.PROP_ROOT ) )
+                refreshFs( evt.getSource() );
+        }
+    }
+
+    class capChangeListener implements  PropertyChangeListener {
+        public void propertyChange( PropertyChangeEvent evt ) {
+            if ( evt.getPropertyName().equals( "doc" ) )
+                refreshAll();
+        }
+    }
+}
+
+ 

@@ -1,0 +1,38 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.model.DefaultTextModel {
+- com.taursys.model.ValueHolder valueHolder
+- String propertyName
+- java.text.Format format
+- String formatPattern
+- Vector changeListeners
++ <<Create>> DefaultTextModel()
++ <<Create>> DefaultTextModel(int)
+# ValueHolder createDefaultValueHolder()
++ String getText()
++ void setText(String)
+# void setupFormat()
++ void setValueHolder(com.taursys.model.ValueHolder)
++ com.taursys.model.ValueHolder getValueHolder()
++ void setPropertyName(String)
++ String getPropertyName()
++ void setFormat(java.text.Format)
++ java.text.Format getFormat()
++ void setFormatPattern(String)
++ String getFormatPattern()
++ void stateChanged(ChangeEvent)
++ void removeChangeListener(ChangeListener)
++ void addChangeListener(ChangeListener)
+# void fireStateChanged(ChangeEvent)
+}
+
+
+
+
+com.taursys.model.TextModel <|.. com.taursys.model.DefaultTextModel
+javax.swing.event.ChangeListener <|.. com.taursys.model.DefaultTextModel
+@enduml

@@ -1,0 +1,50 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package org.acm.seguin.uml;
+
+import java.awt.Point;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+
+
+public class UMLMouseAdapter extends MouseAdapter {
+	
+	private UMLPackage current;
+	private UMLType type;
+	private JPanel child;
+
+
+	
+	public UMLMouseAdapter(UMLPackage currentPackage, UMLType initType, JPanel initChild) {
+		current = currentPackage;
+		type = initType;
+		child = initChild;
+	}
+
+
+	
+	public void mousePressed(MouseEvent mevt) {
+		if ((mevt.getModifiers() & MouseEvent.BUTTON1_MASK) == 0) {
+			Point pt;
+			UMLPopupMenu upm;
+			if (child == null) {
+				upm = new UMLPopupMenu(current, type);
+				pt = type.getLocationOnScreen();
+			}
+			else {
+				upm = new UMLPopupMenu(current, child);
+				pt = child.getLocationOnScreen();
+			}
+			JPopupMenu menu = upm.getMenu();
+			menu.setLocation(mevt.getX() + pt.x, mevt.getY() + pt.y);
+			menu.setVisible(true);
+		}
+	}
+}

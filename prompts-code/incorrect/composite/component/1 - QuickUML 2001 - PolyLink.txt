@@ -1,0 +1,147 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of component.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package diagram.figures;
+
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.io.Serializable;
+
+import diagram.Figure;
+import diagram.Link;
+import diagram.shape.PolyLine2D;
+
+
+public class PolyLink extends PolyLine2D.Double 
+  implements Link, Serializable {
+
+  protected Figure source;
+  protected Figure sink;
+
+  
+  public PolyLink(Figure source, Figure sink) {
+
+    if(source == null || sink == null)
+      throw new IllegalArgumentException("null Figures not allowed");
+
+    this.source = source;
+    this.sink = sink;
+
+  } 
+
+
+  
+  public Figure getSource() {
+    return this.source;
+  }
+
+  
+  public Point2D getSourceAnchor(Point2D pt) {
+    return (pt = source.getAnchor(pt));
+  }
+  
+
+  
+  public Figure getSink() {
+    return this.sink;
+  }
+
+  
+  public Point2D getSinkAnchor(Point2D pt) {
+    return (pt = sink.getAnchor(pt));
+  }
+
+
+  
+  private final void updateEndpoints() {
+
+    getSourceAnchor(getP1());
+    getSinkAnchor(getP2());
+
+  }
+
+  
+  public boolean contains(double x, double y, double tolerance) {
+    updateEndpoints();
+    return super.contains(x, y, tolerance);
+  }
+  
+   
+  public Rectangle2D getBounds2D(Rectangle2D rc) {
+    updateEndpoints();
+    return super.getBounds2D(rc);
+  }
+
+  
+  public Point2D getAnchor(Point2D pt) {
+    updateEndpoints();
+    return getCenter(pt);
+  }
+
+  
+  public Point2D getConnection(Point2D ptFrom, Point2D pt) {
+
+    updateEndpoints();
+
+    double dist = java.lang.Double.MAX_VALUE;
+
+    for(int i=1; i < pointCount-1; i++) {
+      
+      double d = getPN(i).distance(ptFrom);
+      if(d < dist) {
+
+        dist = d;
+        if(pt == null)
+          pt = new Point2D.Double(getXN(i), getYN(i));
+        else 
+          pt.setLocation(getXN(i), getYN(i));
+
+      }
+
+    }
+
+    return pt;
+
+  }
+
+  
+  public boolean intersects(double x, double y, double w, double h) {
+    updateEndpoints(); 
+    return super.intersects(x, y, w, h);
+  }
+
+  
+  public void setBounds(double x, double y, double w, double h) {
+  }
+
+
+  
+  public Figure setSource(Figure figure) {
+
+    Figure oldSource = source;
+
+    source = figure;
+    return oldSource;
+
+  }
+
+  
+  public Figure setSink(Figure figure) {
+
+    Figure oldSink = sink;
+
+    sink = figure;
+    return oldSink;
+
+  }
+  
+  
+  public int hashCode() {
+    return getClass().hashCode();
+  }
+
+}

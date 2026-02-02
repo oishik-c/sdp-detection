@@ -1,0 +1,648 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.netbeans.modules.corba;
+
+import java.awt.Image;
+import java.awt.Toolkit;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+
+
+import org.openide.*;
+import org.openide.cookies.OpenCookie;
+import org.openide.cookies.CompilerCookie;
+import org.openide.cookies.LineCookie;
+import org.openide.filesystems.*;
+import org.openide.loaders.*;
+import org.openide.windows.*;
+import org.openide.actions.OpenAction;
+import org.openide.text.*;
+import org.openide.util.*;
+import org.openide.util.actions.*;
+import org.openide.nodes.Node;
+import org.openide.nodes.Children;
+
+
+import org.openide.loaders.*;
+import org.openide.nodes.CookieSet;
+
+import org.openide.compiler.Compiler;
+import org.openide.compiler.CompilerJob;
+import org.openide.compiler.ExternalCompiler;
+import org.openide.execution.NbProcessDescriptor;
+
+import org.netbeans.modules.java.JavaCompilerType;
+import org.netbeans.modules.java.JavaExternalCompilerType;
+
+import org.netbeans.modules.corba.settings.*;
+import org.netbeans.modules.corba.idl.src.*;
+import org.netbeans.modules.corba.idl.generator.*;
+
+
+
+public class IDLDataObject extends MultiDataObject {
+
+    static final long serialVersionUID =-7151972557886707595L;
+
+    
+    private static final boolean DEBUG = false;
+
+    private static final int STATUS_OK = 0;
+    private static final int STATUS_ERROR = 1;
+
+    private static final int STYLE_NOTHING = 0;
+    private static final int STYLE_FIRST_LEVEL = 1;
+    private static final int STYLE_FIRST_LEVEL_WITH_NESTED_TYPES = 2;
+    private static final int STYLE_ALL = 3;
+
+    private int status;
+    private IDLElement src;
+
+    
+    
+    private Hashtable possibleNames;
+
+    private MultiFileLoader idl_loader;
+    private IDLParser parser;
+
+    private IDLNode idlNode;
+
+    private ImplGenerator generator;
+
+    private PositionRef position_of_element;
+
+    private int _line;
+    private int _column;
+
+    public IDLDataObject (final FileObject obj, final MultiFileLoader loader)
+    throws DataObjectExistsException {
+        super(obj, loader);
+
+        if (DEBUG)
+            System.out.println ("IDLDataObject::IDLDataObject (...)");
+        idl_loader = loader;
+        
+        MultiDataObject.Entry entry = getPrimaryEntry ();
+        CookieSet cookies = getCookieSet ();
+
+        
+        cookies.add (new IDLEditorSupport (entry));
+        cookies.add (new IDLCompilerSupport.Compile (entry));
+        
+        cookies.add (new IDLNodeCookie () {
+                         public void GenerateImpl (IDLDataObject ido) {
+                             ido.generateImplementation ();
+                             
+                         }
+                     });
+
+        FileUtil.setMIMEType ("idl", "text/x-idl");
+        getPrimaryFile().addFileChangeListener (new FileListener ());
+        
+
+        update ();
+    }
+
+    
+    protected Node createNodeDelegate () {
+        
+        if (DEBUG)
+            System.out.println ("createNodeDelegate");
+        try {
+            idlNode = new IDLNode (this);
+            idlNode.update ();
+            if (status == STATUS_ERROR) {
+                if (DEBUG)
+                    System.out.println ("set error icon...");
+                idlNode.setIconBase (IDLNode.IDL_ERROR_ICON);
+            }
+        } catch (Exception e) {
+            e.printStackTrace ();
+        }
+        return idlNode;
+    }
+
+    
+    public HelpCtx getHelpCtx () {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+    public void openAtPosition (int line_pos, int offset) {
+        if (DEBUG)
+            System.out.println ("openAtPosition (" + line_pos + ", " + offset + ");");
+        LineCookie line_cookie = (LineCookie)getCookie (LineCookie.class);
+        if (line_cookie != null) {
+            Line line = line_cookie.getLineSet().getOriginal (line_pos - 1);
+            line.show (Line.SHOW_GOTO, offset - 1);
+        }
+    }
+
+    public void openAtLinePosition () {
+        openAtPosition (_line, 1);
+    }
+
+    public void setLinePosition (int line) {
+        if (DEBUG)
+            System.out.println ("setLinePosition: " + line);
+        _line = line;
+    }
+
+    public int getLinePosition () {
+        if (DEBUG)
+            System.out.println ("getLinePosition: " + _line);
+        return _line;
+    }
+
+    public void setColumnPosition (int column) {
+        if (DEBUG)
+            System.out.println ("setColumnPosition: " + column);
+        _column = column;
+    }
+
+    public int getColumnPosition () {
+        if (DEBUG)
+            System.out.println ("getColumnPosition: " + _column);
+        return _column;
+    }
+
+    public void setPositionRef (PositionRef ref) {
+        if (DEBUG)
+            System.out.println ("setPositionRef");
+        position_of_element = ref;
+    }
+
+
+    public PositionRef getPositionRef () {
+        if (DEBUG)
+            System.out.println ("getPositionRef");
+        return position_of_element;
+    }
+
+
+    public Compiler createCompiler (CompilerJob job, Class type) {
+        if (DEBUG)
+            System.out.println ("IDLDataObject.java:112:createCompiler");
+        CORBASupportSettings css = (CORBASupportSettings) CORBASupportSettings.findObject
+                                   (CORBASupportSettings.class, true);
+        if (css.getOrb () == null) {
+            new NotSetuped ();
+            return null;
+        }
+
+        ExternalCompiler.ErrorExpression eexpr = new ExternalCompiler.ErrorExpression
+                ("blabla", css.getErrorExpression (), css.file (), css.line (), css.column (),
+                 css.message ());
+
+
+        FileObject fo = this.getPrimaryFile ();
+        NbProcessDescriptor nb = css.getIdl ();
+        ExternalCompiler ec = new IDLExternalCompiler (this.getPrimaryFile (), type, nb, eexpr);
+
+        job.add (ec);
+
+        Vector gens = getGeneratedFileObjects ();
+        
+        
+        JavaCompilerType jct = (JavaCompilerType)TopManager.getDefault ().getServices
+                               ().find(JavaExternalCompilerType.class);
+        if (DEBUG)
+            System.out.println ("generated files: " + gens);
+        FileSystem fs = null;
+        try {
+            fs = getPrimaryFile ().getFileSystem ();
+        } catch (FileStateInvalidException ex) {
+            ex.printStackTrace ();
+        }
+
+        String package_name = "";
+        for (int j=0; j<gens.size (); j++) {
+            if (DEBUG)
+                System.out.println ("add compiler to job for "
+                                    + ((FileObject)gens.elementAt (j)).getName ());
+
+            package_name = ((FileObject)gens.elementAt (j)).getPackageNameExt ('/', '.');
+
+            if (DEBUG)
+                System.out.println ("package name: " + package_name);
+
+            
+            
+            job.add (jct.prepareIndirectCompiler (type, fs, package_name));
+        }
+
+        return ec;
+    }
+
+    private Vector getIdlConstructs (int style, IDLElement src) {
+        Vector constructs = new Vector ();
+        String name;
+        Vector type_members;
+        Vector tmp_members;
+        Vector members;
+        if (src != null) {
+            members = src.getMembers ();
+            if (style == STYLE_ALL) {
+                for (int i = 0; i<members.size (); i++) {
+                    if (members.elementAt (i) instanceof Identifier) {
+                        
+                        constructs.add (((Identifier)members.elementAt (i)).getName ());
+                    }
+                    else {
+                        
+                        constructs.addAll (getIdlConstructs (style, (IDLElement)members.elementAt (i)));
+                    }
+                }
+            }
+            if (style == STYLE_NOTHING) {
+            }
+            if (style == STYLE_FIRST_LEVEL) {
+                for (int i=0; i<members.size (); i++) {
+                    if (members.elementAt (i) instanceof TypeElement) {
+                        tmp_members = ((IDLElement)members.elementAt (i)).getMembers ();
+                        for (int j=0; j<tmp_members.size (); j++) {
+                            if (((IDLElement)members.elementAt (i)).getMember (j) instanceof Identifier)
+                                
+                                name = ((IDLElement)members.elementAt (i)).getMember (j).getName ();
+                            else
+                                
+                                name = ((TypeElement)members.elementAt (i)).getMember (j).getName ();
+                            constructs.addElement (name);
+                        }
+                    }
+                    else {
+                        name = ((IDLElement)members.elementAt (i)).getName ();
+                        constructs.addElement (name);
+                    }
+                }
+            }
+            if (style == STYLE_FIRST_LEVEL_WITH_NESTED_TYPES) {
+                for (int i=0; i<members.size (); i++) {
+                    if (members.elementAt (i) instanceof TypeElement) {
+                        constructs.addAll (getIdlConstructs (STYLE_ALL,
+                                                             (TypeElement)members.elementAt (i)));
+                    }
+                    else {
+                        name = ((IDLElement)members.elementAt (i)).getName ();
+                        constructs.addElement (name);
+                    }
+                }
+
+            }
+        }
+        return constructs;
+    }
+
+    private Vector getIdlConstructs (int style) {
+        if (DEBUG)
+            System.out.println ("IDLDataObject.getIdlConstructs ()...");
+        
+
+        return getIdlConstructs (style, src);
+        
+    }
+
+    private Vector getIdlInterfaces (int style) {
+        if (DEBUG)
+            System.out.println ("IDLDataObject.getIdlInterfaces (" + style + ");");
+        
+        return getIdlInterfaces (src, style);
+    }
+
+    private Vector getIdlInterfaces (IDLElement element, int style) {
+        if (DEBUG)
+            System.out.println ("IDLDataObject.getIdlInterfaces (" + element + ", " + style + ");");
+        Vector idl_interfaces = new Vector ();
+        String name;
+        Vector type_members;
+        Vector tmp_members;
+        if (style == STYLE_NOTHING) {
+            return idl_interfaces;
+        }
+        if (style == STYLE_FIRST_LEVEL) {
+            if (element != null) {
+                
+                if (DEBUG)
+                    System.out.println ("element: " + element.getMembers ());
+                for (int i=0; i<element.getMembers ().size (); i++) {
+                    if (element.getMember (i) instanceof InterfaceElement) {
+                        name = element.getMember (i).getName ();
+                        idl_interfaces.addElement (name);
+                    }
+                }
+                if (DEBUG) {
+                    for (int i=0; i<idl_interfaces.size (); i++)
+                        System.out.println ("interface: " + (String)idl_interfaces.elementAt (i));
+                }
+            }
+        }
+        if (style == STYLE_ALL) {
+            if (element != null) {
+                
+                if (DEBUG)
+                    System.out.println ("element: " + element.getMembers ());
+                for (int i=0; i<element.getMembers ().size (); i++) {
+                    if (element.getMember (i) instanceof InterfaceElement) {
+                        name = element.getMember (i).getName ();
+                        idl_interfaces.addElement (name);
+                    }
+                    if (element.getMember (i) instanceof ModuleElement) {
+                        Vector nested = getIdlInterfaces ((IDLElement)element.getMember (i), STYLE_ALL);
+                        if (nested != null)
+                            idl_interfaces.addAll (nested);
+                    }
+
+                }
+                if (DEBUG) {
+                    for (int i=0; i<idl_interfaces.size (); i++)
+                        System.out.println ("interface: " + (String)idl_interfaces.elementAt (i));
+                }
+            }
+        }
+
+        return idl_interfaces;
+    }
+
+    public Hashtable createPossibleNames (Vector ic, Vector ii) {
+        
+        Hashtable possible_names = new Hashtable ();
+        if (DEBUG)
+            System.out.println ("IDLDataObject.createPossibleNames () ...");
+        String name;
+        
+        for (int i=0; i<ic.size (); i++) {
+            name = (String)ic.elementAt (i);
+            if (name != null && (!name.equals (""))) {
+                possible_names.put (name + "Holder", "");
+                possible_names.put (name + "Helper", "");
+                possible_names.put (name, "");
+            }
+        }
+        
+        for (int i=0; i<ii.size (); i++) {
+            name = (String)ii.elementAt (i);
+            if (name != null && (!name.equals (""))) {
+                
+                
+                
+                
+                possible_names.put ("_" + name + "Stub", "");
+                
+                
+                possible_names.put (name + "POA", "");
+                
+                possible_names.put (name + "Operations", "");
+                
+
+                
+                possible_names.put ("StubFor" + name, "");
+                possible_names.put ("_" + name + "ImplBase", "");
+                
+                possible_names.put ("_example_" + name, "");
+                
+                possible_names.put ("_st_" + name, "");
+                
+                possible_names.put ("_" + name + "Skeleton", "");
+                possible_names.put ("_" + name + "Stub", "");
+                possible_names.put ("_" + name + "Operations", "");
+                
+                
+                
+                
+            }
+
+        }
+        if (DEBUG)
+            System.out.println ("possible names for " + getPrimaryFile ().getName () + " : "
+                                + possible_names) ;
+        return possible_names;
+    }
+
+    public boolean canGenerate (FileObject fo) {
+        String name = fo.getName ();
+        if (DEBUG)
+            System.out.print ("IDLDataObject.canGenerate (" + name + ") ...");
+        if (possibleNames.get (name) != null) {
+            if (DEBUG)
+                System.out.println ("yes");
+            return true;
+        }
+        else {
+            if (DEBUG)
+                System.out.println ("no");
+            return false;
+        }
+    }
+
+    public Vector getImplementationNames () {
+        Vector retval = new Vector ();
+        String impl_prefix = null;
+        String impl_postfix = null;
+        CORBASupportSettings css = (CORBASupportSettings)CORBASupportSettings.findObject
+                                   (CORBASupportSettings.class, true);
+        if (!css.isTie ()) {
+            
+            impl_prefix = css.getImplBasePrefix ();
+            impl_postfix = css.getImplBasePostfix ();
+        }
+        else {
+            
+            impl_prefix = css.getTiePrefix ();
+            impl_postfix = css.getTiePostfix ();
+        }
+        Vector int_names = getIdlInterfaces (STYLE_ALL);
+        for (int i=0; i<int_names.size (); i++) {
+            retval.add (impl_prefix + (String)int_names.elementAt (i) + impl_postfix);
+        }
+        return retval;
+    }
+
+
+    public int hasGeneratedImplementation () {
+        if (DEBUG)
+            System.out.println ("hasGeneratedImplementation ()");
+        int retval = 0;
+        Vector names = getImplementationNames ();
+        if (DEBUG)
+            System.out.println ("names: " + names + " of size: " + names.size ());
+        FileObject ifo_folder = getPrimaryFile ().getParent ();
+        for (int i=0; i<names.size (); i++) {
+            if (ifo_folder.getFileObject ((String)names.elementAt (i), "java") != null) {
+                
+                
+                if (retval == 0 && i == 0) {
+                    retval = 2;
+                    continue;
+                }
+                if (retval == 0) {
+                    retval = 1;
+                    continue;
+                }
+            }
+            else {
+                if (retval != 0)
+                    retval = 1;
+            }
+        }
+        
+        return retval;
+    }
+
+    public void update () {
+        if (DEBUG)
+            System.out.println ("IDLDataObject.update ()...");
+        
+
+        Set entries = secondaryEntries ();
+        Iterator iter = entries.iterator ();
+        
+        for (int i=0; i<entries.size (); i++) {
+            Object o = iter.next ();
+            if (DEBUG)
+                System.out.println ("removing: " + o);
+            removeSecondaryEntry ((MultiDataObject.Entry) o);
+        }
+
+        startParsing ();
+
+        
+        
+        
+        possibleNames = createPossibleNames (getIdlConstructs (STYLE_FIRST_LEVEL_WITH_NESTED_TYPES),
+                                             getIdlInterfaces (STYLE_FIRST_LEVEL));
+
+
+        FileObject tmp_file = null;
+        FileLock lock = null;
+        
+        
+    }
+    public void startParsing () {
+        parse ();
+
+        
+        
+        
+    }
+
+    public void parse () {
+        try {
+            parser = new IDLParser (getPrimaryFile ().getInputStream ());
+            if (DEBUG)
+                System.out.println ("parsing of " + getPrimaryFile ().getName ());
+            src = (IDLElement)parser.Start ();
+            
+            src.setDataObject (this);
+            if (idlNode != null)
+                idlNode.setIconBase (IDLNode.IDL_ICON_BASE);
+            status = STATUS_OK;
+            if (DEBUG)
+                src.dump ("");
+            if (DEBUG)
+                System.out.println ("parse OK :-)");
+        } catch (ParseException e) {
+            if (DEBUG) {
+                System.out.println ("parse exception");
+                e.printStackTrace ();
+            }
+            if (idlNode != null) {
+                idlNode.setIconBase (IDLNode.IDL_ERROR_ICON);
+            } else {
+                if (DEBUG)
+                    System.out.println ("can't setup error icon!");
+            }
+            status = STATUS_ERROR;
+            src = null;
+        } catch (TokenMgrError e) {
+            if (idlNode != null) {
+                idlNode.setIconBase (IDLNode.IDL_ERROR_ICON);
+            } else {
+                if (DEBUG)
+                    System.out.println ("can't setup error icon!");
+            }
+            if (DEBUG) {
+                System.out.println ("parser error!!!");
+                e.printStackTrace ();
+            }
+            status = STATUS_ERROR;
+            src = null;
+        } catch (java.io.FileNotFoundException e) {
+            e.printStackTrace ();
+        } catch (Exception ex) {
+            System.out.println ("IDLParser exception in " + this.getPrimaryFile ());
+            ex.printStackTrace ();
+        }
+    }
+
+    public IDLElement getSources () {
+        return src;
+    }
+
+    class FileListener extends FileChangeAdapter {
+        public void fileChanged (FileEvent e) {
+            if (DEBUG)
+                System.out.println ("idl file was changed.");
+            
+            
+            IDLDataObject.this.update ();
+            IDLDataObject.this.idlNode.update ();
+            CORBASupportSettings css = (CORBASupportSettings) CORBASupportSettings.findObject
+                                       (CORBASupportSettings.class, true);
+            if (css.getSynchro () == CORBASupport.SYNCHRO_ON_SAVE)
+                IDLDataObject.this.generateImplementation ();
+        }
+
+        public void fileRenamed (FileRenameEvent e) {
+            if (DEBUG)
+                System.out.println ("IDLDocumentChildren.FileListener.FileRenamed (" + e + ")");
+        }
+    }
+
+    public Hashtable getPossibleNames () {
+        return possibleNames;
+    }
+
+    public Vector getGeneratedFileObjects () {
+        Vector result = new Vector ();
+        Hashtable h = getPossibleNames ();
+        Enumeration enum = h.keys ();
+        FileObject folder = this.getPrimaryFile ().getParent ();
+        FileObject gen_file;
+        while (enum.hasMoreElements ()) {
+            gen_file = folder.getFileObject ((String)enum.nextElement (), "java");
+            if (DEBUG)
+                if (gen_file != null)
+                    System.out.println ("add fo: " + gen_file.getName ());
+            if (gen_file != null)
+                result.add (gen_file);
+        }
+        return result;
+    }
+
+
+    public void generateImplementation () {
+        CORBASupportSettings css = (CORBASupportSettings) CORBASupportSettings.findObject
+                                   (CORBASupportSettings.class, true);
+        if (css.getOrb () == null) {
+            new NotSetuped ();
+            return;
+        }
+
+        if (DEBUG)
+            System.out.println ("generating of idl implemenations...");
+        generator = new ImplGenerator (this);
+        generator.setSources (getSources ());
+        
+        
+        generator.generate ();
+    }
+
+}
+
+
+

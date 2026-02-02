@@ -1,0 +1,32 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class CH.ifa.draw.util.StorableOutput {
+- PrintWriter fStream
+- Vector fMap
+- int fIndent
++ <<Create>> StorableOutput(OutputStream)
++ void writeStorable(Storable)
++ void writeInt(int)
++ void writeColor(Color)
++ void writeDouble(double)
++ void writeBoolean(boolean)
++ void writeString(String)
++ void close()
+- boolean mapped(Storable)
+- void map(Storable)
+- void writeRef(Storable)
+- void incrementIndent()
+- void decrementIndent()
+- void startNewLine()
+- void space()
+}
+
+
+
+
+CH.ifa.draw.util.Object <|-- CH.ifa.draw.util.StorableOutput
+@enduml

@@ -1,0 +1,556 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+package org.openide.util;
+
+
+import java.beans.*;
+import java.lang.ref.*;
+import java.util.EventListener;
+import java.awt.event.FocusListener;
+import java.awt.event.FocusEvent;
+
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+
+import org.openide.filesystems.*;
+import org.openide.loaders.OperationListener;
+import org.openide.loaders.OperationEvent;
+
+import org.openide.nodes.*;
+
+
+public abstract class WeakListener extends Object implements java.util.EventListener {
+    
+    private static ReferenceQueue QUEUE = new ReferenceQueue ();
+    
+    private static int CLEANER_TIME = 25000;
+    
+    private static RequestProcessor.Task CLEANER_TASK = RequestProcessor.postRequest(
+                new Cleaner (), CLEANER_TIME, Thread.MIN_PRIORITY
+            );
+
+    
+    private Reference ref;
+    
+    Class listenerClass;
+    
+    private Reference source;
+
+    
+    protected WeakListener (Class listenerClass, java.util.EventListener l) {
+        this.listenerClass = listenerClass;
+        ref = new ListenerReference (l, this);
+    }
+
+    
+    final void setSource (Object source) {
+        if (source == null) {
+            this.source = null;
+        } else {
+            this.source = new WeakReference (source);
+        }
+    }
+
+    
+    protected abstract String removeMethodName ();
+
+    
+    protected final java.util.EventListener get (java.util.EventObject ev) {
+        if (ref == null) return null;
+
+        EventListener l = (EventListener)ref.get ();
+        if (l != null) {
+            return l;
+        } else {
+            if (ev != null) {
+                removeListener (ev.getSource ());
+                ref = null;
+            }
+            return null;
+        }
+    }
+
+    
+    private void removeListener () {
+        Reference s = this.source;
+        if (s == null) return;
+
+        Object src = s.get ();
+        if (src != null) {
+            removeListener (src);
+        }
+    }
+
+    
+    private void removeListener (Object source) {
+        try {
+            java.lang.reflect.Method m = source.getClass ().getMethod (
+                                             removeMethodName (),
+                                             new Class [] { listenerClass }
+                                         );
+            
+            m.invoke (source, new Object[] { this });
+        } catch (Exception ex) {
+            
+        }
+    }
+
+    
+    public String toString () {
+        java.lang.ref.Reference r = ref;
+        if (r == null) {
+            return super.toString () + " " + NbBundle.getBundle(WeakListener.class).getString("MSG_ToNowhere");
+        } else {
+            return super.toString () + " "+ NbBundle.getBundle(WeakListener.class).getString("MSG_To") + r.get ();
+        }
+    }
+
+
+    
+    
+    
+
+    
+    private static Factory factory;
+
+    static {
+        try {
+            Class c = Class.forName ("org.openide.util.WeakListener13"); 
+            factory = (Factory)c.newInstance ();
+        } catch (Throwable t) {
+            
+            factory = new WeakListener12 ();
+        }
+    }
+
+    
+    public static NodeListener node (NodeListener l, Object source) {
+        return factory.node (l, source);
+    }
+
+    public static PropertyChangeListener propertyChange (PropertyChangeListener l, Object source) {
+        return factory.propertyChange (l, source);
+    }
+
+    public static VetoableChangeListener vetoableChange (VetoableChangeListener l, Object source) {
+        return factory.vetoableChange (l, source);
+    }
+
+    public static FileChangeListener fileChange (FileChangeListener l, Object source) {
+        return factory.fileChange (l, source);
+    }
+
+    public static FileStatusListener fileStatus (FileStatusListener l, Object source) {
+        return factory.fileStatus (l, source);
+    }
+
+    public static RepositoryListener repository (RepositoryListener l, Object source) {
+        return factory.repository (l, source);
+    }
+
+    public static DocumentListener document (DocumentListener l, Object source) {
+        return factory.document (l, source);
+    }
+
+    public static ChangeListener change (ChangeListener l, Object source) {
+        return factory.change (l, source);
+    }
+
+    public static FocusListener focus (FocusListener l, Object source) {
+        return factory.focus (l, source);
+    }
+
+    public static OperationListener operation (OperationListener l, Object source) {
+        return factory.operation (l, source);
+    }
+
+    
+    public static class PropertyChange extends WeakListener
+        implements PropertyChangeListener {
+        
+        public PropertyChange (PropertyChangeListener l) {
+            super (PropertyChangeListener.class, l);
+        }
+
+        
+        PropertyChange (Class clazz, PropertyChangeListener l) {
+            super (clazz, l);
+        }
+
+        
+        public void propertyChange (PropertyChangeEvent ev) {
+            PropertyChangeListener l = (PropertyChangeListener)super.get (ev);
+            if (l != null) l.propertyChange (ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removePropertyChangeListener"; 
+        }
+    }
+
+    
+    public static class VetoableChange extends WeakListener
+        implements VetoableChangeListener {
+        
+        public VetoableChange (VetoableChangeListener l) {
+            super (VetoableChangeListener.class, l);
+        }
+
+        
+        public void vetoableChange (PropertyChangeEvent ev) throws PropertyVetoException {
+            VetoableChangeListener l = (VetoableChangeListener)super.get (ev);
+            if (l != null) l.vetoableChange (ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removeVetoableChangeListener"; 
+        }
+    }
+
+    
+    public static class FileChange extends WeakListener
+        implements FileChangeListener {
+        
+        public FileChange (FileChangeListener l) {
+            super (FileChangeListener.class, l);
+        }
+
+        
+        public void fileFolderCreated (FileEvent ev) {
+            FileChangeListener l = (FileChangeListener)super.get (ev);
+            if (l != null) l.fileFolderCreated (ev);
+        }
+
+        
+        public void fileDataCreated (FileEvent ev) {
+            FileChangeListener l = (FileChangeListener)super.get (ev);
+            if (l != null) l.fileDataCreated (ev);
+        }
+
+        
+        public void fileChanged (FileEvent ev) {
+            FileChangeListener l = (FileChangeListener)super.get (ev);
+            if (l != null) l.fileChanged (ev);
+        }
+
+        
+        public void fileDeleted (FileEvent ev) {
+            FileChangeListener l = (FileChangeListener)super.get (ev);
+            if (l != null) l.fileDeleted (ev);
+        }
+
+        
+        public void fileRenamed (FileRenameEvent ev) {
+            FileChangeListener l = (FileChangeListener)super.get (ev);
+            if (l != null) l.fileRenamed (ev);
+        }
+
+        
+        public void fileAttributeChanged (FileAttributeEvent ev) {
+            FileChangeListener l = (FileChangeListener)super.get (ev);
+            if (l != null) l.fileAttributeChanged (ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removeFileChangeListener"; 
+        }
+    }
+
+    
+    public static class FileStatus extends WeakListener
+        implements FileStatusListener {
+        
+        public FileStatus (FileStatusListener l) {
+            super (FileStatusListener.class, l);
+        }
+
+        
+        public void annotationChanged(FileStatusEvent ev) {
+            FileStatusListener l = (FileStatusListener)super.get (ev);
+            if (l != null) l.annotationChanged (ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removeFileStatusListener"; 
+        }
+
+    }
+
+    
+    public static class Repository extends WeakListener
+        implements RepositoryListener {
+        
+        public Repository (RepositoryListener l) {
+            super (RepositoryListener.class, l);
+        }
+
+
+        
+        public void fileSystemAdded (RepositoryEvent ev) {
+            RepositoryListener l = (RepositoryListener)super.get (ev);
+            if (l != null) l.fileSystemAdded (ev);
+        }
+
+        
+        public void fileSystemRemoved (RepositoryEvent ev) {
+            RepositoryListener l = (RepositoryListener)super.get (ev);
+            if (l != null) l.fileSystemRemoved (ev);
+        }
+
+        
+        public void fileSystemPoolReordered(RepositoryReorderedEvent ev) {
+            RepositoryListener l = (RepositoryListener)super.get (ev);
+            if (l != null) l.fileSystemPoolReordered (ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removeRepositoryListener"; 
+        }
+
+    }
+
+    
+    public static final class Document extends WeakListener
+        implements DocumentListener {
+        
+        public Document (final DocumentListener l) {
+            super (DocumentListener.class, l);
+        }
+
+        
+        public void changedUpdate(DocumentEvent ev) {
+            final DocumentListener l = docGet(ev);
+            if (l != null) l.changedUpdate(ev);
+        }
+
+        
+        public void insertUpdate(DocumentEvent ev) {
+            final DocumentListener l = docGet(ev);
+            if (l != null) l.insertUpdate(ev);
+        }
+
+        
+        public void removeUpdate(DocumentEvent ev) {
+            final DocumentListener l = docGet(ev);
+            if (l != null) l.removeUpdate(ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removeDocumentListener"; 
+        }
+
+        
+        private DocumentListener docGet (DocumentEvent ev) {
+            if (super.ref == null) return null;
+
+            DocumentListener l = (DocumentListener)super.ref.get ();
+            if (l != null) {
+                return l;
+            } else {
+                super.removeListener (ev.getDocument());
+                super.ref = null;
+                return null;
+            }
+        }
+    } 
+
+    
+    public static final class Change extends WeakListener
+        implements ChangeListener {
+        
+        public Change (ChangeListener l) {
+            super (ChangeListener.class, l);
+        }
+
+        
+        public void stateChanged (final ChangeEvent ev) {
+            ChangeListener l = (ChangeListener)super.get(ev);
+            if (l != null) l.stateChanged (ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removeChangeListener"; 
+        }
+
+    }
+
+    
+    public static final class Node extends WeakListener.PropertyChange
+        implements NodeListener {
+        
+        public Node (NodeListener l) {
+            super (NodeListener.class, l);
+        }
+
+        
+        public void childrenAdded (NodeMemberEvent ev) {
+            NodeListener l = (NodeListener)super.get (ev);
+            if (l != null) l.childrenAdded (ev);
+        }
+
+        
+        public void childrenRemoved (NodeMemberEvent ev) {
+            NodeListener l = (NodeListener)super.get (ev);
+            if (l != null) l.childrenRemoved (ev);
+        }
+
+        
+        public void childrenReordered (NodeReorderEvent ev) {
+            NodeListener l = (NodeListener)super.get (ev);
+            if (l != null) l.childrenReordered (ev);
+        }
+
+        
+        public void nodeDestroyed (NodeEvent ev) {
+            NodeListener l = (NodeListener)super.get (ev);
+            if (l != null) l.nodeDestroyed (ev);
+        }
+
+
+        
+        protected String removeMethodName () {
+            return "removeNodeListener"; 
+        }
+
+    }
+
+
+
+    
+    public static final class Focus extends WeakListener
+        implements FocusListener {
+        
+        public Focus (FocusListener l) {
+            super (FocusListener.class, l);
+        }
+
+        
+        public void focusGained(FocusEvent ev) {
+            FocusListener l = (FocusListener)super.get (ev);
+            if (l != null) l.focusGained (ev);
+        }
+
+        
+        public void focusLost(FocusEvent ev) {
+            FocusListener l = (FocusListener)super.get (ev);
+            if (l != null) l.focusLost (ev);
+        }
+
+        
+        protected String removeMethodName () {
+            return "removeFocusListener"; 
+        }
+
+    }
+
+    
+    final static class Operation extends WeakListener
+        implements OperationListener {
+        
+        public Operation (OperationListener l) {
+            super (PropertyChangeListener.class, l);
+        }
+
+
+        
+        protected String removeMethodName () {
+            return "removeOperationListener"; 
+        }
+
+        
+        public void operationPostCreate(OperationEvent ev) {
+            OperationListener l = (OperationListener)super.get (ev);
+            if (l != null) l.operationPostCreate (ev);
+        }
+        
+        public void operationCopy(OperationEvent.Copy ev) {
+            OperationListener l = (OperationListener)super.get (ev);
+            if (l != null) l.operationCopy (ev);
+        }
+        
+        public void operationMove(OperationEvent.Move ev) {
+            OperationListener l = (OperationListener)super.get (ev);
+            if (l != null) l.operationMove (ev);
+        }
+        
+        public void operationDelete(OperationEvent ev) {
+            OperationListener l = (OperationListener)super.get (ev);
+            if (l != null) l.operationDelete (ev);
+        }
+        
+        public void operationRename(OperationEvent.Rename ev) {
+            OperationListener l = (OperationListener)super.get (ev);
+            if (l != null) l.operationRename (ev);
+        }
+
+        
+        public void operationCreateShadow (OperationEvent.Copy ev) {
+            OperationListener l = (OperationListener)super.get (ev);
+            if (l != null) l.operationCreateShadow (ev);
+        }
+        
+        public void operationCreateFromTemplate(OperationEvent.Copy ev) {
+            OperationListener l = (OperationListener)super.get (ev);
+            if (l != null) l.operationCreateFromTemplate (ev);
+        }
+    }
+
+    
+    private static final class ListenerReference extends WeakReference {
+        final WeakListener weakListener;
+
+        public ListenerReference (
+            Object ref,
+            WeakListener weakListener
+        ) {
+            super (ref, QUEUE);
+            this.weakListener = weakListener;
+        }
+    }
+
+    
+    private static final class Cleaner extends Object implements Runnable {
+        public void run () {
+            for (;;) {
+                ListenerReference lr = (ListenerReference)QUEUE.poll();
+
+                if (lr == null) break;
+
+                lr.weakListener.removeListener ();
+            }
+
+            CLEANER_TASK.schedule (CLEANER_TIME);
+        }
+    }
+
+
+    
+    static interface Factory {
+        public NodeListener node (NodeListener l, Object source);
+        public PropertyChangeListener propertyChange (PropertyChangeListener l, Object source);
+        public VetoableChangeListener vetoableChange (VetoableChangeListener l, Object source);
+        public FileChangeListener fileChange (FileChangeListener l, Object source);
+        public FileStatusListener fileStatus (FileStatusListener l, Object source);
+        public RepositoryListener repository (RepositoryListener l, Object source);
+        public DocumentListener document (DocumentListener l, Object source);
+        public ChangeListener change (ChangeListener l, Object source);
+        public FocusListener focus (FocusListener l, Object source);
+        public OperationListener operation (OperationListener l, Object source);
+    }
+}
+
+

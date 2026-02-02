@@ -1,0 +1,35 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class junit.swingui.FailureRunView {
+~ JList fFailureList
+~ TestRunContext fRunContext
++ <<Create>> FailureRunView(TestRunContext)
++ Test getSelectedTest()
++ void activate()
++ void addTab(JTabbedPane)
++ void revealFailure(Test)
++ void aboutToStart(Test,TestResult)
++ void runFinished(Test,TestResult)
+# void testSelected()
+}
+
+
+class junit.swingui.FailureRunView$FailureListCellRenderer {
+- Icon fFailureIcon
+- Icon fErrorIcon
+~ <<Create>> FailureListCellRenderer()
+~ void loadIcons()
++ Component getListCellRendererComponent(JList,Object,int,boolean,boolean)
+}
+
+
+
+
+junit.swingui.TestRunView <|.. junit.swingui.FailureRunView
+junit.swingui.FailureRunView +.. junit.swingui.FailureRunView$FailureListCellRenderer
+junit.swingui.DefaultListCellRenderer <|-- junit.swingui.FailureRunView$FailureListCellRenderer
+@enduml

@@ -1,0 +1,73 @@
+Given the following java code, determine whether it contains an instance of the bridge design pattern playing the role of abstraction.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+
+
+package net.nutch.io;
+
+import java.io.*;
+
+
+public class IntWritable implements WritableComparable {
+  private int value;
+
+  public IntWritable() {}
+
+  public IntWritable(int value) { set(value); }
+
+  
+  public void set(int value) { this.value = value; }
+
+  
+  public int get() { return value; }
+
+  public void readFields(DataInput in) throws IOException {
+    value = in.readInt();
+  }
+
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(value);
+  }
+
+  
+  public boolean equals(Object o) {
+    if (!(o instanceof IntWritable))
+      return false;
+    IntWritable other = (IntWritable)o;
+    return this.value == other.value;
+  }
+
+  public int hashCode() {
+    return (int)value;
+  }
+
+  
+  public int compareTo(Object o) {
+    int thisValue = this.value;
+    int thatValue = ((IntWritable)o).value;
+    return thisValue - thatValue;
+  }
+
+  public String toString() {
+    return Integer.toString(value);
+  }
+
+   
+  public static class Comparator extends WritableComparator {
+    public Comparator() {
+      super(IntWritable.class);
+    }
+
+    public int compare(byte[] b1, int s1, int l1,
+                       byte[] b2, int s2, int l2) {
+      int thisValue = readInt(b1, s1);
+      int thatValue = readInt(b2, s2);
+      return thisValue - thatValue;
+    }
+  }
+
+}
+

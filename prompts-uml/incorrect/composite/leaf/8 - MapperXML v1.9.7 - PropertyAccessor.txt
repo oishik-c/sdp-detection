@@ -1,0 +1,30 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.model.PropertyAccessor {
+- String propertyName
+- int javaDataType
+- java.lang.reflect.Method writeMethod
+- java.lang.reflect.Method[] readMethods
+- Class valueObjectClass
+- boolean primative
++ <<Create>> PropertyAccessor(Class,String)
+# void setAccessorMethods()
+# PropertyDescriptor getProperty(Class,String)
++ Object getPropertyValue(Object)
++ void setPropertyValue(Object,Object)
+# Object invokeReadMethod(int,Object)
+# void invokeWriteMethod(Object,Object)
++ int getJavaDateType()
++ String getPropertyName()
+# java.lang.reflect.Method[] getReadMethods()
+# java.lang.reflect.Method getWriteMethod()
++ Class getValueObjectClass()
+# boolean isPrimative()
+}
+
+
+@enduml

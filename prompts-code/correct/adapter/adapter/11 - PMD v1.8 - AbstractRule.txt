@@ -1,0 +1,149 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package net.sourceforge.pmd;
+
+import net.sourceforge.pmd.ast.ASTCompilationUnit;
+import net.sourceforge.pmd.ast.JavaParserVisitorAdapter;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+
+public abstract class AbstractRule extends JavaParserVisitorAdapter implements Rule {
+
+    private String name = getClass().getName();
+    private Properties properties = new Properties();
+    private String message;
+    private String description;
+    private String example;
+    private boolean m_include;
+    private int m_priority = LOWEST_PRIORITY;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getExample() {
+        return example;
+    }
+
+    public void setExample(String example) {
+        this.example = example;
+    }
+
+    public boolean hasProperty(String name) {
+        return properties.containsKey(name);
+    }
+
+    public void addProperty(String name, String value) {
+        properties.setProperty(name, value);
+    }
+
+    public double getDoubleProperty(String name) {
+        return Double.parseDouble(properties.getProperty(name));
+    }
+
+    public int getIntProperty(String name) {
+        return Integer.parseInt(properties.getProperty(name));
+    }
+
+    public boolean getBooleanProperty(String name) {
+        return Boolean.valueOf(properties.getProperty(name)).booleanValue();
+    }
+
+    public String getStringProperty(String name) {
+        return properties.getProperty(name);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public boolean equals(Object o) {
+        if (!(o instanceof Rule)) {
+            return false;
+        }
+        return ((Rule)o).getName().equals(getName());
+    }
+
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    protected void visitAll(List acus, RuleContext ctx) {
+        for (Iterator i = acus.iterator(); i.hasNext();) {
+            ASTCompilationUnit node = (ASTCompilationUnit) i.next();
+            visit(node, ctx);
+        }
+    }
+
+    public void apply(List acus, RuleContext ctx) {
+        visitAll(acus, ctx);
+    }
+
+    public RuleViolation createRuleViolation(RuleContext ctx, int lineNumber) {
+        return new RuleViolation(this, lineNumber, ctx);
+    }
+
+    public RuleViolation createRuleViolation(RuleContext ctx, int lineNumber, String specificDescription) {
+        return new RuleViolation(this, lineNumber, specificDescription, ctx);
+    }
+
+    
+    public Properties getProperties() {
+        return properties;
+    }
+
+    
+    public boolean include() {
+        return m_include;
+    }
+
+    
+    public void setInclude(boolean include) {
+        m_include = include;
+    }
+
+    
+    public int getPriority() {
+        if ((m_priority < 0) || (m_priority > LOWEST_PRIORITY)) {
+            m_priority = LOWEST_PRIORITY;
+        }
+
+        return m_priority;
+    }
+
+    
+    public String getPriorityName() {
+        return PRIORITIES[getPriority() - 1];
+    }
+
+    
+    public void setPriority(int priority) {
+        if ((priority < 1) || (priority > LOWEST_PRIORITY)) {
+            m_priority = LOWEST_PRIORITY;
+        } else {
+            m_priority = priority;
+        }
+    }
+}

@@ -1,0 +1,41 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class com.taursys.swing.MComboBox {
++ <<Create>> MComboBox()
++ <<Create>> MComboBox(Object[])
++ MListCellRenderer getMListCellRenderer()
++ void setModel(ComboBoxModel)
++ void setFormat(java.text.Format)
++ java.text.Format getFormat()
++ void setFormatPattern(String)
++ String getFormatPattern()
++ void setDisplayPropertyName(String)
++ String getDisplayPropertyName()
++ void setValueHolder(ValueHolder)
++ ValueHolder getValueHolder()
++ void setPropertyName(String)
++ String getPropertyName()
++ void setPropertyNames(String[])
++ String[] getPropertyNames()
++ void setListValueHolder(ListValueHolder)
++ ListValueHolder getListValueHolder()
++ void setListPropertyName(String)
++ String getListPropertyName()
++ void setListPropertyNames(String[])
++ String[] getListPropertyNames()
++ void setNullDisplay(String)
++ String getNullDisplay()
++ void setNullAllowed(boolean)
++ boolean isNullAllowed()
++ void enableChange(EnableEvent)
+}
+
+
+
+com.taursys.swing.EnableListener <|.. com.taursys.swing.MComboBox
+com.taursys.swing.JComboBox <|-- com.taursys.swing.MComboBox
+@enduml

@@ -1,0 +1,63 @@
+Given the following java code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+package org.acm.seguin.ide.cafe;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import org.acm.seguin.refactor.RefactoringException;
+import org.acm.seguin.uml.refactor.ExtractMethodDialog;
+
+
+class CafeExtractMethod extends ExtractMethodDialog implements ActionListener{
+	private SourceFile sourceFile;
+	
+	
+	
+	public CafeExtractMethod() throws RefactoringException {
+		super(null);
+	}
+
+
+	
+	protected void setStringInIDE(String value) {
+		if (sourceFile == null) {
+			return;
+		}
+		sourceFile.setText(value);
+		sourceFile = null;
+	}
+
+
+	
+	protected String getStringFromIDE() {
+		
+		VisualCafe vc = VisualCafe.getVisualCafe();
+		if (vc == null) { return ""; }
+		sourceFile = vc.getFrontmostSourceFile();
+		if (sourceFile == null) { return ""; }
+		return sourceFile.getTextString();
+	}
+
+
+	
+	protected String getSelectionFromIDE() {
+		if (sourceFile == null) {
+			VisualCafe vc = VisualCafe.getVisualCafe();
+    		if (vc == null) { return ""; }
+			sourceFile = vc.getFrontmostSourceFile();
+    		if (sourceFile == null) { return ""; }
+		}
+		Range range = sourceFile.getSelectionRange();
+		return sourceFile.getRangeTextString(range);
+	}
+
+
+	
+	public void actionPerformed(ActionEvent e) {
+		show();
+	}
+}

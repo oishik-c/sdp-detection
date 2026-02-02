@@ -1,0 +1,199 @@
+Given the following java code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+
+package com.taursys.xml;
+
+import com.taursys.model.DefaultSelectModel;
+import com.taursys.model.SelectModel;
+import com.taursys.model.TextModel;
+import com.taursys.model.ObjectArrayValueHolder;
+import com.taursys.model.ModelException;
+import com.taursys.xml.render.SelectFieldRenderer;
+import com.taursys.xml.event.RenderEvent;
+import com.taursys.xml.event.RenderException;
+
+
+public class SelectField extends AbstractField {
+  private SelectFieldRenderer renderer;
+
+  
+  
+  
+
+  
+  public SelectField() {
+    renderer = createDefaultRenderer();
+  }
+
+  
+  public SelectField(int javaDataType) {
+    super(javaDataType);
+    renderer = createDefaultRenderer();
+  }
+
+  
+  public SelectField(Object[] array) {
+    renderer = createDefaultRenderer();
+    setList(new ObjectArrayValueHolder(array));
+  }
+
+  
+  public SelectField(int javaDataType, Object[] array) {
+    super(javaDataType);
+    renderer = createDefaultRenderer();
+    setList(new ObjectArrayValueHolder(array));
+  }
+
+  
+  
+  
+
+  
+  protected TextModel createDefaultModel() {
+    return new DefaultSelectModel();
+  }
+
+  
+  protected TextModel createDefaultModel(int javaDataType) {
+    return new DefaultSelectModel(javaDataType);
+  }
+
+  
+  public void setModel(TextModel newModel) throws IllegalArgumentException {
+    if (!(newModel instanceof SelectModel))
+      throw new IllegalArgumentException(
+          "Invalid Model type passed - must be instance of SelectModel.");
+    super.setModel( newModel);
+  }
+
+  
+  protected SelectModel getSelectModel() {
+    return (SelectModel)getModel();
+  }
+
+  
+  protected SelectFieldRenderer createDefaultRenderer() {
+    return new SelectFieldRenderer(this);
+  }
+
+  
+  public void setRenderer(SelectFieldRenderer newRenderer) {
+    renderer = newRenderer;
+  }
+
+  
+  public SelectFieldRenderer getRenderer() {
+    return renderer;
+  }
+
+  
+  
+  
+
+  
+  public String getText() throws ModelException {
+    return getModel().getText();
+  }
+
+  
+  public void setText(String text) throws ModelException {
+    getModel().setText(text);
+  }
+
+  
+  public Object getSelection() throws ModelException {
+    return getSelectModel().getSelectedItem();
+  }
+
+  
+  public void setSelection(Object value) throws ModelException {
+    getSelectModel().setSelectedItem(value);
+  }
+
+  
+  
+  
+
+  
+  public void processRenderEvent(RenderEvent e) throws RenderException {
+    fireRender(e);
+    renderer.render();
+  }
+
+  
+  
+  
+
+  
+  public void setList(com.taursys.model.CollectionValueHolder newList) {
+    getSelectModel().setList(newList);
+  }
+
+  
+  public com.taursys.model.CollectionValueHolder getList() {
+    return getSelectModel().getList();
+  }
+
+  
+  public void setDisplayPropertyName(String newDisplayPropertyName) {
+    getSelectModel().setDisplayPropertyName(newDisplayPropertyName);
+  }
+
+  
+  public String getDisplayPropertyName() {
+    return getSelectModel().getDisplayPropertyName();
+  }
+
+  
+  public void setListPropertyNames(String[] newListPropertyNames) {
+    getSelectModel().setListPropertyNames(newListPropertyNames);
+  }
+
+  
+  public String[] getListPropertyNames() {
+    return getSelectModel().getListPropertyNames();
+  }
+
+  
+  public void setPropertyNames(String[] newPropertyNames) {
+    getSelectModel().setPropertyNames(newPropertyNames);
+  }
+
+  
+  public String[] getPropertyNames() {
+    return getSelectModel().getPropertyNames();
+  }
+
+  
+  public void setPropertyName(String newPropertyName) {
+    getSelectModel().setPropertyName(newPropertyName);
+  }
+
+  
+  public String getPropertyName() {
+    return getSelectModel().getPropertyName();
+  }
+
+  
+  public void setNullAllowed(boolean nullAllowed) {
+    getSelectModel().setNullAllowed(nullAllowed);
+  }
+
+  
+  public boolean isNullAllowed() {
+    return getSelectModel().isNullAllowed();
+  }
+
+  
+  public void setNullDisplay(String newNullDisplay) {
+    getSelectModel().setNullDisplay(newNullDisplay);
+  }
+
+  
+  public String getNullDisplay() {
+    return getSelectModel().getNullDisplay();
+  }
+}

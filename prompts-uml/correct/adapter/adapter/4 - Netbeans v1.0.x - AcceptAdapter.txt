@@ -1,0 +1,48 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.netbeans.modules.search.SearchTaskImpl {
+- Vector threads
+- boolean stop
+- ThreadGroup group
+- Node[] nodes
+- SearchType[] types
+- NodeAcceptor na
+- Vector found
+- boolean TRACE
++ <<Create>> SearchTaskImpl(Node[],SearchType[],NodeAcceptor)
++ void run()
++ void stop()
++ Node[] getResult()
+- void waitStop()
+- void notifyStop()
+- void t(String)
+}
+
+
+class org.netbeans.modules.search.SearchTaskImpl$ScannerThread {
+- Node[] nodes
+- Scanner scanner
++ <<Create>> ScannerThread(Scanner,Node[])
++ void run()
+}
+
+
+class org.netbeans.modules.search.SearchTaskImpl$AcceptAdapter {
+- NodeAcceptor acceptor
++ <<Create>> AcceptAdapter(NodeAcceptor)
++ void scannerFound(ScannerEvent)
+}
+
+
+
+
+org.netbeans.modules.search.SearchTask <|-- org.netbeans.modules.search.SearchTaskImpl
+org.netbeans.modules.search.SearchTaskImpl +.. org.netbeans.modules.search.SearchTaskImpl$ScannerThread
+org.netbeans.modules.search.Runnable <|.. org.netbeans.modules.search.SearchTaskImpl$ScannerThread
+org.netbeans.modules.search.SearchTaskImpl +.. org.netbeans.modules.search.SearchTaskImpl$AcceptAdapter
+org.netbeans.modules.search.ScannerListener <|.. org.netbeans.modules.search.SearchTaskImpl$AcceptAdapter
+@enduml

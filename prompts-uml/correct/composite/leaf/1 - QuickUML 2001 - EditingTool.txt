@@ -1,0 +1,72 @@
+Given the following uml code, determine whether it contains an instance of the composite design pattern playing the role of leaf.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class diagram.tool.EditingTool {
+# MouseHandler mouseHandler
+# FocusHandler focusHandler
+# Action actionStart
+# Action actionStop
+# Action actionCancel
+- Diagram diagram
+- Figure figure
+- Component dispatchComponent
+- Component editorComponent
+- Rectangle editorBounds
+- FigureEditor editor
+- Figure[] selected
++ void install(Diagram)
++ void uninstall(Diagram)
+# boolean isEditing()
+# boolean startEditing(Diagram,Figure,EventObject)
+# void stopEditing(Diagram,Figure)
+# void removeEditor()
+}
+
+
+class diagram.tool.EditingTool$MouseHandler {
+- Link[] links
+- boolean shouldIgnore(MouseEvent)
+- void setDispatchComponent(MouseEvent)
+- boolean repostEvent(MouseEvent)
++ void mousePressed(MouseEvent)
++ void mouseReleased(MouseEvent)
++ void mouseDragged(MouseEvent)
+# Figure findPressedFigure(Diagram,Point2D)
+}
+
+
+class diagram.tool.EditingTool$FocusHandler {
++ void focusGained(FocusEvent)
++ void focusLost(FocusEvent)
+- void repaintEditorCell(Diagram)
+}
+
+class diagram.tool.EditingTool$StartEditingAction {
++ void actionPerformed(ActionEvent)
+}
+
+class diagram.tool.EditingTool$StopEditingAction {
++ void actionPerformed(ActionEvent)
+}
+
+class diagram.tool.EditingTool$CancelEditingAction {
++ void actionPerformed(ActionEvent)
+}
+
+
+
+diagram.tool.AbstractTool <|-- diagram.tool.EditingTool
+diagram.tool.EditingTool +.. diagram.tool.EditingTool$MouseHandler
+diagram.tool.MouseInputAdapter <|-- diagram.tool.EditingTool$MouseHandler
+diagram.tool.EditingTool +.. diagram.tool.EditingTool$FocusHandler
+diagram.tool.FocusAdapter <|-- diagram.tool.EditingTool$FocusHandler
+diagram.tool.EditingTool +.. diagram.tool.EditingTool$StartEditingAction
+diagram.tool.AbstractAction <|-- diagram.tool.EditingTool$StartEditingAction
+diagram.tool.EditingTool +.. diagram.tool.EditingTool$StopEditingAction
+diagram.tool.AbstractAction <|-- diagram.tool.EditingTool$StopEditingAction
+diagram.tool.EditingTool +.. diagram.tool.EditingTool$CancelEditingAction
+diagram.tool.AbstractAction <|-- diagram.tool.EditingTool$CancelEditingAction
+@enduml

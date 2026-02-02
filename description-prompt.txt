@@ -1,0 +1,6 @@
+You are a software engineer. Analyze the provided description of a java class code and identify whether a(n) {role} role attributed to a(n) {pattern} pattern has been used in the actual code.
+
+Description:
+{code}
+
+Answer in capital letters, and provide a concise explanation as well as determine the specific role it undertakes.

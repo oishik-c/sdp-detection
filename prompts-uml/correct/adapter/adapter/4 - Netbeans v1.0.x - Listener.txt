@@ -1,0 +1,72 @@
+Given the following uml code, determine whether it contains an instance of the adapter design pattern playing the role of adapter.
+
+You should read the entire code snippet carefully. Then answer with YES or NO in capital letters. Finally, In 2-3 short sentences, explain why that is the answer
+
+CODE:
+@startuml
+class org.openide.explorer.ExplorerManager {
+~ {static} long serialVersionUID
++ {static} String PROP_ROOT_CONTEXT
++ {static} String PROP_EXPLORED_CONTEXT
++ {static} String PROP_SELECTED_NODES
+- VetoableChangeSupport vetoableSupport
+- PropertyChangeSupport propertySupport
+- Node rootContext
+- Node exploredContext
+- Node[] selectedNodes
+- Listener listener
+- NodeListener weakListener
+~ {static} java.util.ResourceBundle explorerBundle
++ <<Create>> ExplorerManager()
+- void init()
++ Object clone()
++ Node[] getSelectedNodes()
++ void setSelectedNodes(Node[])
++ Node getExploredContext()
++ void setExploredContext(Node)
++ Node getRootContext()
++ void setRootContext(Node)
++ void addPropertyChangeListener(PropertyChangeListener)
++ void removePropertyChangeListener(PropertyChangeListener)
++ void addVetoableChangeListener(VetoableChangeListener)
++ void removeVetoableChangeListener(VetoableChangeListener)
+- boolean isUnderRoot(Node)
+- void writeObject(java.io.ObjectOutputStream)
+- void readObject(java.io.ObjectInputStream)
++ {static} ExplorerManager find(Component)
+~ {static} Node findPath(Node,String[])
+}
+
+
+interface org.openide.explorer.ExplorerManager$Provider {
++ ExplorerManager getExplorerManager()
+}
+
+class org.openide.explorer.ExplorerManager$Listener {
++ void nodeDestroyed(NodeEvent)
+}
+
+class org.openide.explorer.ExplorerManager$MyValidation {
+~ Node root
+~ String[] rootCtx
+~ String[] exploredCtx
+~ List selNodes
++ <<Create>> MyValidation(Node,String[],String[],List)
++ <<Create>> MyValidation()
++ void validateObject()
++ void run()
+}
+
+
+
+
+java.io.Serializable <|.. org.openide.explorer.ExplorerManager
+org.openide.explorer.Cloneable <|.. org.openide.explorer.ExplorerManager
+org.openide.explorer.Object <|-- org.openide.explorer.ExplorerManager
+org.openide.explorer.ExplorerManager +.. org.openide.explorer.ExplorerManager$Provider
+org.openide.explorer.ExplorerManager +.. org.openide.explorer.ExplorerManager$Listener
+org.openide.explorer.NodeAdapter <|-- org.openide.explorer.ExplorerManager$Listener
+org.openide.explorer.ExplorerManager +.. org.openide.explorer.ExplorerManager$MyValidation
+org.openide.explorer.ObjectInputValidation <|.. org.openide.explorer.ExplorerManager$MyValidation
+org.openide.explorer.Runnable <|.. org.openide.explorer.ExplorerManager$MyValidation
+@enduml
